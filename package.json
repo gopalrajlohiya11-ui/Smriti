@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@google/genai": "^2.19.0",
+    "twilio": "^6.1.0"
+  }
+}

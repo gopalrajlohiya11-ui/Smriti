@@ -1,0 +1,298 @@
+<div align="center">
+
+# 🌸 Smriti (স্মৃতি)
+### *Multilingual AI-Powered Cognitive Care & Memory Companion Ecosystem*
+
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248.svg)](https://www.mongodb.com/)
+[![Gemini AI](https://img.shields.io/badge/Google%20Gemini-Generative%20AI-8E75B2.svg)](https://deepmind.google/technologies/gemini/)
+[![Meta WhatsApp](https://img.shields.io/badge/WhatsApp-Cloud%20API-25D366.svg)](https://developers.facebook.com/docs/whatsapp)
+[![WebAuthn](https://img.shields.io/badge/WebAuthn-Biometrics%20FIDO2-orange.svg)](https://webauthn.io/)
+
+<p align="center">
+  <b>Smriti</b> is an intelligent, compassionate healthcare platform designed for seniors living with Alzheimer's, dementia, and age-related memory impairment. It bridges the communication gap between elderly patients, family caregivers, and clinicians through multi-modal voice guidance, WhatsApp routine tracking, cognitive exercises, and clinical oversight.
+</p>
+
+</div>
+
+---
+
+## 📑 Table of Contents
+
+- [🌟 Core Features](#-core-features)
+  - [1. Warm & Elderly-Friendly Patient Portal](#1-warm--elderly-friendly-patient-portal)
+  - [2. Clinical Caregiver & Clinician Dashboard](#2-clinical-caregiver--clinician-dashboard)
+  - [3. WhatsApp AI Companion (Automated Reminders)](#3-whatsapp-ai-companion-automated-reminders)
+  - [4. Multilingual Speech & WebAuthn Biometrics](#4-multilingual-speech--webauthn-biometrics)
+- [🏛️ System Architecture](#️-system-architecture)
+- [💻 Tech Stack](#-tech-stack)
+- [🚀 Quick Start & Installation](#-quick-start--installation)
+  - [Prerequisites](#prerequisites)
+  - [1. Clone Repository](#1-clone-repository)
+  - [2. Backend Setup](#2-backend-setup)
+  - [3. Frontend Setup](#3-frontend-setup)
+  - [4. Seed Database](#4-seed-database)
+- [🔗 API Endpoints](#-api-endpoints)
+- [📱 WhatsApp Webhook Setup](#-whatsapp-webhook-setup)
+- [📂 Project Directory Structure](#-project-directory-structure)
+- [🛡️ Security & Privacy](#️-security--privacy)
+
+---
+
+## 🌟 Core Features
+
+### 1. Warm & Elderly-Friendly Patient Portal
+- **High-Contrast, Large-Touch UI**: Custom-tailored typography and warm terracotta/amber color palette designed specifically for seniors with low vision or motor difficulties.
+- **Focused Routine Horizon (Previous / Current / Next)**: Reduces cognitive overload by highlighting the single immediate routine while showing completed and upcoming tasks.
+- **Daily Streak & Cognitive Milestones**: Rewards daily task completion with encouraging confetti animations and positive reinforcement.
+- **Interactive Daily Memory Challenge**: Built-in visual memory games (e.g. *Majuli Island Mask Match*, *Bihu Rhythm Tap*).
+- **Family Memories & Photo Vault**: Horizontal reel of cherished family landmarks and portraits with 1-tap voice audio narration.
+
+### 2. Clinical Caregiver & Clinician Dashboard
+- **Deep Slate Clinical Theme**: Professional healthcare SaaS interface built with Inter typography, clean statistical cards, and actionable patient rosters.
+- **KPI Summary Metrics**: Real-time adherence rates, active attention alerts, registered patient totals, and top adherence streaks.
+- **Real-Time Overdue Alerts (`/caregiver/notifications`)**: Dedicated view displaying unacknowledged medication and hydration routines with 1-tap patient calling and database-backed persistent dismissals.
+- **Full Patient Records (`/caregiver/patient/:id`)**: 7-day adherence charts, 10-slot routine manager, medical notes, emergency contact overrides, and direct patient portal preview.
+- **Clinician Profile & Security (`/caregiver/profile`)**: Account credentials, Google OAuth status, backup password configuration, and assigned patient roster.
+
+### 3. WhatsApp AI Companion (Automated Reminders)
+- **Zero-Friction Senior Access**: Patients receive automated daily routine reminders directly on WhatsApp without needing to install new apps.
+- **Gemini AI Conversational Understanding**: Powered by Google Gemini to parse natural conversational replies (e.g., *"I took my medicine just now with tea"* $\to$ marks routine complete in MongoDB).
+- **Automated Cron Engine**: Periodically checks routine schedules and dispatches template reminders.
+
+### 4. Multilingual Speech & WebAuthn Biometrics
+- **Assamese & Regional Language Support**: Voice guidance and speech synthesis tailored for Indian regional languages and accents.
+- **WebAuthn FIDO2 Biometric Login**: 1-tap biometric fingerprint or Face Unlock authentication on supported devices.
+- **Accessible PIN Keypad**: 4-digit numeric keypad with tactile tap feedback and profile shortcuts.
+
+---
+
+## 🏛️ System Architecture
+
+```
+                               ┌────────────────────────────────┐
+                               │       Senior Patient /         │
+                               │      Family Caregiver          │
+                               └───────┬────────────────┬───────┘
+                                       │                │
+                        Web Portal (React + Vite)  WhatsApp (Meta Cloud API)
+                                       │                │
+                                       ▼                ▼
+                       ┌────────────────────────────────────────────────┐
+                       │           Express.js REST & Webhook API        │
+                       │           - Auth & Google OAuth                │
+                       │           - WebAuthn FIDO2 Handler             │
+                       │           - Routine & Alert State Engine       │
+                       │           - Automated Cron Scheduler           │
+                       └───────┬────────────────────────┬───────────────┘
+                               │                        │
+                               ▼                        ▼
+                       ┌───────────────┐        ┌────────────────┐
+                       │  MongoDB (DB) │        │  Google Gemini │
+                       │  - Patients   │        │  - NLP Reply   │
+                       │  - Reminders  │        │    Parsing &   │
+                       │  - Caregivers │        │    Assistance  │
+                       └───────────────┘        └────────────────┘
+```
+
+---
+
+## 💻 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend UI** | React 18, Vite, Tailwind CSS v4, Lucide Icons, Canvas Confetti |
+| **Typography** | Inter (Google Fonts) |
+| **Backend** | Node.js, Express.js |
+| **Database** | MongoDB, Mongoose ODM |
+| **AI / NLP** | Google Gemini Generative AI API |
+| **Messaging** | Meta WhatsApp Business Cloud API |
+| **Authentication** | JWT, Google OAuth 2.0 (`@react-oauth/google`), WebAuthn (FIDO2 Biometrics) |
+| **Voice & Speech** | Web Speech Synthesis API (Multilingual) |
+
+---
+
+## 🚀 Quick Start & Installation
+
+### Prerequisites
+- **Node.js**: `v18.x` or higher
+- **MongoDB**: Local MongoDB instance running on `localhost:27017` (or MongoDB Atlas URI)
+- **Git**
+
+---
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/gopalrajlohiya11-ui/Smriti.git
+cd Smriti
+```
+
+---
+
+### 2. Backend Setup
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file in the `backend/` directory based on `.env.example`:
+```env
+MONGO_URI=mongodb://localhost:27017/SIH
+JWT_SECRET=your_jwt_secret_key_here
+PORT=5000
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+
+# Meta WhatsApp Cloud API (Optional for WhatsApp Bot)
+WHATSAPP_TOKEN=your_meta_whatsapp_token
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_VERIFY_TOKEN=your_verify_token
+
+# Google Gemini AI API
+GEMINI_API_KEY=your_gemini_api_key
+
+# Test Patient Phone Number (E.164 without +)
+MY_WHATSAPP_NUMBER=919435012345
+```
+
+---
+
+### 3. Frontend Setup
+```bash
+cd ../frontend
+npm install
+```
+
+---
+
+### 4. Seed Database
+Seed the MongoDB database with demo patients, 10 daily routines, and active clinical alerts:
+```bash
+cd ../backend
+node seed.js
+```
+
+---
+
+### 5. Run the Application
+
+In terminal 1 (Backend):
+```bash
+cd backend
+node server.js
+# Backend runs on http://localhost:5000
+```
+
+In terminal 2 (Frontend):
+```bash
+cd frontend
+npm run dev
+# Frontend runs on http://localhost:5173
+```
+
+---
+
+## 🔗 API Endpoints
+
+### 🩺 Caregiver Routes (`/api/caregivers`)
+- `POST /api/caregivers/signup` — Register new clinician account
+- `POST /api/caregivers/login` — Email & password clinician login
+- `POST /api/caregivers/google-login` — Google OAuth credential exchange
+- `POST /api/caregivers/set-password` — Set backup password for Google users
+
+### 👴 Patient Routes (`/api/patients`)
+- `GET /api/patients` — List assigned patient profiles
+- `POST /api/patients` — Enroll new patient record
+- `POST /api/patients/login` — Patient name & PIN authentication
+- `POST /api/patients/biometric-login` — WebAuthn FIDO2 authentication
+- `PATCH /api/patients/:id` — Update patient vitals & notes
+- `DELETE /api/patients/:id` — Remove patient record
+
+### ⏰ Reminder & Alert Routes (`/api/reminders`)
+- `GET /api/reminders/alerts` — Fetch live overdue alerts across assigned patients
+- `GET /api/reminders/:patientId` — Fetch all 10 routines for a patient
+- `PATCH /api/reminders/:id` — Toggle routine completion state (Patient side)
+- `PATCH /api/reminders/:id/dismiss` — Dismiss overdue alert (Caregiver side)
+
+---
+
+## 📱 WhatsApp Webhook Setup
+
+1. Forward local port `5000` via ngrok:
+   ```bash
+   ngrok http 5000
+   ```
+2. Configure your Meta App Webhook Callback URL:
+   ```
+   https://<your-ngrok-subdomain>.ngrok-free.app/api/whatsapp
+   ```
+3. Set your **Verify Token** matching `WHATSAPP_VERIFY_TOKEN` in your `.env`.
+4. Subscribe to the `messages` webhook field.
+
+---
+
+## 📂 Project Directory Structure
+
+```
+Smriti/
+├── backend/
+│   ├── jobs/
+│   │   └── reminderCron.js         # Automated reminder scheduler
+│   ├── models/
+│   │   ├── Caregiver.js            # Clinician & caregiver schema
+│   │   ├── patient.js              # Senior patient profile schema
+│   │   └── Reminder.js             # Daily routine & alert schema
+│   ├── routes/
+│   │   ├── caregiverRoutes.js      # Auth & clinician management
+│   │   ├── patientRoutes.js        # Patient CRUD & biometrics
+│   │   ├── reminderRoutes.js       # Live database alerts & routines
+│   │   └── whatsappWebhook.js      # WhatsApp inbound/outbound bot
+│   ├── .env.example
+│   ├── seed.js                     # Full MongoDB demo database seeder
+│   └── server.js                   # Express server entry point
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── caregiver/
+│   │   │   │   └── CaregiverLayout.jsx  # Clinical sidebar layout
+│   │   │   └── Navbar.jsx
+│   │   ├── context/
+│   │   │   └── AppContext.jsx      # Global state & MongoDB sync
+│   │   ├── data/
+│   │   │   └── mockData.js         # Fallback data & regional languages
+│   │   ├── pages/
+│   │   │   ├── caregiver/
+│   │   │   │   ├── CaregiverDashboard.jsx      # Patient roster directory
+│   │   │   │   ├── CaregiverNotifications.jsx  # Dedicated alerts page
+│   │   │   │   ├── CaregiverPatientDetail.jsx  # 7-day adherence & routines
+│   │   │   │   └── CaregiverProfile.jsx        # Clinician account & security
+│   │   │   └── patient/
+│   │   │       ├── PatientDashboard.jsx        # Elder-friendly home space
+│   │   │       ├── PatientLogin.jsx            # Unified login & PIN keypad
+│   │   │       └── PatientReminders.jsx        # Full 10-routine schedule
+│   │   ├── services/
+│   │   │   └── api.js              # REST client for backend endpoints
+│   │   ├── App.jsx                 # Route definitions
+│   │   ├── index.css               # Inter font & design tokens
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🛡️ Security & Privacy
+
+- **Data Privacy**: Patient routines and health logs are stored securely in MongoDB and accessed through role-scoped tokens.
+- **Biometric Security**: WebAuthn keys use standard public-key cryptography — biometric credentials never leave the user's secure hardware enclave.
+- **HIPAA / Senior Care Alignment**: High-contrast, transparent patient records with emergency contact calling.
+
+---
+
+<div align="center">
+  <b>🌸 Smriti — Preserving Memories, Empowering Caregivers.</b>
+</div>
