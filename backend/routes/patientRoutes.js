@@ -396,4 +396,34 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// 8. Patient AI Chatbot: POST /api/patients/:id/chat
+// Calls Gemini with dynamically fetched patient records from MongoDB
+const { generatePatientChatReply } = require('../services/patientChatService');
+
+router.post('/:id/chat', async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    const patientId = req.params.id;
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'A message string is required.' });
+    }
+
+    const result = await generatePatientChatReply(patientId, message.trim(), history || []);
+
+    res.json({
+      status: 'ok',
+      reply: result.reply,
+      patientName: result.patientName
+    });
+  } catch (err) {
+    console.error('❌ Patient Chat Route Error:', err.message);
+    res.status(500).json({ 
+      error: 'Failed to generate assistant response.', 
+      details: err.message,
+      reply: "I am right here with you. Please take a deep breath and tell me how I can assist you today. 🌸" 
+    });
+  }
+});
+
 module.exports = router;

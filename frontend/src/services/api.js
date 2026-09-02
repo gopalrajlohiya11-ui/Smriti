@@ -252,3 +252,22 @@ export async function fetchActiveAlertsApi() {
     return null;
   }
 }
+
+// 9. Send Patient AI Chat Message (Gemini Backend)
+export async function sendPatientChatMessage(patientId, message, history = []) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, history })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Chatbot request failed');
+    }
+    return data;
+  } catch (err) {
+    console.error('Patient Chat API error:', err.message);
+    throw err;
+  }
+}

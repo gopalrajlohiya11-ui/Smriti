@@ -10,6 +10,7 @@ import CaregiverProfile from './pages/caregiver/CaregiverProfile';
 import PatientLogin from './pages/patient/PatientLogin';
 import PatientDashboard from './pages/patient/PatientDashboard';
 import PatientReminders from './pages/patient/PatientReminders';
+import PatientChatbot from './components/patient/PatientChatbot';
 
 function App() {
   return (
@@ -38,6 +39,8 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
+          {/* Floating AI Chatbot for Patient Portal */}
+          <PatientChatbot />
         </div>
       </Router>
     </AppProvider>
