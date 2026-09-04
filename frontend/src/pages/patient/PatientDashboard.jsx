@@ -126,11 +126,11 @@ export default function PatientDashboard() {
     syncToast
   } = useApp();
 
-  // Real-time ticking device clock (updates every 15s)
+  // Real-time ticking device clock (updates live every 1s)
   const [nowTime, setNowTime] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setNowTime(new Date()), 15000);
+    const timer = setInterval(() => setNowTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -169,6 +169,9 @@ export default function PatientDashboard() {
 
   // Game of the Day Modal State
   const [isGameOfDayOpen, setIsGameOfDayOpen] = useState(false);
+
+  // Dismissing Reminder Animation State
+  const [dismissingReminderId, setDismissingReminderId] = useState(null);
 
   // Streak & Game of the Day Completion State
   const todayKey = useMemo(() => {
@@ -219,7 +222,7 @@ export default function PatientDashboard() {
   };
 
   const handleReminderDone = (remId, title) => {
-    toggleReminder(activePatient.id, remId);
+    setDismissingReminderId(remId);
     
     confetti({
       particleCount: 45,
@@ -229,6 +232,11 @@ export default function PatientDashboard() {
     });
 
     speakText(t('dashboard.completedRoutineAudio', { title }));
+
+    setTimeout(() => {
+      toggleReminder(activePatient.id, remId);
+      setDismissingReminderId(null);
+    }, 300);
   };
 
   // Helper to parse reminder scheduled time into today's Date object
@@ -1009,37 +1017,72 @@ export default function PatientDashboard() {
 
           {/* Compact Inline Active Reminder Card */}
           {(() => {
-            const activeRem = chronologicalReminders.find(r => !r.isCompleted && (r.timeState === 'due_now' || r.timeState === 'overdue'))
-              || chronologicalReminders.find(r => !r.isCompleted)
-              || chronologicalReminders[0];
+            const uncompletedReminders = chronologicalReminders.filter(r => !r.isCompleted);
+            const activeRem = uncompletedReminders.find(r => r.timeState === 'due_now' || r.timeState === 'overdue')
+              || uncompletedReminders[0];
 
             if (!activeRem) {
               return (
-                <p className="text-xs text-stone-500 italic p-3">No reminders scheduled for today.</p>
+                <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-5 text-center space-y-2.5 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-sm">
+                    <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-emerald-950">
+                    All done for today! 🌟 Great job, {activePatient?.name?.split(' ')[0] || 'Elder'}.
+                  </h3>
+                  <p className="text-xs sm:text-sm text-emerald-800 font-bold max-w-md mx-auto">
+                    You've completed all {chronologicalReminders.length} of your daily wellness, medicine, and routine care goals!
+                  </p>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/patient/reminders')}
+                      className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer active:scale-95 inline-flex items-center gap-1.5"
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                      <span>View All Completed Routines ({chronologicalReminders.length}) →</span>
+                    </button>
+                  </div>
+                </div>
               );
             }
 
-            const isDone = activeRem.isCompleted;
+            const isDismissing = dismissingReminderId === activeRem.id;
 
             return (
-              <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-2 transition-all ${
-                isDone 
-                  ? 'bg-emerald-50/70 border-emerald-300'
-                  : 'bg-amber-50/60 border-amber-300'
-              }`}>
+              <div 
+                key={activeRem.id}
+                className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-2 transition-all duration-300 ${
+                  isDismissing
+                    ? 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+                    : 'opacity-100 scale-100 translate-y-0 animate-in fade-in slide-in-from-bottom-2 duration-300'
+                } ${
+                  activeRem.timeState === 'overdue'
+                    ? 'bg-rose-50/80 border-rose-300'
+                    : activeRem.timeState === 'due_now'
+                    ? 'bg-amber-50 border-amber-500 shadow-sm ring-2 ring-amber-400/20'
+                    : 'bg-amber-50/60 border-amber-300'
+                }`}
+              >
                 {/* Left info */}
                 <div className="flex items-center gap-3.5">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-bold shadow-2xs ${
-                    isDone ? 'bg-emerald-700 text-white' : 'bg-amber-800 text-white'
+                    activeRem.timeState === 'overdue' ? 'bg-rose-700 text-white' : 'bg-amber-800 text-white'
                   }`}>
                     {getReminderIcon(activeRem.type)}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-stone-800 border border-stone-200">
-                        {isDone ? 'Completed' : 'Next Up'} ({activeRem.formattedTime})
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                        activeRem.timeState === 'overdue'
+                          ? 'bg-rose-100 text-rose-950 border-rose-300'
+                          : activeRem.timeState === 'due_now'
+                          ? 'bg-amber-200 text-amber-950 border-amber-400'
+                          : 'bg-white text-stone-800 border-stone-200'
+                      }`}>
+                        {activeRem.timeState === 'due_now' ? 'Due Now' : activeRem.timeState === 'overdue' ? 'Overdue' : 'Next Up'} ({activeRem.formattedTime})
                       </span>
-                      <span className="text-[11px] font-bold text-stone-500">
+                      <span className="text-[11px] font-bold text-stone-500 capitalize">
                         {activeRem.type}
                       </span>
                     </div>
@@ -1056,15 +1099,12 @@ export default function PatientDashboard() {
                 <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0 w-full sm:w-auto">
                   <button
                     type="button"
+                    disabled={isDismissing}
                     onClick={() => handleReminderDone(activeRem.id, activeRem.title)}
-                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95 ${
-                      isDone
-                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                        : 'bg-amber-800 hover:bg-amber-900 text-white'
-                    }`}
+                    className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Check className="w-4 h-4 stroke-[3]" />
-                    <span>{isDone ? 'Done ✓' : 'Mark Done'}</span>
+                    <span>Mark Done</span>
                   </button>
 
                   <button
