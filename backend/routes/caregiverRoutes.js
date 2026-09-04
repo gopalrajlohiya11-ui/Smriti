@@ -5,58 +5,54 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const Caregiver = require('../models/Caregiver');
 const Patient = require('../models/patient');
+const { JWT_SECRET, authenticateCaregiver, rateLimitLogin } = require('../middleware/auth');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'smriti-hackathon-secret-key-2026';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '413068962989-pv637gaki6ekg1vk9javkb21njg96g4m.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// Middleware to verify Caregiver JWT
-const authenticateCaregiver = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization header with Bearer token required' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.caregiver = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid or expired session token' });
-  }
+// Email validation helper
+const isValidEmail = (email) => {
+  return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 };
 
 // 1. Caregiver Signup: POST /api/caregivers/signup
-router.post('/signup', async (req, res) => {
+router.post('/signup', rateLimitLogin, async (req, res) => {
   try {
     const { name, email, password, role, contact } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Name is required (at least 2 characters).' });
+    }
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'A valid email address is required.' });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     const existingCaregiver = await Caregiver.findOne({ email: normalizedEmail });
     if (existingCaregiver) {
-      return res.status(400).json({ error: 'A caregiver with this email address already exists. Please log in.' });
+      return res.status(400).json({ error: 'A caregiver account with this email address already exists. Please log in.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const caregiver = new Caregiver({
-      name,
+      name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
       role: role || 'clinician',
-      contact: contact || ''
+      contact: contact ? contact.trim() : ''
     });
 
     await caregiver.save();
 
     const token = jwt.sign(
-      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role },
+      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
     res.status(201).json({
@@ -79,23 +75,25 @@ router.post('/signup', async (req, res) => {
 });
 
 // 2. Caregiver Login: POST /api/caregivers/login
-router.post('/login', async (req, res) => {
+router.post('/login', rateLimitLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     const caregiver = await Caregiver.findOne({ email: normalizedEmail });
+    
+    // Generic error on missing user or invalid password
     if (!caregiver) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     if (!caregiver.password) {
       return res.status(401).json({ 
-        error: 'This account was created with Google Sign-In and has no password set yet. Please click "Continue with Google" to log in, or set a password in your settings.' 
+        error: 'This account was created with Google Sign-In and has no password set yet. Please click "Continue with Google" or set a password in your settings.' 
       });
     }
 
@@ -105,9 +103,9 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role },
+      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
     res.json({
@@ -129,9 +127,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 3. Real Google Sign-In / Sign-Up (OAuth): POST /api/caregivers/google-login
-// Handles BOTH new and returning users seamlessly through ONE endpoint
-router.post('/google-login', async (req, res) => {
+// 3. Google Sign-In / Sign-Up (OAuth): POST /api/caregivers/google-login
+// Looks up by Google ID first; seamlessly logs in existing users or creates new ones
+router.post('/google-login', rateLimitLogin, async (req, res) => {
   try {
     const { credential } = req.body;
 
@@ -153,7 +151,7 @@ router.post('/google-login', async (req, res) => {
         payload = jwt.decode(credential);
       }
     } catch (verifyErr) {
-      console.warn('Google verifyIdToken note:', verifyErr.message);
+      console.warn('Google verifyIdToken fallback note:', verifyErr.message);
       payload = jwt.decode(credential);
     }
 
@@ -161,44 +159,52 @@ router.post('/google-login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid or unverifiable Google token' });
     }
 
+    const googleId = payload.sub;
     const normalizedEmail = payload.email.toLowerCase().trim();
     const name = payload.name || payload.given_name || payload.email.split('@')[0];
 
-    // Check if Caregiver already exists in MongoDB
-    let caregiver = await Caregiver.findOne({ email: normalizedEmail });
-    let isNewUser = false;
+    // 1. Look up by Google ID FIRST
+    let caregiver = null;
+    if (googleId) {
+      caregiver = await Caregiver.findOne({ googleId });
+    }
 
+    // 2. If not found by Google ID, look up by email
     if (!caregiver) {
-      // New caregiver via Google
-      isNewUser = true;
-      const existingPatients = await Patient.find().limit(3);
-      const assignedIds = existingPatients.map(p => p._id);
-
-      caregiver = new Caregiver({
-        name,
-        email: normalizedEmail,
-        googleAuth: true,
-        role: 'clinician',
-        contact: '+91 94350 12345',
-        patientIds: assignedIds
-      });
-
-      await caregiver.save();
-      console.log(`✅ Created new Google OAuth Caregiver: ${name} (${normalizedEmail})`);
-    } else {
-      // Returning caregiver via Google
-      if (!caregiver.googleAuth) {
+      caregiver = await Caregiver.findOne({ email: normalizedEmail });
+      if (caregiver && googleId) {
+        caregiver.googleId = googleId;
         caregiver.googleAuth = true;
         await caregiver.save();
       }
+    }
+
+    let isNewUser = false;
+
+    if (!caregiver) {
+      // Create new caregiver via Google
+      isNewUser = true;
+      caregiver = new Caregiver({
+        name,
+        email: normalizedEmail,
+        googleId,
+        googleAuth: true,
+        role: 'clinician',
+        contact: '+91 94350 12345',
+        patientIds: []
+      });
+
+      await caregiver.save();
+      console.log(`✅ Created new Google OAuth Caregiver: ${name} (${normalizedEmail}) with Google ID: ${googleId}`);
+    } else {
       console.log(`ℹ️ Returning Google OAuth login for Caregiver: ${caregiver.name} (${normalizedEmail})`);
     }
 
-    // Issue our JWT session token
+    // Issue JWT session token with 7-day expiry
     const token = jwt.sign(
-      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role },
+      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
     res.json({
@@ -223,13 +229,14 @@ router.post('/google-login', async (req, res) => {
   }
 });
 
-// 4. Feature 1: Set/Update Password for Authenticated Caregiver (POST /api/caregivers/set-password)
+// 4. Set/Update Password for Caregiver: POST /api/caregivers/set-password
+// Allows caregivers to set a password/PIN after first Google signup
 router.post('/set-password', async (req, res) => {
   try {
     const { email, password } = req.body;
     let caregiverId = null;
 
-    // Check authorization header first if present
+    // Check authorization header if present
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
@@ -239,8 +246,8 @@ router.post('/set-password', async (req, res) => {
       } catch (e) {}
     }
 
-    if (!password || password.length < 4) {
-      return res.status(400).json({ error: 'Password must be at least 4 characters long' });
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
     }
 
     let caregiver = null;
@@ -252,7 +259,7 @@ router.post('/set-password', async (req, res) => {
     }
 
     if (!caregiver) {
-      return res.status(404).json({ error: 'Caregiver account not found' });
+      return res.status(404).json({ error: 'Caregiver account not found.' });
     }
 
     // Hash and save new password
@@ -282,7 +289,7 @@ router.post('/set-password', async (req, res) => {
 // 5. Current Caregiver Profile: GET /api/caregivers/me
 router.get('/me', authenticateCaregiver, async (req, res) => {
   try {
-    const caregiver = await Caregiver.findById(req.caregiver.id).populate('patientIds');
+    const caregiver = await Caregiver.findById(req.caregiver._id).populate('patientIds');
     if (!caregiver) {
       return res.status(404).json({ error: 'Caregiver not found' });
     }
@@ -293,8 +300,34 @@ router.get('/me', authenticateCaregiver, async (req, res) => {
       email: caregiver.email,
       role: caregiver.role,
       contact: caregiver.contact,
+      notificationPreference: caregiver.notificationPreference || 'whatsapp',
       patients: caregiver.patientIds,
       hasPassword: !!caregiver.password
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Update Caregiver Profile & Preferences: PATCH /api/caregivers/me
+router.patch('/me', authenticateCaregiver, async (req, res) => {
+  try {
+    const { notificationPreference, contact, name } = req.body;
+    const update = {};
+    if (notificationPreference) update.notificationPreference = notificationPreference;
+    if (contact) update.contact = contact;
+    if (name) update.name = name;
+
+    const updated = await Caregiver.findByIdAndUpdate(
+      req.caregiver._id,
+      { $set: update },
+      { new: true }
+    );
+
+    res.json({
+      status: 'ok',
+      message: 'Caregiver preferences updated successfully',
+      caregiver: updated
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

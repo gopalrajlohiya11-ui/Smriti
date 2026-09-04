@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import confetti from 'canvas-confetti';
 import { 
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function PatientReminders() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { activePatient, toggleReminder, currentLanguage } = useApp();
 
@@ -136,29 +138,29 @@ export default function PatientReminders() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10">
+      <div className="max-w-6xl mx-auto space-y-6">
         
         {/* Navigation & Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-2xs space-y-4">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-stone-200 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <button
                 onClick={() => navigate('/patient')}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 hover:text-stone-900 transition-colors cursor-pointer mb-2 group"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-black text-stone-700 hover:text-stone-950 transition-colors cursor-pointer mb-2 group bg-stone-100 hover:bg-stone-200 px-3.5 py-1.5 rounded-xl border border-stone-300"
               >
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                <span>← Back to Dashboard</span>
+                <span>← {t('remindersPage.backToDashboard')}</span>
               </button>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-stone-900 flex items-center gap-2.5">
-                <span>All Today's Reminders</span>
-                <span className="text-sm font-bold px-3 py-0.5 bg-amber-100 text-amber-950 rounded-full border border-amber-200">
-                  {completedCount} of {totalCount} Done
+              <h1 className="text-2xl sm:text-3xl font-black text-stone-950 flex items-center gap-2.5">
+                <span>{t('remindersPage.title')}</span>
+                <span className="text-sm font-black px-3 py-1 bg-amber-100 text-amber-950 rounded-full border border-amber-300">
+                  {completedCount} of {totalCount} {t('dashboard.done')}
                 </span>
               </h1>
-              <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                Full chronological daily schedule for <strong className="text-stone-800">{activePatient.name}</strong> • {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
+              <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-1">
+                {t('remindersPage.subtitle')} • <strong className="text-stone-900">{activePatient.name}</strong> • {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
               </p>
             </div>
 
@@ -172,7 +174,7 @@ export default function PatientReminders() {
               }`}
             >
               <Volume2 className="w-5 h-5" />
-              <span>{isPlayingAudio ? 'Reading...' : 'Listen to Schedule'}</span>
+              <span>{isPlayingAudio ? t('remindersPage.speaking') : t('remindersPage.listenAll')}</span>
             </button>
           </div>
 
@@ -235,28 +237,28 @@ export default function PatientReminders() {
                       {isDone && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black border border-emerald-300">
                           <CheckCircle2 className="w-3 h-3 text-emerald-700" />
-                          <span>Completed ✓ ({rem.formattedTime})</span>
+                          <span>{t('dashboard.completed')} ✓ ({rem.formattedTime})</span>
                         </span>
                       )}
 
                       {isDueNow && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-800 text-white text-xs font-black tracking-wide shadow-2xs animate-pulse">
                           <Sparkles className="w-3 h-3" />
-                          <span>DUE RIGHT NOW ({rem.formattedTime})</span>
+                          <span>{t('dashboard.dueNow')} ({rem.formattedTime})</span>
                         </span>
                       )}
 
                       {isOverdue && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-700 text-white text-xs font-black tracking-wide">
                           <Clock className="w-3 h-3" />
-                          <span>Overdue • Scheduled {rem.formattedTime}</span>
+                          <span>{t('dashboard.overdue')} ({rem.formattedTime})</span>
                         </span>
                       )}
 
                       {isUpcoming && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-600 text-xs font-bold border border-stone-200">
                           <Clock className="w-3 h-3 text-stone-500" />
-                          <span>Scheduled at {rem.formattedTime}</span>
+                          <span>{t('dashboard.upcoming')} ({rem.formattedTime})</span>
                         </span>
                       )}
                     </div>
@@ -285,7 +287,7 @@ export default function PatientReminders() {
                     }`}
                   >
                     <Check className="w-5 h-5 stroke-[3]" />
-                    <span>{isDone ? 'Completed ✓' : 'Mark as Done'}</span>
+                    <span>{isDone ? `${t('dashboard.completed')} ✓` : t('dashboard.markDone')}</span>
                   </button>
                 </div>
               </div>
@@ -300,7 +302,7 @@ export default function PatientReminders() {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm border border-stone-300 cursor-pointer shadow-2xs transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Main Dashboard</span>
+            <span>{t('remindersPage.backToDashboard')}</span>
           </button>
         </div>
 

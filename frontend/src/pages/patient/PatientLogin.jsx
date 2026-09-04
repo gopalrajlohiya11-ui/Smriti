@@ -108,6 +108,19 @@ export default function PatientLogin({ defaultRole }) {
     window.speechSynthesis.speak(utterance);
   };
 
+  const speakText = (text) => {
+    if (!text || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech synthesis error:', e);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) {
@@ -155,15 +168,25 @@ export default function PatientLogin({ defaultRole }) {
   // Admin Submit
   const handleAdminSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!adminEmail.trim()) {
+    setErrorMsg('');
+    const email = adminEmail.trim();
+    if (!email) {
       setErrorMsg('Please enter your email address');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMsg('Please enter a valid email address');
+      return;
+    }
+    if (!adminPassword) {
+      setErrorMsg('Please enter your password');
+      return;
+    }
     try {
-      await loginCaregiver(adminEmail, adminPassword);
+      await loginCaregiver(email, adminPassword);
       navigate('/caregiver');
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid caregiver credentials');
+      setErrorMsg(err.message || 'Invalid email or password');
     }
   };
 

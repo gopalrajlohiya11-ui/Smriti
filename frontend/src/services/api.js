@@ -63,6 +63,23 @@ export async function setCaregiverPasswordApi(password, email) {
   }
 }
 
+// 1d. Update Caregiver Preferences (Notification Channels, etc.)
+export async function updateCaregiverProfileApi(updateData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/caregivers/me`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(updateData)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to update preferences');
+    return data;
+  } catch (err) {
+    console.error('Update caregiver preferences API error:', err.message);
+    throw err;
+  }
+}
+
 // 2. Caregiver Signup
 export async function signupCaregiverApi(caregiverData) {
   try {
@@ -145,6 +162,25 @@ export async function fetchRealPatients() {
   }
 }
 
+// 4b. Fetch Current Logged-In Patient (Patient-Scoped /me)
+export async function fetchCurrentPatientApi() {
+  try {
+    const token = localStorage.getItem('smriti_patient_token');
+    if (!token) return null;
+    const response = await fetch(`${API_BASE_URL}/patients/me`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn('⚠️ Could not fetch current patient profile:', err.message);
+    return null;
+  }
+}
+
 // 5. Create Real Patient in MongoDB
 export async function createPatientApi(patientData) {
   try {
@@ -198,7 +234,9 @@ export async function deletePatientApi(patientId) {
 // 7. Fetch Real Reminders for Patient
 export async function fetchPatientReminders(patientId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/reminders`);
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/reminders`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -212,13 +250,88 @@ export async function toggleReminderStatus(reminderId, nextAcknowledged) {
   try {
     const response = await fetch(`${API_BASE_URL}/reminders/${reminderId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ acknowledged: nextAcknowledged })
     });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
     console.warn(`⚠️ Could not update reminder ${reminderId} in backend:`, err.message);
+    return null;
+  }
+}
+
+// 8b. Fetch Memory Bank Photos from MongoDB
+export async function fetchPatientPhotos(patientId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not fetch photos for patient ${patientId}:`, err.message);
+    return null;
+  }
+}
+
+// 8c. Add Memory Bank Photo to MongoDB
+export async function addPatientPhotoApi(patientId, photoData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(photoData)
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error('Failed to add photo:', err.message);
+    throw err;
+  }
+}
+
+// 8d. Delete Memory Bank Photo from MongoDB
+export async function deletePatientPhotoApi(patientId, photoId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos/${photoId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error('Failed to delete photo:', err.message);
+    throw err;
+  }
+}
+
+// 8e. Fetch Game Sessions from MongoDB
+export async function fetchPatientGameSessions(patientId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not fetch game sessions for patient ${patientId}:`, err.message);
+    return null;
+  }
+}
+
+// 8f. Record Game Session in MongoDB
+export async function recordGameSessionApi(patientId, gameData) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(gameData)
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn('Failed to record game session:', err.message);
     return null;
   }
 }
@@ -253,20 +366,38 @@ export async function fetchActiveAlertsApi() {
   }
 }
 
-// 9. Send Patient AI Chat Message (Gemini Backend)
-export async function sendPatientChatMessage(patientId, message, history = []) {
+// 9. Send Patient AI Chat Message (Gemini Backend with Timeout & Safe JSON Parsing)
+export async function sendPatientChatMessage(patientId, message, history = [], audioData = null, mimeType = null) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second safety timeout
+
   try {
     const response = await fetch(`${API_BASE_URL}/patients/${patientId}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, history })
+      body: JSON.stringify({ message, history, audioData, mimeType }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response from chat server:', text.slice(0, 150));
+      throw new Error('Server returned an invalid response. Please try again.');
+    }
+
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || 'Chatbot request failed');
+      throw new Error(data.details || data.error || 'Chatbot request failed');
     }
     return data;
   } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Smriti is taking longer than expected to respond. Please try asking again.');
+    }
     console.error('Patient Chat API error:', err.message);
     throw err;
   }

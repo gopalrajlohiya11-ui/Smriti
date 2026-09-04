@@ -16,6 +16,7 @@ const patientSchema = new mongoose.Schema({
   medicalNotes: { type: String },
   avatar: { type: String },
   caregiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Caregiver' },
+  notificationPreference: { type: String, enum: ['whatsapp', 'sms', 'ivr'], default: 'whatsapp' },
   lastGameLinkSentDate: { type: Date },
   // Flag distinguishing seeded demo accounts from newly registered live patients
   isDemoSeed: { type: Boolean, default: false },

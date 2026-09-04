@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { initialPatients, initialRedFlags, regionalLanguages } from '../data/mockData';
 import { 
   fetchRealPatients, 
+  fetchCurrentPatientApi,
   fetchPatientReminders, 
   toggleReminderStatus,
   dismissReminderApi,
@@ -15,14 +16,56 @@ import {
   registerPatientBiometricApi,
   createPatientApi,
   updatePatientApi,
-  deletePatientApi
+  deletePatientApi,
+  fetchPatientPhotos,
+  addPatientPhotoApi,
+  deletePatientPhotoApi,
+  fetchPatientGameSessions,
+  recordGameSessionApi
 } from '../services/api';
+import i18n from '../i18n';
+import { 
+  cachePatientData, 
+  getCachedPatientData, 
+  queueOfflineAction, 
+  getQueuedOfflineActions, 
+  removeQueuedOfflineAction 
+} from '../utils/offlineDb';
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // Global Language
-  const [currentLanguage, setCurrentLanguage] = useState(regionalLanguages[0]);
+  // Network Connectivity State
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [syncToast, setSyncToast] = useState('');
+
+  // Global Language with LocalStorage Persistence & i18n sync
+  const [currentLanguage, setCurrentLanguageState] = useState(() => {
+    const savedLangCode = localStorage.getItem('smriti_language') || localStorage.getItem('smriti_selected_lang');
+    if (savedLangCode) {
+      const found = regionalLanguages.find(l => l.code === savedLangCode || l.name === savedLangCode);
+      if (found) {
+        if (i18n && typeof i18n.changeLanguage === 'function') {
+          i18n.changeLanguage(found.code === 'as' ? 'as' : 'en');
+        }
+        return found;
+      }
+    }
+    return regionalLanguages[0];
+  });
+
+  const setCurrentLanguage = useCallback((lang) => {
+    if (!lang) return;
+    setCurrentLanguageState(lang);
+    if (lang.code) {
+      localStorage.setItem('smriti_language', lang.code);
+      localStorage.setItem('smriti_selected_lang', lang.code);
+      if (i18n && typeof i18n.changeLanguage === 'function') {
+        i18n.changeLanguage(lang.code === 'as' ? 'as' : 'en');
+      }
+    }
+  }, []);
 
   // Caregiver Authentication
   const [isCaregiverLoggedIn, setIsCaregiverLoggedIn] = useState(() => {
@@ -53,8 +96,170 @@ export function AppProvider({ children }) {
     return saved ? JSON.parse(saved) : initialRedFlags;
   });
 
-  // Fetch real data from backend API
+  // Update pending sync actions count
+  const refreshPendingSyncCount = useCallback(async () => {
+    try {
+      const actions = await getQueuedOfflineActions();
+      setPendingSyncCount(actions.length);
+    } catch (e) {}
+  }, []);
+
+  // Sync queued offline actions when network returns
+  const syncOfflineQueue = useCallback(async () => {
+    try {
+      const queuedActions = await getQueuedOfflineActions();
+      if (!queuedActions || queuedActions.length === 0) return;
+
+      console.log(`🌸 [Smriti Offline Sync] Processing ${queuedActions.length} queued action(s)...`);
+      let successfulCount = 0;
+
+      for (const item of queuedActions) {
+        try {
+          if (item.action === 'toggleReminder' && item.reminderId) {
+            await toggleReminderStatus(item.reminderId, item.targetAcknowledged);
+            await removeQueuedOfflineAction(item.id);
+            successfulCount++;
+          }
+        } catch (err) {
+          console.warn('Failed to sync action:', item, err);
+        }
+      }
+
+      await refreshPendingSyncCount();
+      if (successfulCount > 0) {
+        setSyncToast(`✓ Reconnected! Synced ${successfulCount} offline action(s) with your caregiver.`);
+        setTimeout(() => setSyncToast(''), 4500);
+      }
+    } catch (e) {
+      console.warn('Offline sync error:', e);
+    }
+  }, [refreshPendingSyncCount]);
+
+  // Online / Offline Network Event Listeners
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncOfflineQueue();
+      loadRealData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    refreshPendingSyncCount();
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [syncOfflineQueue, refreshPendingSyncCount]);
+
+  // Fetch real data from backend API (Scoped appropriately for Caregiver vs Patient with Offline Cache fallback)
   const loadRealData = useCallback(async () => {
+    const hasCaregiverToken = !!localStorage.getItem('smriti_caregiver_token');
+    const hasPatientToken = !!localStorage.getItem('smriti_patient_token');
+
+    // If device is offline, load from cached IndexedDB snapshot
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+      const cached = await getCachedPatientData(targetId);
+      if (cached) {
+        setPatients([cached]);
+        setActivePatientId(cached.id);
+      }
+      return;
+    }
+
+    // 1. If Patient is logged in (Patient Portal Mode)
+    if (hasPatientToken && !hasCaregiverToken) {
+      try {
+        const patientRecord = await fetchCurrentPatientApi();
+        if (patientRecord && patientRecord._id) {
+          const realReminders = await fetchPatientReminders(patientRecord._id);
+        let formattedReminders = [];
+        if (realReminders && realReminders.length > 0) {
+          formattedReminders = realReminders.map(r => {
+            const timeStr = r.scheduledTime 
+              ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : '9:00 AM';
+
+            let title = r.title || 'Daily Routine';
+            let detail = r.detail || `Scheduled ${r.type}`;
+            if (!r.title) {
+              if (r.type === 'medicine') title = 'Prescribed Medicine';
+              else if (r.type === 'hydration') title = 'Stay Hydrated (Water/Tea)';
+              else if (r.type === 'meal') title = 'Nourishing Meal & Tea';
+              else if (r.type === 'game') title = 'Memory Game of the Day';
+              else if (r.type === 'activity') title = 'Gentle Movement / Walk';
+              else if (r.type === 'appointment') title = 'Caregiver Check-in';
+              else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
+            }
+
+            return {
+              id: r._id,
+              type: r.type,
+              title: title,
+              detail: detail,
+              time: timeStr,
+              status: r.acknowledged ? 'completed' : 'pending',
+              acknowledged: r.acknowledged,
+              dismissed: !!r.dismissed,
+              scheduledTime: r.scheduledTime
+            };
+          });
+        }
+
+        const isDemo = patientRecord.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patientRecord.name);
+
+        const enrichedPatient = {
+          id: patientRecord._id,
+          name: patientRecord.name,
+          age: patientRecord.age || 70,
+          gender: patientRecord.gender || 'Senior',
+          phone: patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345',
+          rawPhone: patientRecord.phoneNumber,
+          location: patientRecord.location || 'Assam',
+          nativeLanguage: patientRecord.language || 'Assamese',
+          avatar: patientRecord.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
+          lastActive: 'Active on WhatsApp',
+          streakDays: isDemo ? 14 : 1,
+          cognitiveStage: patientRecord.cognitiveStage || 'Early Memory Support',
+          primaryCaregiver: patientRecord.primaryCaregiver || 'Dr. Ananya Sharma',
+          emergencyContact: patientRecord.emergencyContact || (patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345'),
+          notes: patientRecord.notes || '',
+          medicalNotes: patientRecord.medicalNotes || '',
+          todayReminders: formattedReminders,
+          reminderHistory: isDemo ? initialPatients[0].reminderHistory : [],
+          weeklyPerformance: isDemo ? initialPatients[0].weeklyPerformance : [],
+          notificationPreference: patientRecord.notificationPreference || 'whatsapp',
+          isDemoSeed: isDemo
+        };
+
+        setPatients([enrichedPatient]);
+        setActivePatientId(enrichedPatient.id);
+        await cachePatientData(enrichedPatient.id, enrichedPatient);
+        return;
+        }
+      } catch (err) {
+        console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
+        const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+        const cached = await getCachedPatientData(targetId);
+        if (cached) {
+          setPatients([cached]);
+          setActivePatientId(cached.id);
+        }
+        return;
+      }
+    }
+
+    // 2. If Caregiver is logged in (Caregiver Portal Mode)
+    if (!hasCaregiverToken) {
+      return; // Not logged in as caregiver, don't call /api/patients
+    }
+
     const backendPatients = await fetchRealPatients();
     if (!backendPatients || !Array.isArray(backendPatients)) return;
 
@@ -128,6 +333,7 @@ export function AppProvider({ children }) {
           todayReminders: formattedReminders,
           reminderHistory: isDemo ? fallbackPatient.reminderHistory : [],
           weeklyPerformance: isDemo ? fallbackPatient.weeklyPerformance : [],
+          notificationPreference: bp.notificationPreference || 'whatsapp',
           isDemoSeed: isDemo
         };
       })
@@ -144,35 +350,6 @@ export function AppProvider({ children }) {
     const realDbAlerts = await fetchActiveAlertsApi();
     if (realDbAlerts && Array.isArray(realDbAlerts)) {
       setRedFlags(realDbAlerts);
-    } else {
-      // Fallback calculation from enriched patients
-      const realFlags = [];
-      const now = new Date();
-
-      for (const p of enrichedPatients) {
-        const overdueReminders = p.todayReminders.filter(
-          r => r.status === 'pending' && !r.acknowledged && !r.dismissed && r.scheduledTime && new Date(r.scheduledTime) < now
-        );
-
-        for (const rem of overdueReminders) {
-          realFlags.push({
-            id: `flag-${p.id}-${rem.id}`,
-            reminderId: rem.id,
-            patientId: p.id,
-            patientName: p.name,
-            patientAvatar: p.avatar,
-            patientLocation: p.location,
-            severity: rem.type === 'medicine' ? 'critical' : 'high',
-            title: `Missed ${rem.title}`,
-            description: `${p.name} has not yet acknowledged their ${rem.type} reminder scheduled for ${rem.time} via WhatsApp.`,
-            time: 'Overdue today',
-            actionRequired: 'Contact Patient',
-            actionPhone: p.phone
-          });
-        }
-      }
-
-      setRedFlags(realFlags);
     }
   }, [activePatientId]);
 
@@ -269,12 +446,15 @@ export function AppProvider({ children }) {
 
   const logoutCaregiver = () => {
     setIsCaregiverLoggedIn(false);
+    setCaregiverUser(null);
     localStorage.removeItem('smriti_caregiver_auth');
     localStorage.removeItem('smriti_caregiver_token');
     localStorage.removeItem('smriti_caregiver_user');
     localStorage.removeItem('smriti_patients');
+    localStorage.removeItem('smriti_red_flags');
     localStorage.removeItem('smriti_patient_id');
     setPatients([]);
+    setRedFlags([]);
     setActivePatientId('');
   };
 
@@ -293,18 +473,8 @@ export function AppProvider({ children }) {
       await loadRealData();
       return { success: true, patient: matchedPatient };
     } catch (err) {
-      console.warn('Real patient login failed, falling back to matching local/state patient:', err.message);
-      let existingPatient = patients.find(p => p.name.toLowerCase().includes((name || '').toLowerCase().trim()));
-      if (!existingPatient) {
-        existingPatient = patients[0] || initialPatients[0];
-      }
-      setActivePatientId(existingPatient.id);
-      setIsPatientLoggedIn(true);
-      if (remember) {
-        localStorage.setItem('smriti_patient_auth', 'true');
-        localStorage.setItem('smriti_patient_id', existingPatient.id);
-      }
-      return { success: true, patient: existingPatient };
+      console.error('Patient login failed:', err.message);
+      throw err;
     }
   };
 
@@ -340,8 +510,10 @@ export function AppProvider({ children }) {
 
   const logoutPatient = () => {
     setIsPatientLoggedIn(false);
+    setActivePatientId('');
     localStorage.removeItem('smriti_patient_auth');
     localStorage.removeItem('smriti_patient_token');
+    localStorage.removeItem('smriti_patient_id');
   };
 
   // 4. Create Real Patient in MongoDB
@@ -480,32 +652,89 @@ export function AppProvider({ children }) {
     }
   };
 
-  // 6. Toggle Reminder Completion in real backend
+  // 6. Toggle Reminder Completion in real backend + offline caching & sync queue
   const toggleReminder = async (patientId, reminderId) => {
     let targetAcknowledged = false;
+    let targetPatient = null;
 
-    setPatients(prev => prev.map(p => {
-      if (p.id === patientId) {
-        const updatedReminders = p.todayReminders.map(r => {
-          if (r.id === reminderId) {
-            const nextStatus = r.status === 'completed' ? 'pending' : 'completed';
-            targetAcknowledged = nextStatus === 'completed';
-            return {
-              ...r,
-              status: nextStatus,
-              acknowledged: targetAcknowledged
-            };
-          }
-          return r;
-        });
-        return { ...p, todayReminders: updatedReminders };
-      }
-      return p;
-    }));
+    setPatients(prev => {
+      const updated = prev.map(p => {
+        if (p.id === patientId || p._id === patientId) {
+          const updatedReminders = p.todayReminders.map(r => {
+            if (r.id === reminderId || r._id === reminderId) {
+              const nextStatus = r.status === 'completed' ? 'pending' : 'completed';
+              targetAcknowledged = nextStatus === 'completed';
+              return {
+                ...r,
+                status: nextStatus,
+                acknowledged: targetAcknowledged
+              };
+            }
+            return r;
+          });
+          targetPatient = { ...p, todayReminders: updatedReminders };
+          return targetPatient;
+        }
+        return p;
+      });
+      return updated;
+    });
+
+    if (targetPatient) {
+      await cachePatientData(patientId, targetPatient);
+    }
+
+    const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    if (!online) {
+      await queueOfflineAction({
+        action: 'toggleReminder',
+        patientId,
+        reminderId,
+        targetAcknowledged
+      });
+      await refreshPendingSyncCount();
+      return;
+    }
 
     if (typeof reminderId === 'string' && reminderId.length === 24) {
-      await toggleReminderStatus(reminderId, targetAcknowledged);
+      try {
+        await toggleReminderStatus(reminderId, targetAcknowledged);
+      } catch (err) {
+        console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
+        await queueOfflineAction({
+          action: 'toggleReminder',
+          patientId,
+          reminderId,
+          targetAcknowledged
+        });
+        await refreshPendingSyncCount();
+      }
     }
+  };
+
+  // 7. Memory Bank Photos (Real MongoDB Vault)
+  const loadPatientPhotos = useCallback(async (patientId) => {
+    if (!patientId) return [];
+    return await fetchPatientPhotos(patientId);
+  }, []);
+
+  const addPatientPhoto = async (patientId, photoData) => {
+    const created = await addPatientPhotoApi(patientId, photoData);
+    return created;
+  };
+
+  const deletePatientPhoto = async (patientId, photoId) => {
+    return await deletePatientPhotoApi(patientId, photoId);
+  };
+
+  // 8. Game Sessions & Cognitive Scores (Real MongoDB)
+  const loadGameSessions = useCallback(async (patientId) => {
+    if (!patientId) return [];
+    return await fetchPatientGameSessions(patientId);
+  }, []);
+
+  const recordGameSession = async (patientId, gameData) => {
+    return await recordGameSessionApi(patientId, gameData);
   };
 
   return (
@@ -514,6 +743,11 @@ export function AppProvider({ children }) {
         currentLanguage,
         setCurrentLanguage,
         regionalLanguages,
+        // Network & Offline Sync state
+        isOnline,
+        pendingSyncCount,
+        syncToast,
+        syncOfflineQueue,
         // Caregiver state & handlers
         isCaregiverLoggedIn,
         caregiverUser,
@@ -538,7 +772,13 @@ export function AppProvider({ children }) {
         loginPatientBiometric,
         registerPatientBiometric,
         logoutPatient,
-        toggleReminder
+        toggleReminder,
+        // Real MongoDB Memory Bank Photos & Game Sessions
+        loadPatientPhotos,
+        addPatientPhoto,
+        deletePatientPhoto,
+        loadGameSessions,
+        recordGameSession
       }}
     >
       {children}

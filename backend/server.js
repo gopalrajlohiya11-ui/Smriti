@@ -148,6 +148,21 @@ const resetDailyFlagsHandler = async (req, res) => {
 app.post('/api/test/reset-daily-flags/:patientId', resetDailyFlagsHandler);
 app.get('/api/test/reset-daily-flags/:patientId', resetDailyFlagsHandler);
 
+// 404 handler for unmatched API routes
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl}` });
+});
+
+// Global Express Error Handler (Guarantees JSON response instead of HTML crash stack traces)
+app.use((err, req, res, next) => {
+  console.error('💥 Unhandled Application Error:', err);
+  const statusCode = err.status || err.statusCode || 500;
+  res.status(statusCode).json({
+    error: err.message || 'Internal Server Error',
+    status: statusCode
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

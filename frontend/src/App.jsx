@@ -10,7 +10,9 @@ import CaregiverProfile from './pages/caregiver/CaregiverProfile';
 import PatientLogin from './pages/patient/PatientLogin';
 import PatientDashboard from './pages/patient/PatientDashboard';
 import PatientReminders from './pages/patient/PatientReminders';
+import PatientProfile from './pages/patient/PatientProfile';
 import PatientChatbot from './components/patient/PatientChatbot';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
@@ -19,14 +21,16 @@ function App() {
         <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-stone-900 selection:bg-amber-200 selection:text-amber-900">
           <Navbar />
           <main className="flex-1">
-            <Routes>
-              {/* Default Entry: Patient Login */}
-              <Route path="/" element={<PatientLogin />} />
+            <ErrorBoundary>
+              <Routes>
+                {/* Default Entry: Patient Login */}
+                <Route path="/" element={<PatientLogin />} />
 
-              {/* Patient Portal */}
-              <Route path="/patient" element={<PatientDashboard />} />
-              <Route path="/patient/reminders" element={<PatientReminders />} />
-              <Route path="/patient/login" element={<PatientLogin />} />
+                {/* Patient Portal */}
+                <Route path="/patient" element={<PatientDashboard />} />
+                <Route path="/patient/profile" element={<PatientProfile />} />
+                <Route path="/patient/reminders" element={<PatientReminders />} />
+                <Route path="/patient/login" element={<PatientLogin />} />
 
               {/* Caregiver Portal */}
               <Route path="/caregiver/login" element={<CaregiverLogin />} />
@@ -38,7 +42,8 @@ function App() {
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </main>
+          </ErrorBoundary>
+        </main>
           {/* Floating AI Chatbot for Patient Portal */}
           <PatientChatbot />
         </div>

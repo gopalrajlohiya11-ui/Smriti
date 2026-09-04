@@ -2,10 +2,19 @@ const express = require('express');
 const router = express.Router();
 const Reminder = require('../models/Reminder');
 const Patient = require('../models/patient');
+const { authenticateCaregiver, authenticateAny } = require('../middleware/auth');
 
-// 1. Create a new reminder
-router.post('/', async (req, res) => {
+// 1. Create a new reminder (Caregiver scoped)
+router.post('/', authenticateCaregiver, async (req, res) => {
   try {
+    const { patientId } = req.body;
+    if (patientId) {
+      const patient = await Patient.findById(patientId);
+      if (patient && patient.caregiverId && patient.caregiverId.toString() !== req.caregiver._id.toString() && !req.caregiver.patientIds?.includes(patient._id)) {
+        return res.status(403).json({ error: 'Forbidden: You cannot create reminders for another caregiver patient.' });
+      }
+    }
+
     const reminder = new Reminder(req.body);
     await reminder.save();
     res.status(201).json(reminder);
@@ -14,11 +23,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 2. Fetch all active overdue alerts directly from MongoDB
-router.get('/alerts', async (req, res) => {
+// 2. Fetch all active overdue alerts directly from MongoDB (Caregiver scoped)
+router.get('/alerts', authenticateCaregiver, async (req, res) => {
   try {
     const now = new Date();
+    
+    // Find patient IDs accessible to this caregiver
+    const caregiver = req.caregiver;
+    const accessiblePatients = await Patient.find({
+      $or: [
+        { caregiverId: caregiver._id },
+        { _id: { $in: caregiver.patientIds || [] } }
+      ]
+    }).select('_id');
+
+    const patientIds = accessiblePatients.map(p => p._id);
+
     const overdueReminders = await Reminder.find({
+      patientId: { $in: patientIds },
       acknowledged: false,
       dismissed: false,
       scheduledTime: { $lte: now }
@@ -57,9 +79,8 @@ router.get('/alerts', async (req, res) => {
   }
 });
 
-// 3. Caregiver Dismissal: PATCH /api/reminders/:id/dismiss
-// Marks alert as dismissed by caregiver without marking patient as having completed it
-router.patch('/:id/dismiss', async (req, res) => {
+// 3. Caregiver Dismissal: PATCH /api/reminders/:id/dismiss (Caregiver scoped)
+router.patch('/:id/dismiss', authenticateCaregiver, async (req, res) => {
   try {
     const reminder = await Reminder.findById(req.params.id);
     if (!reminder) {
@@ -82,8 +103,8 @@ router.patch('/:id/dismiss', async (req, res) => {
   }
 });
 
-// 4. Get all reminders for a patient
-router.get('/:patientId', async (req, res) => {
+// 4. Get all reminders for a patient (Authenticated)
+router.get('/:patientId', authenticateAny, async (req, res) => {
   try {
     const reminders = await Reminder.find({ patientId: req.params.patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);
@@ -92,8 +113,8 @@ router.get('/:patientId', async (req, res) => {
   }
 });
 
-// 5. Toggle or update reminder status (Patient completion)
-router.patch('/:id', async (req, res) => {
+// 5. Toggle or update reminder status
+router.patch('/:id', authenticateAny, async (req, res) => {
   try {
     const reminder = await Reminder.findById(req.params.id);
     if (!reminder) return res.status(404).json({ error: 'Reminder not found' });

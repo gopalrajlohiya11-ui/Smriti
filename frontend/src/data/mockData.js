@@ -222,9 +222,9 @@ export const cognitiveGames = [
 ];
 
 export const regionalLanguages = [
-  { code: 'as', name: 'অসমীয়া (Assamese)', greeting: 'শুভ প্ৰভাত (Xubho Probhat)', dir: 'ltr' },
-  { code: 'kha', name: 'Khasi (Meghalaya)', greeting: 'Kumno (Good Day)', dir: 'ltr' },
-  { code: 'mizo', name: 'Mizo (Mizoram)', greeting: 'Chibai (Welcome)', dir: 'ltr' },
-  { code: 'bn', name: 'বাংলা (Bengali)', greeting: 'সুপ্রভাত (Suprobhat)', dir: 'ltr' },
-  { code: 'en', name: 'English', greeting: 'Good Morning', dir: 'ltr' }
+  { code: 'en', name: 'English', greeting: 'Good Morning', dir: 'ltr', status: 'active' },
+  { code: 'as', name: 'অসমীয়া (Assamese)', greeting: 'সুপ্ৰভাত (Xubho Probhat)', dir: 'ltr', status: 'active' },
+  { code: 'kha', name: 'Khasi (Meghalaya)', greeting: 'Kumno (Good Day)', dir: 'ltr', status: 'coming_soon' },
+  { code: 'mizo', name: 'Mizo (Mizoram)', greeting: 'Chibai (Welcome)', dir: 'ltr', status: 'coming_soon' },
+  { code: 'bn', name: 'বাংলা (Bengali)', greeting: 'সুপ্রভাত (Suprobhat)', dir: 'ltr', status: 'coming_soon' }
 ];

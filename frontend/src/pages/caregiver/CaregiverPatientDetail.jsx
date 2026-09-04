@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import CaregiverLayout from '../../components/caregiver/CaregiverLayout';
@@ -38,8 +38,11 @@ import {
   Trash2,
   ExternalLink,
   Activity,
-  ShieldCheck
+  ShieldCheck,
+  Image,
+  Plus
 } from 'lucide-react';
+import NotificationPreferences from '../../components/NotificationPreferences';
 
 export default function CaregiverPatientDetail() {
   const { id } = useParams();
@@ -51,10 +54,80 @@ export default function CaregiverPatientDetail() {
     registerPatientBiometric, 
     toggleReminder, 
     loginPatient,
-    caregiverUser
+    caregiverUser,
+    loadPatientPhotos,
+    addPatientPhoto,
+    deletePatientPhoto
   } = useApp();
 
   const selectedPatient = patients.find(p => p.id === id || p._id === id);
+
+  // Photos Vault State
+  const [patientPhotosList, setPatientPhotosList] = useState([]);
+  const [isPhotoLoading, setIsPhotoLoading] = useState(false);
+  const [showAddPhotoModal, setShowAddPhotoModal] = useState(false);
+  const [newPhotoForm, setNewPhotoForm] = useState({
+    title: '',
+    photoUrl: '',
+    taggedName: '',
+    relation: '',
+    year: '2024',
+    location: 'Assam',
+    description: '',
+    audioPrompt: ''
+  });
+  const [photoSaveStatus, setPhotoSaveStatus] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    if (selectedPatient?.id || selectedPatient?._id) {
+      const pId = selectedPatient.id || selectedPatient._id;
+      setIsPhotoLoading(true);
+      loadPatientPhotos(pId).then(photos => {
+        if (isMounted) {
+          setPatientPhotosList(photos || []);
+          setIsPhotoLoading(false);
+        }
+      });
+    }
+    return () => { isMounted = false; };
+  }, [selectedPatient?.id, selectedPatient?._id, loadPatientPhotos]);
+
+  const handleAddPhotoSubmit = async (e) => {
+    e.preventDefault();
+    if (!newPhotoForm.photoUrl || !newPhotoForm.title) return;
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      setPhotoSaveStatus('saving');
+      const created = await addPatientPhoto(pId, newPhotoForm);
+      setPatientPhotosList(prev => [created, ...prev]);
+      setPhotoSaveStatus('saved');
+      setShowAddPhotoModal(false);
+      setNewPhotoForm({
+        title: '',
+        photoUrl: '',
+        taggedName: '',
+        relation: '',
+        year: '2024',
+        location: 'Assam',
+        description: '',
+        audioPrompt: ''
+      });
+      setTimeout(() => setPhotoSaveStatus(''), 2500);
+    } catch (err) {
+      setPhotoSaveStatus('error');
+    }
+  };
+
+  const handleDeletePhoto = async (photoId) => {
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      await deletePatientPhoto(pId, photoId);
+      setPatientPhotosList(prev => prev.filter(p => p._id !== photoId && p.id !== photoId));
+    } catch (err) {
+      console.error('Delete photo error:', err);
+    }
+  };
 
   // Collapsible 7-Day History Table state
   const [showHistoryTable, setShowHistoryTable] = useState(false);
@@ -613,7 +686,94 @@ export default function CaregiverPatientDetail() {
         </div>
 
         {/* ======================================================== */}
-        {/* 5. CLINICAL & MEDICAL NOTES CARD                         */}
+        {/* 5. NOTIFICATION PREFERENCES                              */}
+        {/* ======================================================== */}
+        <NotificationPreferences 
+          currentPreference={selectedPatient.notificationPreference || 'whatsapp'}
+          onSave={async (channel) => {
+            await updatePatient(selectedPatient.id, { notificationPreference: channel });
+          }}
+        />
+
+        {/* ======================================================== */}
+        {/* 6. FAMILY MEMORY BANK & PHOTOS (REAL MONGODB VAULT)      */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                <Image className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Family Memory Bank & Tagged Photos ({patientPhotosList.length})
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Cherished family portraits and landmarks used in cognitive recall
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAddPhotoModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Memory Photo</span>
+            </button>
+          </div>
+
+          {isPhotoLoading ? (
+            <div className="p-6 text-center text-xs text-slate-400">Loading memory bank photos from MongoDB...</div>
+          ) : patientPhotosList.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200/80">
+              No custom memory photos uploaded yet. Click "Add Memory Photo" to upload family pictures for this patient.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+              {patientPhotosList.map((photo) => (
+                <div 
+                  key={photo._id || photo.id} 
+                  className="bg-slate-50 rounded-xl p-3 border border-slate-200/80 flex flex-col justify-between gap-2.5 group hover:border-slate-300 transition-all relative"
+                >
+                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-slate-200 border border-slate-300/60">
+                    <img
+                      src={photo.photoUrl || photo.imageUrl || photo.image}
+                      alt={photo.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                      {photo.year || '2024'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="font-bold text-xs text-slate-900 truncate">{photo.title}</h4>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo._id || photo.id)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                        title="Delete photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-teal-800 font-bold">{photo.relation || photo.taggedName || 'Family Member'}</p>
+                    <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5">{photo.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ======================================================== */}
+        {/* 7. CLINICAL & MEDICAL NOTES CARD                         */}
         {/* ======================================================== */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-2">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -860,6 +1020,129 @@ export default function CaregiverPatientDetail() {
                 <span>{isDeleting ? 'Deleting...' : 'Yes, Delete Record'}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: ADD MEMORY BANK PHOTO                            */}
+      {/* ======================================================== */}
+      {showAddPhotoModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 sm:p-8 relative my-8 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <Image className="w-5 h-5 text-teal-800" />
+                <h3 className="text-base font-bold text-slate-900">Add Memory Bank Photo</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddPhotoModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPhotoSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Photo Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Garden Walk with Sister"
+                  value={newPhotoForm.title}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, title: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Image URL / Portrait Link *</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://images.unsplash.com/..."
+                  value={newPhotoForm.photoUrl}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, photoUrl: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Tagged Person</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dr. Ananya"
+                    value={newPhotoForm.taggedName}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, taggedName: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Relationship</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Daughter"
+                    value={newPhotoForm.relation}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, relation: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Year</label>
+                  <input
+                    type="text"
+                    placeholder="2023"
+                    value={newPhotoForm.year}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, year: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    placeholder="Assam"
+                    value={newPhotoForm.location}
+                    onChange={(e) => setNewPhotoForm({ ...newPhotoForm, location: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Memory Description & Notes</label>
+                <textarea
+                  rows="2"
+                  placeholder="Cherished family moment..."
+                  value={newPhotoForm.description}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, description: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPhotoModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={photoSaveStatus === 'saving' || !newPhotoForm.photoUrl || !newPhotoForm.title}
+                  className="px-5 py-2 rounded-xl bg-teal-800 text-white font-bold hover:bg-teal-900 cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {photoSaveStatus === 'saving' ? 'Saving to Database...' : 'Save to Memory Bank'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

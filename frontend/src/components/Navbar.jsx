@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { 
   Globe, 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const { 
     currentLanguage, 
     setCurrentLanguage, 
@@ -23,6 +25,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [comingSoonToast, setComingSoonToast] = useState('');
 
   const isCaregiverRoute = location.pathname.startsWith('/caregiver');
   const isPatientRoute = location.pathname.startsWith('/patient');
@@ -32,8 +35,22 @@ export default function Navbar() {
     return null;
   }
 
+  const handleLanguageSelect = (lang) => {
+    setCurrentLanguage(lang);
+    setLangDropdownOpen(false);
+    if (lang.status === 'coming_soon') {
+      setComingSoonToast(`${lang.name} ${t('navbar.comingSoonNotice')}`);
+      setTimeout(() => setComingSoonToast(''), 3500);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-stone-200 shadow-2xs">
+      {comingSoonToast && (
+        <div className="bg-amber-800 text-white text-xs font-bold text-center py-2 px-4 animate-in fade-in">
+          ℹ️ {comingSoonToast}
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
@@ -48,11 +65,11 @@ export default function Navbar() {
                   Smriti
                 </span>
                 <span className="hidden sm:inline-block px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-300 rounded-full">
-                  Cognitive Care
+                  {t('navbar.cognitiveCare')}
                 </span>
               </div>
               <p className="text-xs text-stone-500 font-medium hidden md:block">
-                Your caring memory & wellness companion
+                {t('navbar.brandTagline')}
               </p>
             </div>
           </Link>
@@ -76,31 +93,40 @@ export default function Navbar() {
 
               {langDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-stone-200 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-stone-200 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   onMouseLeave={() => setLangDropdownOpen(false)}
                 >
                   <div className="px-4 py-2 text-xs font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100">
-                    Regional Languages (NER)
+                    {t('navbar.regionalLanguages')}
                   </div>
-                  {regionalLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setCurrentLanguage(lang);
-                        setLangDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between transition-colors cursor-pointer ${
-                        currentLanguage.code === lang.code
-                          ? 'bg-amber-50 text-amber-900 font-bold'
-                          : 'text-stone-700 hover:bg-stone-50'
-                      }`}
-                    >
-                      <span>{lang.name}</span>
-                      <span className="text-xs text-stone-500 font-normal italic">
-                        {lang.greeting.split(' ')[0]}
-                      </span>
-                    </button>
-                  ))}
+                  {regionalLanguages.map((lang) => {
+                    const isComingSoon = lang.status === 'coming_soon';
+                    const isCurrent = currentLanguage.code === lang.code;
+
+                    return (
+                      <button
+                        key={lang.code}
+                        onClick={() => handleLanguageSelect(lang)}
+                        className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                          isCurrent
+                            ? 'bg-amber-50 text-amber-900 font-bold'
+                            : 'text-stone-700 hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{lang.name}</span>
+                          {isComingSoon && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 border border-stone-200">
+                              {t('navbar.comingSoon')}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-stone-500 font-normal italic">
+                          {lang.greeting.split(' ')[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -110,7 +136,7 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-800 text-xs font-bold">
                   <HeartHandshake className="w-3.5 h-3.5 text-amber-800" />
-                  <span>Caregiver Mode</span>
+                  <span>{t('navbar.caregiverMode')}</span>
                 </div>
                 <button
                   onClick={() => {

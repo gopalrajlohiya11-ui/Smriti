@@ -5,13 +5,24 @@ const jwt = require('jsonwebtoken');
 const Patient = require('../models/patient');
 const Caregiver = require('../models/Caregiver');
 const Reminder = require('../models/Reminder');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'smriti-hackathon-secret-key-2026';
+const MemoryBankPhoto = require('../models/MemoryBankPhoto');
+const GameSession = require('../models/GameSession');
+const { 
+  JWT_SECRET, 
+  authenticateCaregiver, 
+  authenticatePatient, 
+  authenticateAny, 
+  rateLimitLogin 
+} = require('../middleware/auth');
 
 // 1. Patient PIN-Based Login: POST /api/patients/login
-router.post('/login', async (req, res) => {
+router.post('/login', rateLimitLogin, async (req, res) => {
   try {
     const { name, age, pin, phoneNumber } = req.body;
+
+    if (!pin || pin.toString().length < 4) {
+      return res.status(400).json({ error: 'A 4-digit PIN is required' });
+    }
 
     let patient = null;
 
@@ -28,25 +39,29 @@ router.post('/login', async (req, res) => {
       }
     }
 
+    // Generic error to prevent user enumeration
     if (!patient) {
-      return res.status(404).json({ error: `No registered patient found matching "${name || phoneNumber}".` });
+      return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
     }
 
-    // Verify PIN if provided
-    if (pin) {
-      if (patient.pin) {
-        const isPinValid = await bcrypt.compare(pin.toString(), patient.pin);
-        if (!isPinValid && pin.toString() !== '1234') {
-          return res.status(401).json({ error: 'Incorrect 4-digit PIN' });
-        }
+    // Verify PIN with bcrypt
+    if (patient.pin) {
+      const isPinValid = await bcrypt.compare(pin.toString(), patient.pin);
+      if (!isPinValid) {
+        return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
+      }
+    } else {
+      // If patient had no PIN set, match against default 1234
+      if (pin.toString() !== '1234') {
+        return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
       }
     }
 
-    // Generate long-lived JWT token for elderly frictionless access
+    // Generate scoped JWT token for patient
     const token = jwt.sign(
-      { id: patient._id, name: patient.name, phoneNumber: patient.phoneNumber },
+      { id: patient._id, patientId: patient._id, name: patient.name, type: 'patient' },
       JWT_SECRET,
-      { expiresIn: '365d' }
+      { expiresIn: '30d' }
     );
 
     res.json({
@@ -60,8 +75,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// 1b. Feature 2: Patient Biometric Login: POST /api/patients/biometric-login
-router.post('/biometric-login', async (req, res) => {
+// 1b. Patient Biometric Login: POST /api/patients/biometric-login
+router.post('/biometric-login', rateLimitLogin, async (req, res) => {
   try {
     const { credentialId, patientId, name } = req.body;
 
@@ -80,18 +95,13 @@ router.post('/biometric-login', async (req, res) => {
     }
 
     if (!patient) {
-      // Fallback to first patient with biometric registered or default patient for demo
-      patient = await Patient.findOne({ hasBiometric: true }) || await Patient.findOne();
-    }
-
-    if (!patient) {
-      return res.status(404).json({ error: 'No patient record associated with this biometric credential' });
+      return res.status(401).json({ error: 'No patient record associated with this biometric credential' });
     }
 
     const token = jwt.sign(
-      { id: patient._id, name: patient.name, phoneNumber: patient.phoneNumber },
+      { id: patient._id, patientId: patient._id, name: patient.name, type: 'patient' },
       JWT_SECRET,
-      { expiresIn: '365d' }
+      { expiresIn: '30d' }
     );
 
     res.json({
@@ -105,41 +115,48 @@ router.post('/biometric-login', async (req, res) => {
   }
 });
 
-// 2. Get patients: GET /api/patients (filtered by caregiver if logged in)
-router.get('/', async (req, res) => {
+// 1c. Get Current Patient Profile: GET /api/patients/me (Patient-scoped)
+router.get('/me', authenticatePatient, async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded && decoded.id) {
-          const caregiver = await Caregiver.findById(decoded.id);
-          if (caregiver) {
-            const query = {
-              $or: [
-                { _id: { $in: caregiver.patientIds || [] } },
-                { caregiverId: caregiver._id }
-              ]
-            };
-            const assignedPatients = await Patient.find(query).sort({ createdAt: -1 });
-            return res.json(assignedPatients);
-          }
-        }
-      } catch (tokenErr) {
-        // Continue if token verification fails or belongs to a patient
-      }
-    }
+    const patient = await Patient.findById(req.patient._id);
+    if (!patient) return res.status(404).json({ error: 'Patient profile not found' });
+    res.json(patient);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    const patients = await Patient.find().sort({ createdAt: -1 });
+// Helper: Verify if a caregiver has access to a specific patient
+const caregiverHasAccessToPatient = (caregiver, patient) => {
+  if (!caregiver || !patient) return false;
+  if (caregiver.role === 'clinician' && !patient.caregiverId) return true; // Unassigned demo records accessible to clinicians
+  const isDirectOwner = patient.caregiverId && patient.caregiverId.toString() === caregiver._id.toString();
+  const isInAssignedList = caregiver.patientIds && caregiver.patientIds.some(pid => pid.toString() === patient._id.toString());
+  return isDirectOwner || isInAssignedList;
+};
+
+// 2. Get patients: GET /api/patients (Scoped strictly to the authenticated caregiver)
+router.get('/', authenticateCaregiver, async (req, res) => {
+  try {
+    const caregiver = req.caregiver;
+    
+    // Find all patients owned by or assigned to this caregiver
+    const query = {
+      $or: [
+        { caregiverId: caregiver._id },
+        { _id: { $in: caregiver.patientIds || [] } }
+      ]
+    };
+
+    const patients = await Patient.find(query).sort({ createdAt: -1 });
     res.json(patients);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 3. Create a new patient: POST /api/patients
-router.post('/', async (req, res) => {
+// 3. Create a new patient: POST /api/patients (Auto-scoped to authenticated caregiver)
+router.post('/', authenticateCaregiver, async (req, res) => {
   try {
     const {
       name,
@@ -158,25 +175,24 @@ router.post('/', async (req, res) => {
       primaryCaregiver,
       emergencyContact,
       avatar,
-      caregiverId,
       webAuthnCredentialId,
       webAuthnPublicKey,
       hasBiometric
     } = req.body;
 
-    if (!name) {
-      return res.status(400).json({ error: 'Patient name is required' });
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Patient name is required (at least 2 characters).' });
     }
 
     const rawPhone = phoneNumber || phone || '919435012345';
     const cleanPhone = rawPhone.replace(/\D/g, '');
 
     // Hash PIN (default 1234 if not provided)
-    const pinToHash = pin ? pin.toString() : '1234';
+    const pinToHash = (pin && pin.toString().length === 4) ? pin.toString() : '1234';
     const hashedPin = await bcrypt.hash(pinToHash, 10);
 
     const patient = new Patient({
-      name,
+      name: name.trim(),
       age: age ? parseInt(age, 10) : 70,
       gender: gender || 'Senior',
       phoneNumber: cleanPhone,
@@ -185,12 +201,12 @@ router.post('/', async (req, res) => {
       language: language || nativeLanguage || 'Assamese',
       location: location || 'Guwahati, Assam',
       cognitiveStage: cognitiveStage || 'Early Memory Support',
-      primaryCaregiver: primaryCaregiver || 'Dr. Ananya Sharma',
+      primaryCaregiver: primaryCaregiver || req.caregiver.name,
       emergencyContact: emergencyContact || cleanPhone,
       notes: notes || 'Enjoys morning walks and daily memory routines.',
       medicalNotes: medicalNotes || 'Prescribed daily memory vitamins. BP stable.',
       avatar: avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
-      caregiverId: caregiverId || undefined,
+      caregiverId: req.caregiver._id,
       webAuthnCredentialId: webAuthnCredentialId || undefined,
       webAuthnPublicKey: webAuthnPublicKey || undefined,
       hasBiometric: !!(hasBiometric || webAuthnCredentialId)
@@ -198,12 +214,10 @@ router.post('/', async (req, res) => {
 
     await patient.save();
 
-    // Link patient to caregiver if caregiverId provided
-    if (caregiverId) {
-      await Caregiver.findByIdAndUpdate(caregiverId, {
-        $addToSet: { patientIds: patient._id }
-      });
-    }
+    // Link patient to the authenticated caregiver
+    await Caregiver.findByIdAndUpdate(req.caregiver._id, {
+      $addToSet: { patientIds: patient._id }
+    });
 
     // Auto-seed today's 10 standard daily reminders for this patient
     const now = new Date();
@@ -230,27 +244,29 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 3b. Feature 2: Register Biometric for Patient: POST /api/patients/:id/register-biometric
-router.post('/:id/register-biometric', async (req, res) => {
+// 3b. Register Biometric for Patient: POST /api/patients/:id/register-biometric
+router.post('/:id/register-biometric', authenticateAny, async (req, res) => {
   try {
     const { credentialId, publicKey } = req.body;
     if (!credentialId) {
       return res.status(400).json({ error: 'credentialId is required' });
     }
 
-    const patient = await Patient.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: {
-          webAuthnCredentialId: credentialId,
-          webAuthnPublicKey: publicKey || '',
-          hasBiometric: true
-        }
-      },
-      { new: true }
-    );
-
+    const patient = await Patient.findById(req.params.id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    // Authorization check
+    if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this patient record.' });
+    }
+    if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
+      return res.status(403).json({ error: 'Forbidden: You cannot modify another patient.' });
+    }
+
+    patient.webAuthnCredentialId = credentialId;
+    patient.webAuthnPublicKey = publicKey || '';
+    patient.hasBiometric = true;
+    await patient.save();
 
     console.log(`✅ Registered WebAuthn Biometrics for Patient: ${patient.name}`);
     res.json({
@@ -263,9 +279,18 @@ router.post('/:id/register-biometric', async (req, res) => {
   }
 });
 
-// 4. Update a patient: PATCH /api/patients/:id
-router.patch('/:id', async (req, res) => {
+// 4. Update a patient: PATCH /api/patients/:id (Scoped to owning caregiver)
+router.patch('/:id', authenticateCaregiver, async (req, res) => {
   try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    if (!caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to update this patient.' });
+    }
+
     const updateData = { ...req.body };
 
     // Format phone if provided
@@ -285,10 +310,6 @@ router.patch('/:id', async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!updatedPatient) {
-      return res.status(404).json({ error: 'Patient not found' });
-    }
-
     res.json({
       status: 'ok',
       message: 'Patient details updated successfully',
@@ -299,11 +320,20 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// 5. Get a patient by ID: GET /api/patients/:id
-router.get('/:id', async (req, res) => {
+// 5. Get a patient by ID: GET /api/patients/:id (Protected & scoped)
+router.get('/:id', authenticateAny, async (req, res) => {
   try {
     const patient = await Patient.findById(req.params.id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    // Authorization check
+    if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this patient record.' });
+    }
+    if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
+      return res.status(403).json({ error: 'Forbidden: You cannot access another patient profile.' });
+    }
+
     res.json(patient);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -311,8 +341,19 @@ router.get('/:id', async (req, res) => {
 });
 
 // 6. Get a patient's reminders: GET /api/patients/:id/reminders
-router.get('/:id/reminders', async (req, res) => {
+router.get('/:id/reminders', authenticateAny, async (req, res) => {
   try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    // Authorization check
+    if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this patient reminders.' });
+    }
+    if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
+      return res.status(403).json({ error: 'Forbidden: You cannot view another patient reminders.' });
+    }
+
     const reminders = await Reminder.find({ patientId: req.params.id }).sort({ scheduledTime: 1 });
     res.json(reminders);
   } catch (err) {
@@ -321,7 +362,7 @@ router.get('/:id/reminders', async (req, res) => {
 });
 
 // 7. Delete a patient: DELETE /api/patients/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateCaregiver, async (req, res) => {
   try {
     const patientId = req.params.id;
     const patient = await Patient.findById(patientId);
@@ -336,33 +377,15 @@ router.delete('/:id', async (req, res) => {
       return res.status(403).json({ error: 'Demo accounts (Ramesh Sharma, Meera Baruah, Biren Das) are protected and cannot be deleted.' });
     }
 
-    // Caregiver Scoping check
-    const authHeader = req.headers.authorization;
-    let caregiver = null;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded && decoded.id) {
-          caregiver = await Caregiver.findById(decoded.id);
-        }
-      } catch (e) {}
+    // Caregiver Scoping check: return 403 if attempting to delete another caregiver's patient
+    if (!caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You are not authorized to delete this patient.' });
     }
 
-    // If caregiver token was provided, ensure caregiver has assignment to this patient
-    if (caregiver) {
-      const isAssigned = (caregiver.patientIds && caregiver.patientIds.some(pid => pid.toString() === patientId)) ||
-                         (patient.caregiverId && patient.caregiverId.toString() === caregiver._id.toString());
-      
-      if (!isAssigned && caregiver.role !== 'clinician') {
-        return res.status(403).json({ error: 'You are not authorized to delete this patient.' });
-      }
-
-      // Remove from caregiver patientIds array
-      await Caregiver.findByIdAndUpdate(caregiver._id, {
-        $pull: { patientIds: patient._id }
-      });
-    }
+    // Remove from caregiver patientIds array
+    await Caregiver.findByIdAndUpdate(req.caregiver._id, {
+      $pull: { patientIds: patient._id }
+    });
 
     // Remove from all caregivers' patientIds lists
     await Caregiver.updateMany(
@@ -384,7 +407,7 @@ router.delete('/:id', async (req, res) => {
     // Delete Patient document
     await Patient.findByIdAndDelete(patientId);
 
-    console.log(`🗑️ Deleted Patient: ${patient.name} (${patientId}) and cleaned up all associated records.`);
+    console.log(`🗑️ Deleted Patient: ${patient.name} (${patientId}) by Caregiver: ${req.caregiver.name}`);
 
     res.json({
       status: 'ok',
@@ -397,32 +420,182 @@ router.delete('/:id', async (req, res) => {
 });
 
 // 8. Patient AI Chatbot: POST /api/patients/:id/chat
-// Calls Gemini with dynamically fetched patient records from MongoDB
 const { generatePatientChatReply } = require('../services/patientChatService');
 
-router.post('/:id/chat', async (req, res) => {
+router.post('/:id/chat', authenticateAny, async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, audioData, mimeType } = req.body;
     const patientId = req.params.id;
 
-    if (!message || typeof message !== 'string' || !message.trim()) {
-      return res.status(400).json({ error: 'A message string is required.' });
+    if ((!message || !message.trim()) && !audioData) {
+      return res.status(400).json({ error: 'A message text or audio recording is required.' });
     }
 
-    const result = await generatePatientChatReply(patientId, message.trim(), history || []);
+    const patient = await Patient.findById(patientId);
+    if (patient) {
+      if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
+        return res.status(403).json({ error: 'Forbidden: You do not have access to chat for this patient.' });
+      }
+      if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
+        return res.status(403).json({ error: 'Forbidden: You cannot chat on behalf of another patient.' });
+      }
+    }
+
+    const result = await generatePatientChatReply(
+      patientId, 
+      message ? message.trim() : '', 
+      history || [],
+      audioData || null,
+      mimeType || 'audio/webm'
+    );
 
     res.json({
       status: 'ok',
       reply: result.reply,
-      patientName: result.patientName
+      transcription: result.transcription,
+      patientName: result.patientName,
+      preferredLanguage: result.preferredLanguage
     });
   } catch (err) {
-    console.error('❌ Patient Chat Route Error:', err.message);
-    res.status(500).json({ 
-      error: 'Failed to generate assistant response.', 
-      details: err.message,
-      reply: "I am right here with you. Please take a deep breath and tell me how I can assist you today. 🌸" 
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 9. Get Patient Reminders: GET /api/patients/:id/reminders
+router.get('/:id/reminders', authenticateAny, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
+    res.json(reminders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. Memory Bank Photos: GET /api/patients/:id/photos
+router.get('/:id/photos', authenticateAny, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    let photos = await MemoryBankPhoto.find({ patientId }).sort({ createdAt: -1 });
+    
+    // If no custom photos uploaded yet, seed default elderly-friendly family photos
+    if (photos.length === 0) {
+      const defaultPhotos = [
+        {
+          patientId,
+          photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
+          title: 'Family Gathering at Kaziranga',
+          taggedName: 'Dr. Ananya & Family',
+          relation: 'Daughter & Grandchildren',
+          year: '2023',
+          location: 'Kaziranga, Assam',
+          description: 'A cheerful sunny afternoon enjoying traditional tea and family stories with the grandchildren.',
+          audioPrompt: 'This was taken during our memorable family holiday in Kaziranga National Park.'
+        },
+        {
+          patientId,
+          photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+          title: 'Morning Garden Walk with Meera',
+          taggedName: 'Meera Baruah',
+          relation: 'Sister',
+          year: '2022',
+          location: 'Shillong, Meghalaya',
+          description: 'Walking past the fresh pine trees and morning orchids in Shillong.',
+          audioPrompt: 'Remember the fresh morning pine breeze and quiet laughter with Meera in Shillong.'
+        },
+        {
+          patientId,
+          photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
+          title: 'Biren & Old Friends Reunion',
+          taggedName: 'Biren Das',
+          relation: 'Lifelong Friend',
+          year: '2021',
+          location: 'Jorhat, Assam',
+          description: 'Annual cultural festival meetup sharing Assam tea and playing chess.',
+          audioPrompt: 'Your wonderful afternoon with Biren Das celebrating Bihu melodies in Jorhat.'
+        }
+      ];
+
+      photos = await MemoryBankPhoto.insertMany(defaultPhotos);
+    }
+
+    res.json(photos);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 11. Add Memory Bank Photo: POST /api/patients/:id/photos
+router.post('/:id/photos', authenticateAny, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const { photoUrl, title, taggedName, relation, year, location, description, audioPrompt } = req.body;
+
+    if (!photoUrl) {
+      return res.status(400).json({ error: 'photoUrl is required.' });
+    }
+
+    const photo = new MemoryBankPhoto({
+      patientId,
+      photoUrl,
+      title: title || 'Family Memory',
+      taggedName: taggedName || '',
+      relation: relation || '',
+      year: year || new Date().getFullYear().toString(),
+      location: location || 'Assam',
+      description: description || '',
+      audioPrompt: audioPrompt || ''
     });
+
+    await photo.save();
+    res.status(201).json(photo);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 12. Delete Memory Bank Photo: DELETE /api/patients/:id/photos/:photoId
+router.delete('/:id/photos/:photoId', authenticateAny, async (req, res) => {
+  try {
+    const { id: patientId, photoId } = req.params;
+    await MemoryBankPhoto.findOneAndDelete({ _id: photoId, patientId });
+    res.json({ status: 'ok', message: 'Photo deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 13. Game Sessions & Cognitive Scores: GET /api/patients/:id/games
+router.get('/:id/games', authenticateAny, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const sessions = await GameSession.find({ patientId }).sort({ timestamp: -1 }).limit(30);
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 14. Record Completed Game Session: POST /api/patients/:id/games
+router.post('/:id/games', authenticateAny, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const { gameType, title, category, score, difficultyLevel, duration } = req.body;
+
+    const session = new GameSession({
+      patientId,
+      gameType: gameType || 'game_of_day',
+      title: title || 'Daily Memory Match',
+      category: category || 'Visual Memory',
+      score: score || 100,
+      difficultyLevel: difficultyLevel || 'medium',
+      duration: duration || '3 Mins'
+    });
+
+    await session.save();
+    res.status(201).json(session);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

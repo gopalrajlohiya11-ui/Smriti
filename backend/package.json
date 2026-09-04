@@ -20,6 +20,7 @@
     "google-auth-library": "^11.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
-    "node-cron": "^4.6.0"
+    "node-cron": "^4.6.0",
+    "openai": "^7.9.0"
   }
 }
