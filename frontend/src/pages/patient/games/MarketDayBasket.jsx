@@ -51,13 +51,14 @@ export function mapItemCountToDifficulty(itemCount) {
   return 'hard';
 }
 
-// Full catalogue of North-East Indian produce items with friendly emojis
+// Full catalogue of North-East Indian produce items with verified real photographs
 const PRODUCE_CATALOGUE = [
   {
     id: 'bhut_jolokia',
     name: 'King Chilli / Bhut Jolokia',
     localName: 'ভূত জলকীয়া',
     emoji: '🌶️',
+    image: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80',
     color: 'from-rose-500 to-red-600',
     type: 'spice',
     isGreen: false,
@@ -71,6 +72,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Tender Bamboo Shoot (Khorisa)',
     localName: 'বাঁহ গাজ',
     emoji: '🎍',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
     color: 'from-emerald-600 to-green-700',
     type: 'green_veg',
     isGreen: true,
@@ -84,6 +86,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Fresh Assam Tea Leaves',
     localName: 'অসমীয়া সেউজীয়া চাহ',
     emoji: '🍵',
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80',
     color: 'from-emerald-500 to-teal-700',
     type: 'green_veg',
     isGreen: true,
@@ -97,6 +100,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Assam Lemon (Kaji Nemu)',
     localName: 'কাজী নেমু',
     emoji: '🍋',
+    image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&auto=format&fit=crop&q=80',
     color: 'from-lime-400 to-amber-500',
     type: 'sour_fruit',
     isGreen: true,
@@ -110,6 +114,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Tripura Queen Pineapple',
     localName: 'ৰসাল আনাৰস',
     emoji: '🍍',
+    image: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&auto=format&fit=crop&q=80',
     color: 'from-amber-400 to-orange-500',
     type: 'sweet_fruit',
     isGreen: false,
@@ -123,6 +128,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Malbhog Sweet Banana',
     localName: 'মালভোগ কল',
     emoji: '🍌',
+    image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80',
     color: 'from-yellow-400 to-amber-500',
     type: 'sweet_fruit',
     isGreen: false,
@@ -136,6 +142,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Lai Xaak (Mustard Greens)',
     localName: 'লাই শাক',
     emoji: '🥬',
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
     color: 'from-green-500 to-emerald-700',
     type: 'green_veg',
     isGreen: true,
@@ -149,6 +156,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Ripe Country Tomato',
     localName: 'ৰঙা বিলাহী',
     emoji: '🍅',
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80',
     color: 'from-red-500 to-rose-600',
     type: 'vegetable',
     isGreen: false,
@@ -162,6 +170,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Fresh Coconut (Narikol)',
     localName: 'সুস্বাদু নাৰিকল',
     emoji: '🥥',
+    image: 'https://images.unsplash.com/photo-1544378730-8b5104b18790?w=400&auto=format&fit=crop&q=80',
     color: 'from-stone-600 to-stone-800',
     type: 'fruit',
     isGreen: false,
@@ -175,6 +184,7 @@ const PRODUCE_CATALOGUE = [
     name: 'Kath Aloo (Sweet Yam)',
     localName: 'কাঠ আলু',
     emoji: '🍠',
+    image: 'https://images.unsplash.com/photo-1590165482129-1b8b27698780?w=400&auto=format&fit=crop&q=80',
     color: 'from-purple-600 to-amber-800',
     type: 'root',
     isGreen: false,
@@ -249,6 +259,7 @@ export default function MarketDayBasket() {
         title: 'Morning Tea Leaves Shopping',
         scenario: 'You buy 2 packets of Assam Tea Leaves at ₹10 each. What is the total cost?',
         itemEmoji: '🍵',
+        itemImage: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80',
         mathEquation: '2 × ₹10 = ₹20',
         correctAnswer: 20,
         options: [15, 20, 25, 30],
@@ -272,6 +283,7 @@ export default function MarketDayBasket() {
         title: 'Bazaar Change Return',
         scenario: 'You bought spicy King Chilli for ₹35 and gave a ₹50 note. How much change should you get back?',
         itemEmoji: '🌶️',
+        itemImage: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80',
         mathEquation: '₹50 − ₹35 = ₹15',
         correctAnswer: 15,
         options: [10, 15, 20, 25],
@@ -764,7 +776,7 @@ export default function MarketDayBasket() {
                         type="button"
                         onClick={() => handleItemTap(item)}
                         disabled={isSelected}
-                        className={`min-h-[110px] sm:min-h-[130px] p-4 rounded-3xl border-3 flex flex-col items-center justify-center gap-2 text-center transition-all cursor-pointer relative shadow-sm active:scale-95 ${
+                        className={`min-h-[160px] sm:min-h-[190px] p-3 sm:p-3.5 rounded-3xl border-3 flex flex-col items-center justify-between text-center transition-all cursor-pointer relative shadow-sm active:scale-95 group overflow-hidden ${
                           isSelected
                             ? 'bg-emerald-100 border-emerald-500 text-emerald-950 shadow-md scale-98'
                             : isShaking
@@ -774,17 +786,27 @@ export default function MarketDayBasket() {
                       >
                         {/* Checked Badge for found items */}
                         {isSelected && (
-                          <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                          <span className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md">
                             <Check className="w-4 h-4 stroke-[3]" />
                           </span>
                         )}
 
-                        <span className="text-4xl sm:text-5xl select-none">{item.emoji}</span>
-                        <div>
-                          <p className="text-xs sm:text-sm font-black leading-tight line-clamp-1">
+                        {/* Real Photograph Tile */}
+                        <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-200 border border-stone-300 shadow-inner relative">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className={`w-full h-full object-cover transition-transform duration-300 ${isSelected ? 'brightness-90 contrast-105' : 'group-hover:scale-105'}`}
+                            loading="lazy"
+                          />
+                        </div>
+
+                        {/* Produce Titles */}
+                        <div className="pt-2 w-full">
+                          <p className="text-xs sm:text-sm font-black leading-tight line-clamp-1 text-stone-950">
                             {item.name}
                           </p>
-                          <p className="text-[11px] font-bold text-stone-500">
+                          <p className="text-[11px] sm:text-xs font-bold text-stone-600 mt-0.5">
                             {item.localName}
                           </p>
                         </div>
@@ -823,9 +845,19 @@ export default function MarketDayBasket() {
             {activeRound.type === 'math' && (
               <div className="space-y-6 max-w-xl mx-auto py-2">
                 
-                {/* Visual Math Story Board */}
-                <div className="p-6 rounded-3xl bg-stone-50 border-2 border-stone-200 text-center space-y-3">
-                  <span className="text-6xl sm:text-7xl block">{activeRound.itemEmoji}</span>
+                {/* Visual Math Story Board with Real Product Photo */}
+                <div className="p-6 rounded-3xl bg-stone-50 border-2 border-stone-200 text-center space-y-4">
+                  {activeRound.itemImage ? (
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-3xl overflow-hidden border-3 border-stone-300 shadow-md">
+                      <img
+                        src={activeRound.itemImage}
+                        alt={activeRound.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-6xl sm:text-7xl block">{activeRound.itemEmoji}</span>
+                  )}
                   <p className="text-base sm:text-lg font-black text-stone-900">
                     {activeRound.scenario}
                   </p>
