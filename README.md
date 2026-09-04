@@ -5,6 +5,7 @@
 
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8.svg)](https://tailwindcss.com/)
+[![PWA](https://img.shields.io/badge/PWA-Offline%20First-purple.svg)](https://web.dev/progressive-web-apps/)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Database-47A248.svg)](https://www.mongodb.com/)
 [![Gemini AI](https://img.shields.io/badge/Google%20Gemini-Generative%20AI-8E75B2.svg)](https://deepmind.google/technologies/gemini/)
@@ -12,7 +13,7 @@
 [![WebAuthn](https://img.shields.io/badge/WebAuthn-Biometrics%20FIDO2-orange.svg)](https://webauthn.io/)
 
 <p align="center">
-  <b>Smriti</b> is an intelligent, compassionate healthcare platform designed for seniors living with Alzheimer's, dementia, and age-related memory impairment. It bridges the communication gap between elderly patients, family caregivers, and clinicians through multi-modal voice guidance, WhatsApp routine tracking, cognitive exercises, and clinical oversight.
+  <b>Smriti</b> is an intelligent, compassionate healthcare platform designed for seniors living with Alzheimer's, dementia, and age-related memory impairment. It bridges the communication gap between elderly patients, family caregivers, and clinicians through multi-modal voice guidance, offline-first PWA caching, WhatsApp routine tracking, culturally resonant cognitive games, and clinical oversight.
 </p>
 
 </div>
@@ -22,10 +23,12 @@
 ## 📑 Table of Contents
 
 - [🌟 Core Features](#-core-features)
-  - [1. Warm & Elderly-Friendly Patient Portal](#1-warm--elderly-friendly-patient-portal)
-  - [2. Clinical Caregiver & Clinician Dashboard](#2-clinical-caregiver--clinician-dashboard)
-  - [3. WhatsApp AI Companion (Automated Reminders)](#3-whatsapp-ai-companion-automated-reminders)
-  - [4. Multilingual Speech & WebAuthn Biometrics](#4-multilingual-speech--webauthn-biometrics)
+  - [1. Elderly-Friendly Patient Portal & Live Routines](#1-elderly-friendly-patient-portal--live-routines)
+  - [2. Culturally Resonant Cognitive Games Suite](#2-culturally-resonant-cognitive-games-suite)
+  - [3. Clinical Caregiver & Clinician Dashboard](#3-clinical-caregiver--clinician-dashboard)
+  - [4. WhatsApp AI Companion (Automated Reminders)](#4-whatsapp-ai-companion-automated-reminders)
+  - [5. Offline-First PWA & IndexedDB Synchronization](#5-offline-first-pwa--indexeddb-synchronization)
+  - [6. Multilingual Speech & WebAuthn Biometrics](#6-multilingual-speech--webauthn-biometrics)
 - [🏛️ System Architecture](#️-system-architecture)
 - [💻 Tech Stack](#-tech-stack)
 - [🚀 Quick Start & Installation](#-quick-start--installation)
@@ -34,6 +37,7 @@
   - [2. Backend Setup](#2-backend-setup)
   - [3. Frontend Setup](#3-frontend-setup)
   - [4. Seed Database](#4-seed-database)
+  - [5. Run the Application](#5-run-the-application)
 - [🔗 API Endpoints](#-api-endpoints)
 - [📱 WhatsApp Webhook Setup](#-whatsapp-webhook-setup)
 - [📂 Project Directory Structure](#-project-directory-structure)
@@ -43,26 +47,40 @@
 
 ## 🌟 Core Features
 
-### 1. Warm & Elderly-Friendly Patient Portal
-- **High-Contrast, Large-Touch UI**: Custom-tailored typography and warm terracotta/amber color palette designed specifically for seniors with low vision or motor difficulties.
-- **Focused Routine Horizon (Previous / Current / Next)**: Reduces cognitive overload by highlighting the single immediate routine while showing completed and upcoming tasks.
-- **Daily Streak & Cognitive Milestones**: Rewards daily task completion with encouraging confetti animations and positive reinforcement.
-- **Interactive Daily Memory Challenge**: Built-in visual memory games (e.g. *Majuli Island Mask Match*, *Bihu Rhythm Tap*).
-- **Family Memories & Photo Vault**: Horizontal reel of cherished family landmarks and portraits with 1-tap voice audio narration.
+### 1. Elderly-Friendly Patient Portal & Live Routines
+- **Single-Column Focus Layout**: Prioritizes brain health games and immediate routines with high-contrast, large-touch interfaces tailored for seniors with low vision or motor difficulties.
+- **Live-Updating Routine Horizon**: Real-time clock synchronizing the single most relevant upcoming routine with smooth 300ms dismissal animations, confetti feedback, and voice confirmations.
+- **MongoDB Persistence & Offline Sync**: Routine completions ("Mark Done") persist directly to MongoDB via REST APIs and automatically queue into IndexedDB when offline.
+- **Daily Streak & Cognitive Milestones**: Visual streak tracker ("14 Days in a Row!") encouraging daily consistency and positive emotional reinforcement.
+- **Memory Bank Photo Vault**: Family photo reel with relationship tags, year labels, and 1-tap voice audio prompts for reminiscence therapy.
 
-### 2. Clinical Caregiver & Clinician Dashboard
-- **Deep Slate Clinical Theme**: Professional healthcare SaaS interface built with Inter typography, clean statistical cards, and actionable patient rosters.
-- **KPI Summary Metrics**: Real-time adherence rates, active attention alerts, registered patient totals, and top adherence streaks.
-- **Real-Time Overdue Alerts (`/caregiver/notifications`)**: Dedicated view displaying unacknowledged medication and hydration routines with 1-tap patient calling and database-backed persistent dismissals.
-- **Full Patient Records (`/caregiver/patient/:id`)**: 7-day adherence charts, 10-slot routine manager, medical notes, emergency contact overrides, and direct patient portal preview.
+### 2. Culturally Resonant Cognitive Games Suite
+- **Market Day Basket (বজাৰৰ পাচি)**:
+  - Pattern recognition, categorization, and basic math recall game featuring 10 verified North-East Indian produce stock photographs (*King Chilli / Bhut Jolokia, Bamboo Shoot, Assam Tea Leaves, Kaji Nemu, Tripura Pineapple, Malbhog Banana, Lai Xaak, Country Tomato, Coconut, Kath Aloo*).
+  - Adaptive difficulty engine adjusting item quantities based on real-time accuracy.
+  - Visible 5-level progression system, running live score header, and warm level-transition screens.
+  - Per-round cognitive telemetry logging (`POST /api/game-sessions`) for longitudinal clinical analysis.
+- **Guwahati Heritage Memory Trail**: Spatial and episodic memory game guiding patients through iconic regional landmarks.
+- **Majuli Island Mask Match & Bihu Rhythm Tap**: Visual pattern matching and rhythm coordination exercises.
+
+### 3. Clinical Caregiver & Clinician Dashboard
+- **Deep Slate Clinical Theme**: Healthcare SaaS interface built with Inter typography, clean statistical cards, and actionable patient rosters.
+- **KPI Summary Metrics**: Adherence rates, overdue attention alerts, registered patient totals, and adherence streaks.
+- **Real-Time Overdue Alerts (`/caregiver/notifications`)**: Dedicated view displaying unacknowledged medication and hydration routines with 1-tap patient calling and persistent database dismissals.
+- **Patient Detail Records (`/caregiver/patient/:id`)**: 7-day adherence charts, 10-slot routine manager, medical notes, emergency contact overrides, and direct patient portal preview.
 - **Clinician Profile & Security (`/caregiver/profile`)**: Account credentials, Google OAuth status, backup password configuration, and assigned patient roster.
 
-### 3. WhatsApp AI Companion (Automated Reminders)
-- **Zero-Friction Senior Access**: Patients receive automated daily routine reminders directly on WhatsApp without needing to install new apps.
+### 4. WhatsApp AI Companion (Automated Reminders)
+- **Zero-Friction Senior Access**: Patients receive automated daily routine reminders directly on WhatsApp without needing to learn new interfaces.
 - **Gemini AI Conversational Understanding**: Powered by Google Gemini to parse natural conversational replies (e.g., *"I took my medicine just now with tea"* $\to$ marks routine complete in MongoDB).
 - **Automated Cron Engine**: Periodically checks routine schedules and dispatches template reminders.
 
-### 4. Multilingual Speech & WebAuthn Biometrics
+### 5. Offline-First PWA & IndexedDB Synchronization
+- **Workbox Service Worker Precache**: Serves cached application shell and assets offline, installable as a standalone PWA on mobile and desktop.
+- **IndexedDB Offline Cache**: Local database layer caching patient profile records, routines, photos, and game assets.
+- **Resilient Action Queue**: Queues routine completions and game scores offline, automatically syncing with MongoDB when internet connection is restored.
+
+### 6. Multilingual Speech & WebAuthn Biometrics
 - **Assamese & Regional Language Support**: Voice guidance and speech synthesis tailored for Indian regional languages and accents.
 - **WebAuthn FIDO2 Biometric Login**: 1-tap biometric fingerprint or Face Unlock authentication on supported devices.
 - **Accessible PIN Keypad**: 4-digit numeric keypad with tactile tap feedback and profile shortcuts.
@@ -77,24 +95,26 @@
                                │      Family Caregiver          │
                                └───────┬────────────────┬───────┘
                                        │                │
-                        Web Portal (React + Vite)  WhatsApp (Meta Cloud API)
+                        Web Portal (React + PWA + IDB)  WhatsApp (Meta Cloud API)
                                        │                │
                                        ▼                ▼
-                       ┌────────────────────────────────────────────────┐
-                       │           Express.js REST & Webhook API        │
-                       │           - Auth & Google OAuth                │
-                       │           - WebAuthn FIDO2 Handler             │
-                       │           - Routine & Alert State Engine       │
-                       │           - Automated Cron Scheduler           │
-                       └───────┬────────────────────────┬───────────────┘
-                               │                        │
-                               ▼                        ▼
-                       ┌───────────────┐        ┌────────────────┐
-                       │  MongoDB (DB) │        │  Google Gemini │
-                       │  - Patients   │        │  - NLP Reply   │
-                       │  - Reminders  │        │    Parsing &   │
-                       │  - Caregivers │        │    Assistance  │
-                       └───────────────┘        └────────────────┘
+                        ┌────────────────────────────────────────────────┐
+                        │           Express.js REST & Webhook API        │
+                        │           - Auth & Google OAuth                │
+                        │           - WebAuthn FIDO2 Handler             │
+                        │           - Routine & Alert State Engine       │
+                        │           - Game Sessions & ML Telemetry       │
+                        │           - Automated Cron Scheduler           │
+                        └───────┬────────────────────────┬───────────────┘
+                                │                        │
+                                ▼                        ▼
+                        ┌───────────────┐        ┌────────────────┐
+                        │  MongoDB (DB) │        │  Google Gemini │
+                        │  - Patients   │        │  - NLP Reply   │
+                        │  - Reminders  │        │    Parsing &   │
+                        │  - GameLogs   │        │    Assistance  │
+                        │  - Caregivers │        └────────────────┘
+                        └───────────────┘
 ```
 
 ---
@@ -104,6 +124,7 @@
 | Layer | Technology |
 |---|---|
 | **Frontend UI** | React 18, Vite, Tailwind CSS v4, Lucide Icons, Canvas Confetti |
+| **Offline PWA** | `vite-plugin-pwa`, Workbox, IndexedDB (`offlineDb.js`) |
 | **Typography** | Inter (Google Fonts) |
 | **Backend** | Node.js, Express.js |
 | **Database** | MongoDB, Mongoose ODM |
@@ -167,7 +188,7 @@ npm install
 ---
 
 ### 4. Seed Database
-Seed the MongoDB database with demo patients, 10 daily routines, and active clinical alerts:
+Seed the MongoDB database with demo patients, 10 daily routines, memory photos, and clinical alerts:
 ```bash
 cd ../backend
 node seed.js
@@ -184,11 +205,19 @@ node server.js
 # Backend runs on http://localhost:5000
 ```
 
-In terminal 2 (Frontend):
+In terminal 2 (Frontend Dev Server):
 ```bash
 cd frontend
 npm run dev
 # Frontend runs on http://localhost:5173
+```
+
+In terminal 3 (Frontend Production PWA Preview):
+```bash
+cd frontend
+npm run build
+npm run preview
+# Production PWA with full Service Worker precache runs on http://localhost:4173
 ```
 
 ---
@@ -202,18 +231,26 @@ npm run dev
 - `POST /api/caregivers/set-password` — Set backup password for Google users
 
 ### 👴 Patient Routes (`/api/patients`)
-- `GET /api/patients` — List assigned patient profiles
+- `GET /api/patients` — List assigned patient profiles (Caregiver scoped)
+- `GET /api/patients/public/default` — Fetch default patient profile for patient portal
+- `GET /api/patients/public/:id` — Fetch specific patient profile
 - `POST /api/patients` — Enroll new patient record
 - `POST /api/patients/login` — Patient name & PIN authentication
 - `POST /api/patients/biometric-login` — WebAuthn FIDO2 authentication
-- `PATCH /api/patients/:id` — Update patient vitals & notes
+- `GET /api/patients/:id/reminders` — Fetch daily routines for a patient
+- `GET /api/patients/:id/photos` — Fetch Memory Bank photo album
+- `PATCH /api/patients/:id` — Update patient vitals & clinical notes
 - `DELETE /api/patients/:id` — Remove patient record
 
 ### ⏰ Reminder & Alert Routes (`/api/reminders`)
 - `GET /api/reminders/alerts` — Fetch live overdue alerts across assigned patients
 - `GET /api/reminders/:patientId` — Fetch all 10 routines for a patient
-- `PATCH /api/reminders/:id` — Toggle routine completion state (Patient side)
+- `PATCH /api/reminders/:id` — Toggle routine completion state (persists to MongoDB)
 - `PATCH /api/reminders/:id/dismiss` — Dismiss overdue alert (Caregiver side)
+
+### 🎮 Game Sessions & ML Telemetry (`/api/game-sessions`)
+- `POST /api/game-sessions` — Record game session score and per-level cognitive telemetry
+- `GET /api/game-sessions/patient/:patientId` — Retrieve cognitive performance history
 
 ---
 
@@ -239,26 +276,33 @@ Smriti/
 ├── backend/
 │   ├── jobs/
 │   │   └── reminderCron.js         # Automated reminder scheduler
+│   ├── middleware/
+│   │   └── auth.js                 # JWT, WebAuthn & optionalAuth middleware
 │   ├── models/
 │   │   ├── Caregiver.js            # Clinician & caregiver schema
+│   │   ├── GameSession.js          # Cognitive game sessions & round telemetry
+│   │   ├── MemoryBankPhoto.js      # Reminiscence photo album schema
 │   │   ├── patient.js              # Senior patient profile schema
 │   │   └── Reminder.js             # Daily routine & alert schema
 │   ├── routes/
 │   │   ├── caregiverRoutes.js      # Auth & clinician management
-│   │   ├── patientRoutes.js        # Patient CRUD & biometrics
+│   │   ├── gameSessionRoutes.js    # Game sessions & cognitive ML logs
+│   │   ├── patientRoutes.js        # Patient CRUD, photos & biometrics
 │   │   ├── reminderRoutes.js       # Live database alerts & routines
 │   │   └── whatsappWebhook.js      # WhatsApp inbound/outbound bot
 │   ├── .env.example
 │   ├── seed.js                     # Full MongoDB demo database seeder
 │   └── server.js                   # Express server entry point
 ├── frontend/
+│   ├── public/
+│   │   └── favicon.svg             # PWA app icon
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── caregiver/
 │   │   │   │   └── CaregiverLayout.jsx  # Clinical sidebar layout
 │   │   │   └── Navbar.jsx
 │   │   ├── context/
-│   │   │   └── AppContext.jsx      # Global state & MongoDB sync
+│   │   │   └── AppContext.jsx      # Global state, offline queue & MongoDB sync
 │   │   ├── data/
 │   │   │   └── mockData.js         # Fallback data & regional languages
 │   │   ├── pages/
@@ -268,17 +312,23 @@ Smriti/
 │   │   │   │   ├── CaregiverPatientDetail.jsx  # 7-day adherence & routines
 │   │   │   │   └── CaregiverProfile.jsx        # Clinician account & security
 │   │   │   └── patient/
-│   │   │       ├── PatientDashboard.jsx        # Elder-friendly home space
+│   │   │       ├── games/
+│   │   │       │   ├── MarketDayBasket.jsx     # NER Produce & Math recall game
+│   │   │       │   └── GuwahatiHeritageTrail.jsx # Spatial memory game
+│   │   │       ├── PatientDashboard.jsx        # Single-column game-first portal
 │   │   │       ├── PatientLogin.jsx            # Unified login & PIN keypad
 │   │   │       └── PatientReminders.jsx        # Full 10-routine schedule
 │   │   ├── services/
 │   │   │   └── api.js              # REST client for backend endpoints
+│   │   ├── utils/
+│   │   │   └── offlineDb.js        # IndexedDB offline store & action queue
 │   │   ├── App.jsx                 # Route definitions
+│   │   ├── i18n.js                 # Multilingual localization config
 │   │   ├── index.css               # Inter font & design tokens
 │   │   └── main.jsx
 │   ├── index.html
 │   ├── package.json
-│   └── vite.config.js
+│   └── vite.config.js              # PWA plugin configuration & SW caching
 ├── .gitignore
 └── README.md
 ```
@@ -289,6 +339,7 @@ Smriti/
 
 - **Data Privacy**: Patient routines and health logs are stored securely in MongoDB and accessed through role-scoped tokens.
 - **Biometric Security**: WebAuthn keys use standard public-key cryptography — biometric credentials never leave the user's secure hardware enclave.
+- **Offline Integrity**: Queued offline actions are validated before being merged into MongoDB upon reconnection.
 - **HIPAA / Senior Care Alignment**: High-contrast, transparent patient records with emergency contact calling.
 
 ---
