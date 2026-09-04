@@ -32,7 +32,7 @@ function resolvePatientId(req) {
 // 1. POST /api/game-sessions (Save game session, update routine & streak)
 router.post('/', async (req, res) => {
   try {
-    const { gameType, score, difficultyLevel, title, category, duration } = req.body;
+    const { gameType, score, difficultyLevel, title, category, duration, roundDetails } = req.body;
     let patientId = resolvePatientId(req);
 
     // If still not resolved, try finding the first active patient in db as fallback
@@ -52,7 +52,8 @@ router.post('/', async (req, res) => {
       category: category || 'Pattern & Math Recall',
       score: typeof score === 'number' ? score : parseInt(score, 10) || 100,
       difficultyLevel: difficultyLevel || 'medium',
-      duration: duration || '3 Mins'
+      duration: duration || '3 Mins',
+      roundDetails: Array.isArray(roundDetails) ? roundDetails : []
     });
 
     await session.save();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../context/AppContext';
@@ -19,7 +19,10 @@ import {
   ChevronRight,
   Heart,
   Check,
-  Plus
+  Plus,
+  Star,
+  Zap,
+  Clock
 } from 'lucide-react';
 
 /**
@@ -187,18 +190,30 @@ export default function MarketDayBasket() {
   const navigate = useNavigate();
   const { activePatient, isOnline, toggleReminder, loadRealData } = useApp();
 
-  // Total rounds per play session
+  // Total levels/rounds per play session
   const TOTAL_ROUNDS = 5;
 
   // Session State
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [itemCount, setItemCount] = useState(3); // Start with 3 items (Adaptive: 3 to 7)
+  const [runningScore, setRunningScore] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [successfulTaps, setSuccessfulTaps] = useState(0);
   const [collectedBasket, setCollectedBasket] = useState([]);
   const [isSessionComplete, setIsSessionComplete] = useState(false);
   const [isSubmittingScore, setIsSubmittingScore] = useState(false);
   const [finalScoreSummary, setFinalScoreSummary] = useState(null);
+
+  // Per-Level / Round Detailed Metrics for ML Logging
+  const [roundDetailsList, setRoundDetailsList] = useState([]);
+  const roundStartTimeRef = useRef(Date.now());
+  const roundAttemptsRef = useRef(0);
+  const roundCorrectRef = useRef(0);
+
+  // Level Transition Modal State
+  const [isTransitioningLevel, setIsTransitioningLevel] = useState(false);
+  const [nextLevelInfo, setNextLevelInfo] = useState(null);
+  const transitionTimerRef = useRef(null);
 
   // Audio / Speech State
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -211,57 +226,67 @@ export default function MarketDayBasket() {
   const [roundCompleted, setRoundCompleted] = useState(false);
 
   // Start Time for Duration calculation
-  const sessionStartTimeRef = React.useRef(Date.now());
+  const sessionStartTimeRef = useRef(Date.now());
 
   // Generate Round Definitions
   const roundsConfig = useMemo(() => {
     return [
       {
         id: 'round-1',
+        levelNumber: 1,
         type: 'categorization',
         title: 'Fresh Greens for the Market Basket',
         instruction: 'Tap ONLY the Green Vegetables & Tea Leaves to put into your basket!',
         criteria: (item) => item.isGreen === true && item.isVegetable === true,
         criteriaHint: 'Green leafy vegetables and tender shoots',
-        targetLabel: 'Green Vegetables 🥬'
+        targetLabel: 'Green Vegetables 🥬',
+        themeColor: 'from-emerald-600 to-teal-700'
       },
       {
         id: 'round-2',
+        levelNumber: 2,
         type: 'math',
         title: 'Morning Tea Leaves Shopping',
         scenario: 'You buy 2 packets of Assam Tea Leaves at ₹10 each. What is the total cost?',
         itemEmoji: '🍵',
         mathEquation: '2 × ₹10 = ₹20',
         correctAnswer: 20,
-        options: [15, 20, 25, 30]
+        options: [15, 20, 25, 30],
+        themeColor: 'from-amber-600 to-orange-700'
       },
       {
         id: 'round-3',
+        levelNumber: 3,
         type: 'categorization',
         title: 'Sweet & Refreshing Fruits',
         instruction: 'Tap ALL the Delicious Fruits (Pineapple, Banana, Lemon, Coconut)!',
         criteria: (item) => item.isFruit === true,
         criteriaHint: 'Juicy lemons, sweet pineapples, bananas & coconuts',
-        targetLabel: 'Fresh Fruits 🍍'
+        targetLabel: 'Fresh Fruits 🍍',
+        themeColor: 'from-yellow-500 to-amber-700'
       },
       {
         id: 'round-4',
+        levelNumber: 4,
         type: 'math',
         title: 'Bazaar Change Return',
         scenario: 'You bought spicy King Chilli for ₹35 and gave a ₹50 note. How much change should you get back?',
         itemEmoji: '🌶️',
         mathEquation: '₹50 − ₹35 = ₹15',
         correctAnswer: 15,
-        options: [10, 15, 20, 25]
+        options: [10, 15, 20, 25],
+        themeColor: 'from-rose-600 to-red-700'
       },
       {
         id: 'round-5',
+        levelNumber: 5,
         type: 'categorization',
         title: 'Assam Signature Produce',
         instruction: 'Tap ALL authentic North-East regional specialties for your family dinner!',
         criteria: (item) => item.isNER === true,
         criteriaHint: 'Specialties native to Assam, Nagaland & Tripura',
-        targetLabel: 'NER Specialties 🌸'
+        targetLabel: 'NER Specialties 🌸',
+        themeColor: 'from-purple-600 to-indigo-700'
       }
     ];
   }, []);
@@ -310,26 +335,45 @@ export default function MarketDayBasket() {
     return combined;
   }, [activeRound, itemCount]);
 
-  // Voice narration when a new round starts
+  // Reset per-round timer and counters when a new round starts
   useEffect(() => {
-    if (activeRound) {
+    roundStartTimeRef.current = Date.now();
+    roundAttemptsRef.current = 0;
+    roundCorrectRef.current = 0;
+  }, [currentRoundIndex]);
+
+  // Voice narration when a new round starts (unless transitioning)
+  useEffect(() => {
+    if (activeRound && !isTransitioningLevel && !isSessionComplete) {
       const speechText = activeRound.type === 'categorization' 
         ? `${activeRound.title}. ${activeRound.instruction}`
         : `${activeRound.title}. ${activeRound.scenario}`;
       speakInstruction(speechText);
     }
-  }, [currentRoundIndex, activeRound, speakInstruction]);
+  }, [currentRoundIndex, activeRound, isTransitioningLevel, isSessionComplete, speakInstruction]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    };
+  }, []);
 
   // Handle Categorization Item Tap
   const handleItemTap = (item) => {
     if (roundCompleted) return;
 
     setTotalAttempts(prev => prev + 1);
+    roundAttemptsRef.current += 1;
+
     const isCorrect = activeRound.criteria(item);
 
     if (isCorrect) {
-      // Correct Match
+      // Correct Match: +20 points
       setSuccessfulTaps(prev => prev + 1);
+      roundCorrectRef.current += 1;
+      setRunningScore(prev => prev + 20);
+
       const nextSet = new Set(selectedItemsInRound);
       nextSet.add(item.id);
       setSelectedItemsInRound(nextSet);
@@ -341,7 +385,8 @@ export default function MarketDayBasket() {
       const remainingTargets = roundDisplayItems.filter(i => activeRound.criteria(i) && !nextSet.has(i.id));
 
       if (remainingTargets.length === 0) {
-        // Round Completed successfully!
+        // Round Completed successfully! +10 completion bonus
+        setRunningScore(prev => prev + 10);
         setRoundCompleted(true);
         confetti({
           particleCount: 40,
@@ -351,7 +396,7 @@ export default function MarketDayBasket() {
         });
       }
     } else {
-      // Wrong Match: Gentle wobble shake without penalty
+      // Wrong Match: Gentle wobble shake without score penalty
       setShakeItemId(item.id);
       setTimeout(() => setShakeItemId(null), 600);
     }
@@ -362,10 +407,16 @@ export default function MarketDayBasket() {
     if (roundCompleted) return;
 
     setTotalAttempts(prev => prev + 1);
+    roundAttemptsRef.current += 1;
     setMathAnswerSelected(option);
 
     if (option === activeRound.correctAnswer) {
+      // Correct Answer: +30 points if first attempt, +15 if after retry
+      const pts = roundAttemptsRef.current === 1 ? 30 : 15;
       setSuccessfulTaps(prev => prev + 1);
+      roundCorrectRef.current += 1;
+      setRunningScore(prev => prev + pts);
+
       setMathAnswerFeedback('correct');
       setRoundCompleted(true);
 
@@ -384,27 +435,73 @@ export default function MarketDayBasket() {
     }
   };
 
-  // Advance to Next Round with Adaptive Difficulty Adjustment
+  // Advance to Next Level with Warm Interstitial Transition Moment
   const handleNextRound = () => {
-    // 1. Calculate next round item count adaptively based on current accuracy
+    // 1. Calculate per-round stats for ML Logging
+    const roundTimeTaken = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
+    const roundAcc = roundAttemptsRef.current > 0 
+      ? Math.round((roundCorrectRef.current / roundAttemptsRef.current) * 100) 
+      : 100;
+
+    const roundMetric = {
+      level: currentRoundIndex + 1,
+      itemCount: activeRound.type === 'categorization' ? itemCount : 4,
+      mode: activeRound.type, // "categorization" | "math"
+      accuracy: roundAcc,
+      correctCount: roundCorrectRef.current,
+      totalAttempts: roundAttemptsRef.current,
+      timeTakenSeconds: roundTimeTaken
+    };
+
+    const updatedRoundDetails = [...roundDetailsList, roundMetric];
+    setRoundDetailsList(updatedRoundDetails);
+
+    // 2. Check if we've completed all levels
+    if (currentRoundIndex + 1 >= TOTAL_ROUNDS) {
+      const nextCount = calculateNextItemCount(currentAccuracy, itemCount);
+      finishGameSession(nextCount, updatedRoundDetails);
+      return;
+    }
+
+    // 3. Adaptive difficulty for next round
     const nextCount = calculateNextItemCount(currentAccuracy, itemCount);
     setItemCount(nextCount);
 
-    // 2. Check if we've reached the end of the session
-    if (currentRoundIndex + 1 >= TOTAL_ROUNDS) {
-      finishGameSession(nextCount);
-    } else {
-      // Move to next round
-      setCurrentRoundIndex(prev => prev + 1);
-      setSelectedItemsInRound(new Set());
-      setMathAnswerSelected(null);
-      setMathAnswerFeedback(null);
-      setRoundCompleted(false);
-    }
+    const nextLevelNum = currentRoundIndex + 2;
+    const nextRoundObj = roundsConfig[currentRoundIndex + 1];
+
+    setNextLevelInfo({
+      levelNumber: nextLevelNum,
+      title: nextRoundObj?.title || `Level ${nextLevelNum}`,
+      type: nextRoundObj?.type === 'categorization' ? 'Produce Search 🧺' : 'Shopping Math 🧮'
+    });
+
+    setIsTransitioningLevel(true);
+
+    // Provide warm celebratory spoken reinforcement
+    speakInstruction(`Great job! Moving to Level ${nextLevelNum}`);
+
+    // Auto-advance after 2.2 seconds (or user can tap immediately)
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    transitionTimerRef.current = setTimeout(() => {
+      proceedToNextLevel();
+    }, 2200);
   };
 
-  // Finish Game Session & Submit Score
-  const finishGameSession = async (settledItemCount) => {
+  // Actually switch to next level state
+  const proceedToNextLevel = () => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    setIsTransitioningLevel(false);
+    setNextLevelInfo(null);
+    setCurrentRoundIndex(prev => prev + 1);
+    setSelectedItemsInRound(new Set());
+    setMathAnswerSelected(null);
+    setMathAnswerFeedback(null);
+    setRoundCompleted(false);
+  };
+
+  // Finish Game Session & Submit Score with Rich Round Details
+  const finishGameSession = async (settledItemCount, completedRoundDetails) => {
     setIsSessionComplete(true);
     setIsSubmittingScore(true);
 
@@ -417,26 +514,29 @@ export default function MarketDayBasket() {
       gameType: 'market-day-basket',
       title: 'Market Day Basket',
       category: 'Pattern & Math Recall',
-      score: finalAccuracy,
+      score: runningScore,
       difficultyLevel: finalDifficulty,
-      duration: `${durationSeconds}s`
+      duration: `${durationSeconds}s`,
+      roundDetails: completedRoundDetails || roundDetailsList
     };
 
     setFinalScoreSummary({
+      score: runningScore,
       accuracy: finalAccuracy,
       totalAttempts,
       successfulTaps,
       itemsCollected: collectedBasket.length,
       difficultyLevel: finalDifficulty,
-      duration: durationSeconds
+      duration: durationSeconds,
+      roundsPlayed: TOTAL_ROUNDS
     });
 
     // Big Celebration Confetti
     confetti({
-      particleCount: 100,
-      spread: 80,
+      particleCount: 120,
+      spread: 90,
       origin: { y: 0.5 },
-      colors: ['#15803d', '#9a3412', '#f59e0b', '#3b82f6']
+      colors: ['#15803d', '#9a3412', '#f59e0b', '#3b82f6', '#8b5cf6']
     });
 
     try {
@@ -471,16 +571,23 @@ export default function MarketDayBasket() {
   // Restart Game Session
   const handleRestartGame = () => {
     sessionStartTimeRef.current = Date.now();
+    roundStartTimeRef.current = Date.now();
+    roundAttemptsRef.current = 0;
+    roundCorrectRef.current = 0;
     setCurrentRoundIndex(0);
     setItemCount(3);
+    setRunningScore(0);
     setTotalAttempts(0);
     setSuccessfulTaps(0);
     setCollectedBasket([]);
+    setRoundDetailsList([]);
     setSelectedItemsInRound(new Set());
     setMathAnswerSelected(null);
     setMathAnswerFeedback(null);
     setRoundCompleted(false);
     setIsSessionComplete(false);
+    setIsTransitioningLevel(false);
+    setNextLevelInfo(null);
     setFinalScoreSummary(null);
   };
 
@@ -489,14 +596,16 @@ export default function MarketDayBasket() {
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* ======================================================== */}
-        {/* TOP BAR: BACK NAVIGATION & GAME TITLE                    */}
+        {/* PERSISTENT HEADER: LEVEL PROGRESSION & LIVE SCORE        */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border-2 border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-4 z-20 backdrop-blur-md bg-white/95">
+          
+          {/* Left: Back Navigation & Level Indicator */}
           <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={() => navigate('/patient')}
-              className="px-4 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 border-2 border-stone-300 font-black text-sm flex items-center gap-2 transition-all cursor-pointer group active:scale-95 shrink-0"
+              className="px-3.5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 border-2 border-stone-300 font-black text-sm flex items-center gap-2 transition-all cursor-pointer group active:scale-95 shrink-0"
               title="Return to Patient Dashboard"
             >
               <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1 text-amber-800" />
@@ -505,25 +614,33 @@ export default function MarketDayBasket() {
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-0.5 rounded-full bg-amber-100 text-amber-950 text-xs font-black border border-amber-300 uppercase tracking-wider">
-                  🧺 Daily Memory Game
+                <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-950 text-xs sm:text-sm font-black border-2 border-amber-300 flex items-center gap-1.5 shadow-xs">
+                  <Star className="w-4 h-4 fill-amber-600 text-amber-600" />
+                  <span>Level {currentRoundIndex + 1} of {TOTAL_ROUNDS}</span>
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300">
-                  Level: {itemCount} Items ({mapItemCountToDifficulty(itemCount)})
+                  {mapItemCountToDifficulty(itemCount).toUpperCase()}
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-stone-950 mt-1">
+              <h1 className="text-lg sm:text-xl font-black text-stone-950 mt-1">
                 Market Day Basket (হাটৰ পাচলি)
               </h1>
             </div>
           </div>
 
-          {/* Right: Round Progress & Audio Speaker Button */}
+          {/* Right: Live Score & Audio Speaker */}
           <div className="flex items-center gap-3 self-end sm:self-center">
-            <span className="px-4 py-2 bg-stone-900 text-white rounded-2xl text-xs sm:text-sm font-black shadow-xs">
-              Round {Math.min(TOTAL_ROUNDS, currentRoundIndex + 1)} / {TOTAL_ROUNDS}
-            </span>
+            
+            {/* Live Accumulating Score Badge */}
+            <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black flex items-center gap-2 shadow-sm border border-amber-600">
+              <Sparkles className="w-5 h-5 text-amber-100 animate-pulse" />
+              <div>
+                <p className="text-[10px] font-bold text-amber-100 uppercase leading-none">Live Score</p>
+                <p className="text-lg sm:text-xl font-black leading-none mt-0.5">{runningScore} pts</p>
+              </div>
+            </div>
 
+            {/* Audio Instruction Speaker */}
             <button
               type="button"
               onClick={() => {
@@ -544,17 +661,86 @@ export default function MarketDayBasket() {
           </div>
         </div>
 
+        {/* Level Progression Indicator Dots */}
+        <div className="bg-white rounded-2xl p-3 border-2 border-stone-200 flex items-center justify-between px-4 sm:px-8">
+          {roundsConfig.map((round, idx) => {
+            const isCompleted = idx < currentRoundIndex;
+            const isCurrent = idx === currentRoundIndex;
+
+            return (
+              <div key={round.id} className="flex items-center gap-2">
+                <div 
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-xs sm:text-sm border-2 transition-all ${
+                    isCompleted 
+                      ? 'bg-emerald-600 border-emerald-700 text-white shadow-xs'
+                      : isCurrent
+                      ? 'bg-amber-500 border-amber-600 text-white scale-110 ring-4 ring-amber-200'
+                      : 'bg-stone-100 border-stone-300 text-stone-500'
+                  }`}
+                >
+                  {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : idx + 1}
+                </div>
+                <span className="hidden md:inline text-xs font-bold text-stone-700">
+                  {round.type === 'categorization' ? 'Basket' : 'Math'}
+                </span>
+                {idx < roundsConfig.length - 1 && (
+                  <div className={`hidden sm:block w-8 lg:w-14 h-1 rounded-full ${idx < currentRoundIndex ? 'bg-emerald-500' : 'bg-stone-200'}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ======================================================== */}
+        {/* WARM LEVEL TRANSITION INTERSTITIAL MOMENT                */}
+        {/* ======================================================== */}
+        {isTransitioningLevel && nextLevelInfo && (
+          <div className="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-8 sm:p-10 border-4 border-white shadow-xl text-center text-white space-y-5 animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white flex items-center justify-center mx-auto shadow-inner">
+              <Sparkles className="w-10 h-10 animate-spin text-amber-200" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-4 py-1.5 rounded-full bg-white/20 border border-white/40 text-xs sm:text-sm font-black uppercase tracking-wider inline-block">
+                Level {currentRoundIndex + 1} Complete! 🌟
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
+                Great Job! Moving to Level {nextLevelInfo.levelNumber}
+              </h2>
+              <p className="text-amber-100 font-bold text-base sm:text-lg max-w-md mx-auto">
+                Next Challenge: {nextLevelInfo.title} ({nextLevelInfo.type})
+              </p>
+            </div>
+
+            <div className="pt-2 flex justify-center">
+              <button
+                type="button"
+                onClick={proceedToNextLevel}
+                className="px-8 py-3.5 rounded-2xl bg-white text-stone-950 hover:bg-stone-100 font-black text-base sm:text-lg shadow-lg flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
+              >
+                <span>Continue to Level {nextLevelInfo.levelNumber}</span>
+                <ChevronRight className="w-6 h-6 text-amber-700 stroke-[3]" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ======================================================== */}
         {/* GAME PLAYGROUND OR COMPLETION SCREEN                     */}
         {/* ======================================================== */}
-        {!isSessionComplete ? (
+        {!isSessionComplete && !isTransitioningLevel && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-stone-200/90 shadow-sm space-y-6">
 
             {/* Instruction Banner */}
             <div className="bg-amber-50/90 border-2 border-amber-300 rounded-2xl p-5 text-center space-y-2">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-3 py-1 rounded-full border border-amber-300">
-                {activeRound.type === 'categorization' ? '🔍 Pattern & Produce Matching' : '🧮 Bazaar Shopping Math'}
-              </span>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-3 py-1 rounded-full border border-amber-300">
+                  {activeRound.type === 'categorization' ? '🔍 Pattern & Produce Matching' : '🧮 Bazaar Shopping Math'}
+                </span>
+                <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300">
+                  Level {activeRound.levelNumber}
+                </span>
+              </div>
               <h2 className="text-xl sm:text-2xl font-black text-stone-950 leading-tight">
                 {activeRound.title}
               </h2>
@@ -620,7 +806,7 @@ export default function MarketDayBasket() {
                       onClick={handleNextRound}
                       className="px-8 py-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-base sm:text-lg font-black shadow-md flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-95 animate-in fade-in"
                     >
-                      <span>Next Round</span>
+                      <span>{currentRoundIndex + 1 < TOTAL_ROUNDS ? `Proceed to Level ${currentRoundIndex + 2}` : 'Complete Challenge'}</span>
                       <ChevronRight className="w-6 h-6 stroke-[3]" />
                     </button>
                   ) : (
@@ -686,7 +872,7 @@ export default function MarketDayBasket() {
                       onClick={handleNextRound}
                       className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-base font-black shadow-xs transition-all cursor-pointer active:scale-95"
                     >
-                      Next Round →
+                      {currentRoundIndex + 1 < TOTAL_ROUNDS ? `Level ${currentRoundIndex + 2} →` : 'Finish →'}
                     </button>
                   </div>
                 )}
@@ -695,10 +881,12 @@ export default function MarketDayBasket() {
             )}
 
           </div>
-        ) : (
-          /* ======================================================== */
-          /* COMPLETION SCREEN: WARM ELDER CELEBRATION & STATS        */
-          /* ======================================================== */
+        )}
+
+        {/* ======================================================== */}
+        {/* COMPLETION SCREEN: WARM ELDER CELEBRATION & STATS        */}
+        {/* ======================================================== */}
+        {isSessionComplete && (
           <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-stone-200/90 shadow-md text-center space-y-8 animate-in fade-in zoom-in-95">
             
             <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center mx-auto shadow-lg border-4 border-white">
@@ -707,46 +895,62 @@ export default function MarketDayBasket() {
 
             <div className="space-y-2">
               <span className="px-4 py-1 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black uppercase tracking-wider border border-emerald-300">
-                ★ Challenge Completed! ★
+                ★ All 5 Levels Completed! ★
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
                 Wonderful job at the Market, {activePatient?.name?.split(' ')[0] || 'Elder'}! 🌟
               </h2>
               <p className="text-stone-700 font-bold text-base max-w-lg mx-auto">
-                You successfully solved your market shopping pattern routines and kept your cognitive memory streak active!
+                You scored <span className="font-black text-amber-800">{finalScoreSummary?.score || runningScore} points</span> across all 5 levels and kept your cognitive memory streak active!
               </p>
             </div>
 
             {/* Score Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
               <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-200">
-                <p className="text-xs font-black text-amber-900 uppercase">Accuracy</p>
+                <p className="text-xs font-black text-amber-900 uppercase">Total Score</p>
+                <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
+                  {finalScoreSummary?.score || runningScore} pts
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200">
+                <p className="text-xs font-black text-emerald-900 uppercase">Accuracy</p>
                 <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
                   {finalScoreSummary?.accuracy || 100}%
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200">
-                <p className="text-xs font-black text-emerald-900 uppercase">Correct Taps</p>
-                <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
-                  {finalScoreSummary?.successfulTaps || 0}
-                </p>
-              </div>
-
               <div className="p-4 rounded-2xl bg-sky-50 border-2 border-sky-200">
-                <p className="text-xs font-black text-sky-900 uppercase">Produce in Basket</p>
+                <p className="text-xs font-black text-sky-900 uppercase">Produce Collected</p>
                 <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
                   {finalScoreSummary?.itemsCollected || 0} 🧺
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-200">
-                <p className="text-xs font-black text-purple-900 uppercase">Difficulty Reached</p>
-                <p className="text-xl sm:text-2xl font-black text-stone-950 mt-1 capitalize">
-                  {finalScoreSummary?.difficultyLevel || 'Medium'}
+                <p className="text-xs font-black text-purple-900 uppercase">Levels Cleared</p>
+                <p className="text-xl sm:text-2xl font-black text-stone-950 mt-1">
+                  5 / 5 🌟
                 </p>
               </div>
             </div>
+
+            {/* Per-Level Summary Breakdown for Transparency */}
+            {roundDetailsList.length > 0 && (
+              <div className="max-w-2xl mx-auto bg-stone-50 rounded-2xl p-4 border border-stone-200 text-left">
+                <p className="text-xs font-black uppercase text-stone-600 mb-2">Level Performance Breakdown:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                  {roundDetailsList.map((r, i) => (
+                    <div key={i} className="p-2.5 rounded-xl bg-white border border-stone-200 text-center">
+                      <p className="text-xs font-black text-stone-900">Level {r.level}</p>
+                      <p className="text-sm font-bold text-emerald-700">{r.accuracy}% acc</p>
+                      <p className="text-[10px] text-stone-500 font-semibold">{r.timeTakenSeconds}s</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Routine & Streak Celebration Card */}
             <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-black flex items-center justify-center gap-3 shadow-md max-w-md mx-auto">
@@ -781,3 +985,4 @@ export default function MarketDayBasket() {
     </div>
   );
 }
+
