@@ -7,11 +7,13 @@ const Caregiver = require('../models/Caregiver');
 const Reminder = require('../models/Reminder');
 const MemoryBankPhoto = require('../models/MemoryBankPhoto');
 const GameSession = require('../models/GameSession');
+const mongoose = require('mongoose');
 const { 
   JWT_SECRET, 
   authenticateCaregiver, 
   authenticatePatient, 
   authenticateAny, 
+  optionalAuth,
   rateLimitLogin 
 } = require('../middleware/auth');
 
@@ -120,6 +122,44 @@ router.get('/me', authenticatePatient, async (req, res) => {
   try {
     const patient = await Patient.findById(req.patient._id);
     if (!patient) return res.status(404).json({ error: 'Patient profile not found' });
+    res.json(patient);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1d. Get Default Demo Patient or Active Patient: GET /api/patients/public/default
+router.get('/public/default', async (req, res) => {
+  try {
+    let patient = await Patient.findOne({ name: /Ramesh Sharma/i });
+    if (!patient) {
+      patient = await Patient.findOne();
+    }
+    if (!patient) {
+      return res.status(404).json({ error: 'No patient profile found' });
+    }
+    res.json(patient);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1e. Get Specific Patient: GET /api/patients/public/:id
+router.get('/public/:id', async (req, res) => {
+  try {
+    let patient = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      patient = await Patient.findById(req.params.id);
+    }
+    if (!patient) {
+      patient = await Patient.findOne({ name: /Ramesh Sharma/i });
+    }
+    if (!patient) {
+      patient = await Patient.findOne();
+    }
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient profile not found' });
+    }
     res.json(patient);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -341,20 +381,14 @@ router.get('/:id', authenticateAny, async (req, res) => {
 });
 
 // 6. Get a patient's reminders: GET /api/patients/:id/reminders
-router.get('/:id/reminders', authenticateAny, async (req, res) => {
+router.get('/:id/reminders', optionalAuth, async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
-
-    // Authorization check
-    if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
-      return res.status(403).json({ error: 'Forbidden: You do not have access to this patient reminders.' });
+    let patientId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+      if (demoPat) patientId = demoPat._id;
     }
-    if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
-      return res.status(403).json({ error: 'Forbidden: You cannot view another patient reminders.' });
-    }
-
-    const reminders = await Reminder.find({ patientId: req.params.id }).sort({ scheduledTime: 1 });
+    const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -461,19 +495,8 @@ router.post('/:id/chat', authenticateAny, async (req, res) => {
   }
 });
 
-// 9. Get Patient Reminders: GET /api/patients/:id/reminders
-router.get('/:id/reminders', authenticateAny, async (req, res) => {
-  try {
-    const patientId = req.params.id;
-    const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
-    res.json(reminders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // 10. Memory Bank Photos: GET /api/patients/:id/photos
-router.get('/:id/photos', authenticateAny, async (req, res) => {
+router.get('/:id/photos', optionalAuth, async (req, res) => {
   try {
     const patientId = req.params.id;
     let photos = await MemoryBankPhoto.find({ patientId }).sort({ createdAt: -1 });

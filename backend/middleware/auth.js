@@ -127,6 +127,50 @@ const authenticateAny = async (req, res, next) => {
 };
 
 /**
+ * Middleware: Optional authentication (attaches user if valid token present, allows through if not)
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return next();
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (jwtErr) {
+      return next();
+    }
+
+    if (decoded.type === 'patient' || decoded.patientId) {
+      const patientId = decoded.patientId || decoded.id;
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        req.patient = patient;
+        req.user = { id: patient._id, type: 'patient' };
+        return next();
+      }
+    }
+
+    const caregiverId = decoded.id;
+    const caregiver = await Caregiver.findById(caregiverId);
+    if (caregiver) {
+      req.caregiver = caregiver;
+      req.user = { id: caregiver._id, type: 'caregiver' };
+      return next();
+    }
+
+    next();
+  } catch (err) {
+    next();
+  }
+};
+
+/**
  * In-memory sliding rate limiter for login & signup endpoints
  * Max 10 attempts per 15 minutes per IP
  */
@@ -163,5 +207,7 @@ module.exports = {
   authenticateCaregiver,
   authenticatePatient,
   authenticateAny,
+  optionalAuth,
   rateLimitLogin
 };
+

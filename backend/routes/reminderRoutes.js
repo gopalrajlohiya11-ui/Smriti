@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Reminder = require('../models/Reminder');
 const Patient = require('../models/patient');
-const { authenticateCaregiver, authenticateAny } = require('../middleware/auth');
+const { authenticateCaregiver, authenticateAny, optionalAuth } = require('../middleware/auth');
 
 // 1. Create a new reminder (Caregiver scoped)
 router.post('/', authenticateCaregiver, async (req, res) => {
@@ -103,21 +104,71 @@ router.patch('/:id/dismiss', authenticateCaregiver, async (req, res) => {
   }
 });
 
-// 4. Get all reminders for a patient (Authenticated)
-router.get('/:patientId', authenticateAny, async (req, res) => {
+// 4. Get all reminders for a patient (Supports auth or public patient lookup)
+router.get('/:patientId', optionalAuth, async (req, res) => {
   try {
-    const reminders = await Reminder.find({ patientId: req.params.patientId }).sort({ scheduledTime: 1 });
+    let patientId = req.params.patientId;
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+      if (demoPat) patientId = demoPat._id;
+    }
+    const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// 5. Toggle or update reminder status
-router.patch('/:id', authenticateAny, async (req, res) => {
+// 5. Toggle or update reminder status in MongoDB
+router.patch('/:id', optionalAuth, async (req, res) => {
   try {
-    const reminder = await Reminder.findById(req.params.id);
-    if (!reminder) return res.status(404).json({ error: 'Reminder not found' });
+    let reminder = null;
+    const { id } = req.params;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      reminder = await Reminder.findById(id);
+    }
+
+    // Fallback: If not found by ObjectId or if given a mock ID (e.g. "rem-1"), find by patient + title / type
+    if (!reminder) {
+      let pId = req.body.patientId;
+      if (!pId || !mongoose.Types.ObjectId.isValid(pId)) {
+        const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+        if (demoPat) pId = demoPat._id;
+      }
+
+      if (pId) {
+        if (req.body.title) {
+          reminder = await Reminder.findOne({ patientId: pId, title: new RegExp(req.body.title.trim(), 'i') });
+        }
+        if (!reminder && req.body.type) {
+          reminder = await Reminder.findOne({ patientId: pId, type: req.body.type });
+        }
+      }
+    }
+
+    if (!reminder) {
+      // If still not found, create a new record so it is permanently saved in MongoDB
+      let pId = req.body.patientId;
+      if (!pId || !mongoose.Types.ObjectId.isValid(pId)) {
+        const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+        if (demoPat) pId = demoPat._id;
+      }
+      if (pId) {
+        reminder = new Reminder({
+          patientId: pId,
+          title: req.body.title || 'Daily Routine',
+          type: req.body.type || 'activity',
+          detail: req.body.detail || '',
+          scheduledTime: req.body.scheduledTime || new Date(),
+          acknowledged: req.body.acknowledged !== undefined ? req.body.acknowledged : true
+        });
+        await reminder.save();
+        console.log(`✅ Created and saved reminder ${reminder._id} (${reminder.title}) acknowledged: ${reminder.acknowledged} to MongoDB`);
+        return res.json(reminder);
+      }
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
 
     if (req.body.acknowledged !== undefined) {
       reminder.acknowledged = req.body.acknowledged;
@@ -129,8 +180,10 @@ router.patch('/:id', authenticateAny, async (req, res) => {
     }
 
     await reminder.save();
+    console.log(`✅ Saved reminder ${reminder._id} (${reminder.title}) acknowledged: ${reminder.acknowledged} to MongoDB`);
     res.json(reminder);
   } catch (err) {
+    console.error('Update reminder error:', err);
     res.status(400).json({ error: err.message });
   }
 });

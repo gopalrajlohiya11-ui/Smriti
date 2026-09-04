@@ -3,6 +3,7 @@ import { initialPatients, initialRedFlags, regionalLanguages } from '../data/moc
 import { 
   fetchRealPatients, 
   fetchCurrentPatientApi,
+  fetchDefaultPatientApi,
   fetchPatientReminders, 
   toggleReminderStatus,
   dismissReminderApi,
@@ -116,7 +117,7 @@ export function AppProvider({ children }) {
       for (const item of queuedActions) {
         try {
           if (item.action === 'toggleReminder' && item.reminderId) {
-            await toggleReminderStatus(item.reminderId, item.targetAcknowledged);
+            await toggleReminderStatus(item.reminderId, item.targetAcknowledged, item.patientId, item.reminderData);
             await removeQueuedOfflineAction(item.id);
             successfulCount++;
           }
@@ -173,75 +174,83 @@ export function AppProvider({ children }) {
       return;
     }
 
-    // 1. If Patient is logged in (Patient Portal Mode)
-    if (hasPatientToken && !hasCaregiverToken) {
+    // 1. If in Patient Portal Mode (either with patient token or default patient portal view)
+    if (!hasCaregiverToken) {
       try {
-        const patientRecord = await fetchCurrentPatientApi();
-        if (patientRecord && patientRecord._id) {
-          const realReminders = await fetchPatientReminders(patientRecord._id);
-        let formattedReminders = [];
-        if (realReminders && realReminders.length > 0) {
-          formattedReminders = realReminders.map(r => {
-            const timeStr = r.scheduledTime 
-              ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : '9:00 AM';
-
-            let title = r.title || 'Daily Routine';
-            let detail = r.detail || `Scheduled ${r.type}`;
-            if (!r.title) {
-              if (r.type === 'medicine') title = 'Prescribed Medicine';
-              else if (r.type === 'hydration') title = 'Stay Hydrated (Water/Tea)';
-              else if (r.type === 'meal') title = 'Nourishing Meal & Tea';
-              else if (r.type === 'game') title = 'Memory Game of the Day';
-              else if (r.type === 'activity') title = 'Gentle Movement / Walk';
-              else if (r.type === 'appointment') title = 'Caregiver Check-in';
-              else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
-            }
-
-            return {
-              id: r._id,
-              type: r.type,
-              title: title,
-              detail: detail,
-              time: timeStr,
-              status: r.acknowledged ? 'completed' : 'pending',
-              acknowledged: r.acknowledged,
-              dismissed: !!r.dismissed,
-              scheduledTime: r.scheduledTime
-            };
-          });
+        let patientRecord = null;
+        if (hasPatientToken) {
+          patientRecord = await fetchCurrentPatientApi();
+        }
+        if (!patientRecord || !patientRecord._id) {
+          patientRecord = await fetchDefaultPatientApi();
         }
 
-        const isDemo = patientRecord.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patientRecord.name);
+        if (patientRecord && patientRecord._id) {
+          const realReminders = await fetchPatientReminders(patientRecord._id);
+          let formattedReminders = [];
+          if (realReminders && realReminders.length > 0) {
+            formattedReminders = realReminders.map(r => {
+              const timeStr = r.scheduledTime 
+                ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '9:00 AM';
 
-        const enrichedPatient = {
-          id: patientRecord._id,
-          name: patientRecord.name,
-          age: patientRecord.age || 70,
-          gender: patientRecord.gender || 'Senior',
-          phone: patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345',
-          rawPhone: patientRecord.phoneNumber,
-          location: patientRecord.location || 'Assam',
-          nativeLanguage: patientRecord.language || 'Assamese',
-          avatar: patientRecord.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
-          lastActive: 'Active on WhatsApp',
-          streakDays: isDemo ? 14 : 1,
-          cognitiveStage: patientRecord.cognitiveStage || 'Early Memory Support',
-          primaryCaregiver: patientRecord.primaryCaregiver || 'Dr. Ananya Sharma',
-          emergencyContact: patientRecord.emergencyContact || (patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345'),
-          notes: patientRecord.notes || '',
-          medicalNotes: patientRecord.medicalNotes || '',
-          todayReminders: formattedReminders,
-          reminderHistory: isDemo ? initialPatients[0].reminderHistory : [],
-          weeklyPerformance: isDemo ? initialPatients[0].weeklyPerformance : [],
-          notificationPreference: patientRecord.notificationPreference || 'whatsapp',
-          isDemoSeed: isDemo
-        };
+              let title = r.title || 'Daily Routine';
+              let detail = r.detail || `Scheduled ${r.type}`;
+              if (!r.title) {
+                if (r.type === 'medicine') title = 'Prescribed Medicine';
+                else if (r.type === 'hydration') title = 'Stay Hydrated (Water/Tea)';
+                else if (r.type === 'meal') title = 'Nourishing Meal & Tea';
+                else if (r.type === 'game') title = 'Memory Game of the Day';
+                else if (r.type === 'activity') title = 'Gentle Movement / Walk';
+                else if (r.type === 'appointment') title = 'Caregiver Check-in';
+                else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
+              }
 
-        setPatients([enrichedPatient]);
-        setActivePatientId(enrichedPatient.id);
-        await cachePatientData(enrichedPatient.id, enrichedPatient);
-        return;
+              return {
+                id: r._id,
+                type: r.type,
+                title: title,
+                detail: detail,
+                time: timeStr,
+                status: r.acknowledged ? 'completed' : 'pending',
+                acknowledged: !!r.acknowledged,
+                dismissed: !!r.dismissed,
+                scheduledTime: r.scheduledTime
+              };
+            });
+          }
+
+          const isDemo = patientRecord.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patientRecord.name);
+
+          const enrichedPatient = {
+            id: patientRecord._id,
+            name: patientRecord.name,
+            age: patientRecord.age || 70,
+            gender: patientRecord.gender || 'Senior',
+            phone: patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345',
+            rawPhone: patientRecord.phoneNumber,
+            location: patientRecord.location || 'Assam',
+            nativeLanguage: patientRecord.language || 'Assamese',
+            avatar: patientRecord.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
+            lastActive: 'Active on WhatsApp',
+            streakDays: isDemo ? 14 : 1,
+            cognitiveStage: patientRecord.cognitiveStage || 'Early Memory Support',
+            primaryCaregiver: patientRecord.primaryCaregiver || 'Dr. Ananya Sharma',
+            emergencyContact: patientRecord.emergencyContact || (patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345'),
+            notes: patientRecord.notes || '',
+            medicalNotes: patientRecord.medicalNotes || '',
+            todayReminders: formattedReminders,
+            reminderHistory: isDemo ? initialPatients[0].reminderHistory : [],
+            weeklyPerformance: isDemo ? initialPatients[0].weeklyPerformance : [],
+            notificationPreference: patientRecord.notificationPreference || 'whatsapp',
+            isDemoSeed: isDemo
+          };
+
+          setPatients([enrichedPatient]);
+          setActivePatientId(enrichedPatient.id);
+          localStorage.setItem('smriti_patient_id', enrichedPatient.id);
+          await cachePatientData(enrichedPatient.id, enrichedPatient);
+          return;
         }
       } catch (err) {
         console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
@@ -654,16 +663,18 @@ export function AppProvider({ children }) {
 
   // 6. Toggle Reminder Completion in real backend + offline caching & sync queue
   const toggleReminder = async (patientId, reminderId) => {
-    let targetAcknowledged = false;
+    let targetAcknowledged = true;
     let targetPatient = null;
+    let targetReminder = null;
 
     setPatients(prev => {
       const updated = prev.map(p => {
         if (p.id === patientId || p._id === patientId) {
-          const updatedReminders = p.todayReminders.map(r => {
+          const updatedReminders = (p.todayReminders || []).map(r => {
             if (r.id === reminderId || r._id === reminderId) {
               const nextStatus = r.status === 'completed' ? 'pending' : 'completed';
               targetAcknowledged = nextStatus === 'completed';
+              targetReminder = r;
               return {
                 ...r,
                 status: nextStatus,
@@ -690,25 +701,30 @@ export function AppProvider({ children }) {
         action: 'toggleReminder',
         patientId,
         reminderId,
-        targetAcknowledged
+        targetAcknowledged,
+        reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined
       });
       await refreshPendingSyncCount();
       return;
     }
 
-    if (typeof reminderId === 'string' && reminderId.length === 24) {
-      try {
-        await toggleReminderStatus(reminderId, targetAcknowledged);
-      } catch (err) {
-        console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
-        await queueOfflineAction({
-          action: 'toggleReminder',
-          patientId,
-          reminderId,
-          targetAcknowledged
-        });
-        await refreshPendingSyncCount();
-      }
+    try {
+      await toggleReminderStatus(
+        reminderId,
+        targetAcknowledged,
+        patientId,
+        targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : {}
+      );
+    } catch (err) {
+      console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
+      await queueOfflineAction({
+        action: 'toggleReminder',
+        patientId,
+        reminderId,
+        targetAcknowledged,
+        reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined
+      });
+      await refreshPendingSyncCount();
     }
   };
 

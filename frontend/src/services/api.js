@@ -231,6 +231,20 @@ export async function deletePatientApi(patientId) {
   }
 }
 
+// 6c. Fetch Default or Public Patient Profile
+export async function fetchDefaultPatientApi() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/public/default`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn('⚠️ Could not fetch default public patient:', err.message);
+    return null;
+  }
+}
+
 // 7. Fetch Real Reminders for Patient
 export async function fetchPatientReminders(patientId) {
   try {
@@ -246,18 +260,26 @@ export async function fetchPatientReminders(patientId) {
 }
 
 // 8. Toggle Reminder Completion in MongoDB
-export async function toggleReminderStatus(reminderId, nextAcknowledged) {
+export async function toggleReminderStatus(reminderId, nextAcknowledged, patientId, reminderData = {}) {
   try {
+    const payload = {
+      acknowledged: nextAcknowledged,
+      patientId: patientId || undefined,
+      type: reminderData.type,
+      title: reminderData.title,
+      scheduledTime: reminderData.scheduledTime
+    };
+
     const response = await fetch(`${API_BASE_URL}/reminders/${reminderId}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ acknowledged: nextAcknowledged })
+      body: JSON.stringify(payload)
     });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
     console.warn(`⚠️ Could not update reminder ${reminderId} in backend:`, err.message);
-    return null;
+    throw err;
   }
 }
 
