@@ -402,3 +402,37 @@ export async function sendPatientChatMessage(patientId, message, history = [], a
     throw err;
   }
 }
+
+// 10. Submit Completed Game Session (POST /api/game-sessions)
+export async function submitGameSessionApi(sessionData) {
+  try {
+    const token = localStorage.getItem('smriti_patient_token') || localStorage.getItem('smriti_caregiver_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/game-sessions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(sessionData)
+    });
+
+    if (!response.ok) {
+      // Fallback endpoint: /api/patients/:id/games
+      if (sessionData.patientId) {
+        const fallbackRes = await fetch(`${API_BASE_URL}/patients/${sessionData.patientId}/games`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(sessionData)
+        });
+        if (fallbackRes.ok) return await fallbackRes.json();
+      }
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.warn('Game session API error (may be offline):', err.message);
+    throw err;
+  }
+}
+

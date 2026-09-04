@@ -63,9 +63,11 @@ mongoose.connect(process.env.MONGO_URI)
 const caregiverRoutes = require('./routes/caregiverRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
+const gameRoutes = require('./routes/gameRoutes');
 app.use('/api/caregivers', caregiverRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/game-sessions', gameRoutes);
 
 const whatsappWebhook = require('./routes/whatsappWebhook');
 app.use('/api/whatsapp', whatsappWebhook);

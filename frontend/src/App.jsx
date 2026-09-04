@@ -11,6 +11,7 @@ import PatientLogin from './pages/patient/PatientLogin';
 import PatientDashboard from './pages/patient/PatientDashboard';
 import PatientReminders from './pages/patient/PatientReminders';
 import PatientProfile from './pages/patient/PatientProfile';
+import MarketDayBasket from './pages/patient/games/MarketDayBasket';
 import PatientChatbot from './components/patient/PatientChatbot';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/patient" element={<PatientDashboard />} />
                 <Route path="/patient/profile" element={<PatientProfile />} />
                 <Route path="/patient/reminders" element={<PatientReminders />} />
+                <Route path="/patient/games/market-day-basket" element={<MarketDayBasket />} />
                 <Route path="/patient/login" element={<PatientLogin />} />
 
               {/* Caregiver Portal */}

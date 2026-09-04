@@ -190,6 +190,18 @@ export const familyPhotos = [
 
 export const cognitiveGames = [
   {
+    id: "game-market-day",
+    title: "Market Day Basket",
+    category: "Pattern & Math Recall",
+    duration: "3 Mins",
+    difficulty: "Adaptive (3-7 items)",
+    badge: "Play Now 🧺",
+    path: "/patient/games/market-day-basket",
+    icon: "ShoppingBasket",
+    description: "Pick North-East fresh produce and solve simple bazaar shopping math!",
+    benefits: "Stimulates executive pattern recognition, memory, and arithmetic recall."
+  },
+  {
     id: "game-1",
     title: "Majuli Island Mask Match",
     category: "Visual Memory",

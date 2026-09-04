@@ -1133,7 +1133,11 @@ export default function PatientDashboard() {
                   <div
                     key={game.id}
                     onClick={() => {
-                      setSelectedGame(game);
+                      if (game.path) {
+                        navigate(game.path);
+                      } else {
+                        setSelectedGame(game);
+                      }
                     }}
                     className="bg-stone-50 rounded-2xl p-4 border-2 border-stone-200 hover:border-amber-800/60 shadow-2xs hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between group"
                   >
