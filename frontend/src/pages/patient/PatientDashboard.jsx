@@ -743,393 +743,163 @@ export default function PatientDashboard() {
         </div>
 
         {/* ======================================================== */}
-        {/* 3. MAIN DASHBOARD 2-COLUMN GRID (1400px VIEWPORT READY)  */}
+        {/* 3. GAMES SECTION (DOMINANT, FULL-WIDTH MAIN FOCUS)       */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 border-2 border-stone-200/90 shadow-sm space-y-8">
           
-          {/* ====================================================== */}
-          {/* LEFT COLUMN: TODAY'S ROUTINES & MEMORY BANK (8 COLS)   */}
-          {/* ====================================================== */}
-          <div className="lg:col-span-7 xl:col-span-7 space-y-8">
-            
-            {/* SECTION 3A: TIME-DYNAMIC TODAY'S REMINDERS */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm space-y-5">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-stone-950 flex items-center gap-2.5">
-                    <span>{t('dashboard.todaysReminders')}</span>
-                    <span className="text-xs font-black text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
-                      {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-1">
-                    {t('dashboard.remindersSubtitle')}
-                  </p>
-                </div>
-
-                {/* Notification Status & Test Control */}
-                <div className="flex items-center gap-2 self-start sm:self-center">
-                  {notifPermission === 'granted' ? (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black border border-emerald-300">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-                        <span>{t('dashboard.liveAlertsActive')}</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleTestNotification}
-                        className="px-3 py-1 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold border border-stone-300 transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                        title="Test browser notification countdown (fires in 5 seconds)"
-                      >
-                        <Bell className="w-3.5 h-3.5 text-stone-700" />
-                        <span>{t('dashboard.testAlert')}</span>
-                      </button>
-                    </div>
-                  ) : notifPermission === 'denied' ? (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-stone-100 text-stone-600 text-xs font-bold border border-stone-300" title="Notifications blocked in browser settings">
-                      <BellOff className="w-3.5 h-3.5 text-stone-500" />
-                      <span>{t('dashboard.alertsBlocked')}</span>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleEnableNotifications}
-                      className="px-3.5 py-1.5 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs font-black shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
-                    >
-                      <Bell className="w-3.5 h-3.5" />
-                      <span>{t('dashboard.enableAlerts')}</span>
-                    </button>
-                  )}
-                </div>
+          {/* 3A. DAILY STREAK CHALLENGE HERO CARD (FULL WIDTH) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 inline-flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5 fill-amber-600 text-amber-600" />
+                  <span>{t('dashboard.dailyStreakChallenge')}</span>
+                </span>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-stone-950 mt-1">
+                  Today's Featured Memory Challenge
+                </h2>
               </div>
 
-              {/* 3 Focused Reminder Cards */}
-              <div className="space-y-4">
-                {threeFocusedReminders.map((rem) => {
-                  const isCurrent = rem.slotLabel === 'Current';
-                  const isPrevious = rem.slotLabel === 'Previous';
-                  const isNext = rem.slotLabel === 'Next';
-                  const isDone = rem.isCompleted;
-                  const isDueNow = rem.timeState === 'due_now';
-
-                  return (
-                    <div
-                      key={rem.id}
-                      className={`rounded-2xl sm:rounded-3xl transition-all p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 ${
-                        isDone
-                          ? 'bg-emerald-50/70 border-2 border-emerald-300 shadow-xs'
-                          : isCurrent
-                          ? 'bg-amber-50 border-2 border-amber-600 shadow-md ring-4 ring-amber-500/10'
-                          : isPrevious
-                          ? 'bg-rose-50/80 border-2 border-rose-300 shadow-xs'
-                          : 'bg-stone-50 border-2 border-stone-200 shadow-2xs'
-                      }`}
-                    >
-                      
-                      {/* Left: Type Icon + Details */}
-                      <div className="flex items-start sm:items-center gap-4">
-                        
-                        {/* State-specific Icon Bubble */}
-                        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 font-bold shadow-xs ${
-                          isDone
-                            ? 'bg-emerald-700 text-white'
-                            : isCurrent
-                            ? 'bg-amber-800 text-white'
-                            : isPrevious
-                            ? 'bg-rose-700 text-white'
-                            : 'bg-stone-200 text-stone-800 border border-stone-300'
-                        }`}>
-                          {getReminderIcon(rem.type)}
-                        </div>
-
-                        <div className="space-y-1">
-                          
-                          {/* Slot Label & Status Badges */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {isPrevious && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-800 text-xs font-black uppercase tracking-wider border border-stone-300">
-                                {t('dashboard.previous')}
-                              </span>
-                            )}
-
-                            {isCurrent && (
-                              <span className="px-3 py-0.5 rounded-full bg-amber-800 text-white text-xs font-black shadow-xs tracking-wider uppercase">
-                                ★ {t('dashboard.current')}
-                              </span>
-                            )}
-
-                            {isNext && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-900 text-xs font-black border border-sky-300 uppercase tracking-wider">
-                                {t('dashboard.next')}
-                              </span>
-                            )}
-
-                            {isDone && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black border border-emerald-300">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                                <span>{t('dashboard.completed')} ✓ ({rem.formattedTime})</span>
-                              </span>
-                            )}
-
-                            {!isDone && isCurrent && (
-                              <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-amber-200 text-amber-950 text-xs font-black border border-amber-400 shadow-2xs">
-                                <Sparkles className="w-3.5 h-3.5 text-amber-900" />
-                                <span>{isDueNow ? t('dashboard.dueNow') : t('dashboard.upcoming')} ({rem.formattedTime})</span>
-                              </span>
-                            )}
-
-                            {!isDone && isPrevious && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-950 text-xs font-black border border-rose-400">
-                                <Clock className="w-3.5 h-3.5 text-rose-800" />
-                                <span>{t('dashboard.overdue')} ({rem.formattedTime})</span>
-                              </span>
-                            )}
-
-                            {!isDone && isNext && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-800 text-xs font-bold border border-stone-300">
-                                <Clock className="w-3.5 h-3.5 text-stone-600" />
-                                <span>{t('dashboard.upcoming')} ({rem.formattedTime})</span>
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-xl sm:text-2xl font-black text-stone-950 leading-tight">
-                            {rem.title}
-                          </h3>
-
-                          <p className="text-xs sm:text-sm text-stone-700 font-semibold leading-relaxed">
-                            {rem.detail}
-                          </p>
-                        </div>
-
-                      </div>
-
-                      {/* Right: Giant Elderly-Friendly 1-Tap Action Button */}
-                      <div className="shrink-0 w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => handleReminderDone(rem.id, rem.title)}
-                          className={`w-full sm:w-52 py-4 px-6 rounded-2xl text-base sm:text-lg font-black flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-95 cursor-pointer ${
-                            isDone
-                              ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs'
-                              : isCurrent
-                              ? 'bg-amber-800 hover:bg-amber-900 text-white shadow-md ring-2 ring-amber-700/30'
-                              : isPrevious
-                              ? 'bg-rose-800 hover:bg-rose-900 text-white shadow-xs'
-                              : 'bg-stone-900 hover:bg-stone-950 text-white'
-                          }`}
-                        >
-                          <Check className="w-6 h-6 stroke-[3]" />
-                          <span>{isDone ? `${t('dashboard.done')} ✓` : `${t('dashboard.markDone')} ✓`}</span>
-                        </button>
-                      </div>
-
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* View All Reminders Action Button */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => navigate('/patient/reminders')}
-                  className="w-full py-4 px-6 bg-stone-50 hover:bg-amber-50 border-2 border-stone-300 hover:border-amber-800 rounded-2xl sm:rounded-3xl text-sm sm:text-base font-black text-stone-900 hover:text-amber-950 shadow-2xs transition-all flex items-center justify-center gap-2.5 cursor-pointer group"
-                >
-                  <ListOrdered className="w-5 h-5 text-stone-700 group-hover:text-amber-800 transition-colors" />
-                  <span>{t('dashboard.viewAllReminders')} ({chronologicalReminders.length}) →</span>
-                </button>
-              </div>
-
+              {isGameOfDayCompleted && (
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-950 text-xs sm:text-sm font-black border-2 border-emerald-300 self-start sm:self-center shadow-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                  <span>{t('dashboard.completedChallenge')}</span>
+                </span>
+              )}
             </div>
 
-            {/* SECTION 3B: FAMILY PHOTO MEMORIES */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-stone-200">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-stone-950 flex items-center gap-2">
-                    <span>{t('dashboard.familyMemories')}</span>
-                    <span>🌸</span>
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-0.5">
-                    {t('dashboard.familyMemoriesDesc')}
+            {/* Giant Full-Width Hero Card */}
+            <div className={`rounded-3xl p-6 sm:p-8 lg:p-10 text-white relative overflow-hidden border-3 transition-all shadow-lg bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 ${
+              isGameOfDayCompleted ? 'border-emerald-500 ring-4 ring-emerald-500/20' : 'border-stone-800 hover:border-amber-700'
+            }`}>
+              
+              {/* Background ambient glow */}
+              <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 space-y-6">
+                
+                {/* Badges Bar */}
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xs border border-amber-400/40">
+                    <Flame className="w-4 h-4 fill-white" />
+                    <span>{todayFeaturedGame.dayName} Game of the Day</span>
+                  </span>
+
+                  <span className="px-3 py-1.5 rounded-full bg-white/15 text-stone-100 text-xs sm:text-sm font-bold border border-white/20">
+                    🧠 {todayFeaturedGame.category}
+                  </span>
+
+                  <span className="px-3 py-1.5 rounded-full bg-white/15 text-stone-100 text-xs sm:text-sm font-bold border border-white/20">
+                    ⏱️ {todayFeaturedGame.duration}
+                  </span>
+
+                  <span className="px-3 py-1.5 rounded-full bg-amber-400/20 text-amber-200 text-xs sm:text-sm font-black border border-amber-300/30 flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5 text-amber-300" />
+                    <span>+1 Day Streak Bonus</span>
+                  </span>
+                </div>
+
+                {/* Title & Description */}
+                <div className="space-y-2 max-w-3xl">
+                  <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                    {todayFeaturedGame.title}
+                  </h3>
+                  <p className="text-base sm:text-lg text-amber-200 font-bold">
+                    {todayFeaturedGame.subtitle}
+                  </p>
+                  <p className="text-sm sm:text-base text-stone-300 leading-relaxed font-medium pt-1">
+                    {todayFeaturedGame.description}
                   </p>
                 </div>
-                <span className="text-xs text-stone-600 font-bold hidden sm:inline">{t('dashboard.scrollHorizontal')}</span>
-              </div>
 
-              <div className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-1 no-scrollbar">
-                {vaultPhotos.map((photo, pIdx) => (
-                  <div
-                    key={photo._id || photo.id || pIdx}
-                    onClick={() => {
-                      setSelectedPhoto(photo);
-                      speakText(`${photo.title}. ${photo.audioNote || photo.audioPrompt || photo.description || ''}`);
-                    }}
-                    className="min-w-[260px] sm:min-w-[280px] bg-stone-50 rounded-2xl p-4 border-2 border-stone-200 hover:border-amber-800/60 shadow-xs hover:shadow-md transition-all cursor-pointer shrink-0 group flex flex-col justify-between"
-                  >
-                    <div className="relative overflow-hidden rounded-xl aspect-[4/3] bg-stone-200 border border-stone-300">
-                      <img
-                        src={photo.photoUrl || photo.imageUrl || photo.image}
-                        alt={photo.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';
-                        }}
-                      />
-                      <div className="absolute top-2.5 right-2.5 bg-stone-950/85 backdrop-blur-xs text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
-                        {photo.year || '2024'}
-                      </div>
-                      {(photo.relation || photo.taggedName) && (
-                        <div className="absolute bottom-2.5 left-2.5 bg-amber-900/90 backdrop-blur-xs text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
-                          {photo.relation || photo.taggedName}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-3 space-y-1">
-                      <h3 className="text-base sm:text-lg font-black text-stone-950 group-hover:text-amber-900 transition-colors">
-                        {photo.title}
-                      </h3>
-                      <p className="text-xs text-stone-600 font-bold">
-                        {photo.location}
-                      </p>
-                      <p className="text-xs text-stone-700 font-medium line-clamp-2 leading-relaxed mt-1">
-                        {photo.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-3.5 pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-amber-900 font-black">
-                      <span className="flex items-center gap-1.5">
-                        <Volume2 className="w-4 h-4 text-amber-800" />
-                        <span>Hear memory 🔊</span>
-                      </span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-amber-800 stroke-[3]" />
+                {/* Interactive Demo Pairs Preview */}
+                <div className="bg-black/30 rounded-2xl p-4 border border-white/10 flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Memory Themes:</span>
+                    <div className="flex gap-2">
+                      {Array.from(new Set(todayFeaturedGame.demoPairs)).slice(0, 4).map((emoji, i) => (
+                        <span key={i} className="text-2xl sm:text-3xl p-1 bg-white/10 rounded-xl border border-white/15 shadow-2xs">
+                          {emoji}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex items-center gap-3 text-xs sm:text-sm font-bold text-stone-300">
+                    <span className="text-emerald-300">✓ Gentle & Elderly-Friendly</span>
+                    <span>•</span>
+                    <span className="text-amber-200">★ 100% Offline Playable</span>
+                  </div>
+                </div>
+
+                {/* Big Full-Width Action Button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGameOfDayOpen(true);
+                      setGodFlippedIndices([]);
+                      setGodMatchedIndices([]);
+                    }}
+                    className={`w-full py-5 sm:py-6 px-8 rounded-2xl font-black text-xl sm:text-2xl shadow-xl flex items-center justify-center gap-3.5 transition-all cursor-pointer active:scale-98 ${
+                      isGameOfDayCompleted
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-stone-950 ring-4 ring-amber-400/30'
+                    }`}
+                  >
+                    {isGameOfDayCompleted ? (
+                      <>
+                        <CheckCircle2 className="w-8 h-8 text-white stroke-[2.5]" />
+                        <span>{t('dashboard.completedChallenge')} (Replay)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-8 h-8 fill-stone-950 text-stone-950" />
+                        <span>Play Today's Challenge Now</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
               </div>
+
             </div>
 
           </div>
 
-          {/* ====================================================== */}
-          {/* RIGHT COLUMN: GAMES, STREAK & CARE HOTLINE (5 COLS)    */}
-          {/* ====================================================== */}
-          <div className="lg:col-span-5 xl:col-span-5 space-y-8">
-            
-            {/* SECTION 4A: FEATURED GAME OF THE DAY (DAILY STREAK CHALLENGE) */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-stone-950 flex items-center gap-2">
-                    <span>{t('dashboard.dailyStreakChallenge')}</span>
-                  </h2>
-                  <p className="text-xs sm:text-sm text-stone-600 font-bold mt-0.5">
-                    {t('dashboard.streakSubtitle')}
-                  </p>
-                </div>
-
-                {isGameOfDayCompleted && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black border border-emerald-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                    <span>{t('dashboard.completedChallenge')}</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Large Hero Card for Game of the Day */}
-              <div className={`rounded-3xl p-6 sm:p-7 text-white relative overflow-hidden border-2 transition-all shadow-md bg-stone-950 ${
-                isGameOfDayCompleted ? 'border-emerald-500' : 'border-stone-800'
-              }`}>
-                
-                <div className="relative z-10 space-y-4">
-                  
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-700 text-white text-xs font-black uppercase tracking-wider shadow-2xs">
-                      <Flame className="w-3.5 h-3.5 fill-white" />
-                      <span>{todayFeaturedGame.dayName} Challenge</span>
-                    </span>
-
-                    <span className="px-2.5 py-1 rounded-full bg-white/15 text-stone-100 text-xs font-bold border border-white/20">
-                      {todayFeaturedGame.category}
-                    </span>
-
-                    <span className="px-2.5 py-1 rounded-full bg-white/15 text-stone-100 text-xs font-bold border border-white/20">
-                      ⏱️ {todayFeaturedGame.duration}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-                      {todayFeaturedGame.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-amber-200 font-bold mt-1">
-                      {todayFeaturedGame.subtitle}
-                    </p>
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-medium">
-                    {todayFeaturedGame.description}
-                  </p>
-
-                  <div className="flex items-center gap-3 text-xs font-bold text-stone-400 pt-1 border-t border-stone-800">
-                    <span className="flex items-center gap-1.5 text-amber-300 font-bold">
-                      <Trophy className="w-4 h-4 text-amber-400" />
-                      <span>{t('dashboard.rewardsStreak')}</span>
-                    </span>
-                    <span>•</span>
-                    <span>{t('dashboard.gentleRelaxing')}</span>
-                  </div>
-
-                  {/* Big Action Button */}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsGameOfDayOpen(true);
-                        setGodFlippedIndices([]);
-                        setGodMatchedIndices([]);
-                      }}
-                      className={`w-full py-4 sm:py-5 px-6 rounded-2xl font-black text-lg sm:text-xl shadow-md flex items-center justify-center gap-3 transition-all cursor-pointer active:scale-95 ${
-                        isGameOfDayCompleted
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black'
-                      }`}
-                    >
-                      {isGameOfDayCompleted ? (
-                        <>
-                          <CheckCircle2 className="w-7 h-7 text-white" />
-                          <span>{t('dashboard.completedChallenge')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-7 h-7 fill-stone-950 text-stone-950" />
-                          <span>{t('dashboard.playChallenge')}</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                </div>
-
-              </div>
+          {/* HORIZONTAL DIVIDER */}
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t-2 border-stone-200" />
             </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-4 text-stone-500 font-black tracking-widest">
+                More Brain Practice Games
+              </span>
+            </div>
+          </div>
 
-            {/* SECTION 4B: EXPLORE MORE PRACTICE GAMES */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm space-y-4">
+          {/* 3B. EXPLORE MORE BRAIN GAMES (FULL-WIDTH GRID) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <div>
-                <h3 className="text-lg sm:text-xl font-black text-stone-950">
-                  {t('dashboard.exploreMoreGames')}
+                <h3 className="text-xl sm:text-2xl font-black text-stone-950 flex items-center gap-2">
+                  <span>{t('dashboard.exploreMoreGames')}</span>
+                  <span>🧺</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-0.5">
                   {t('dashboard.exploreGamesDesc')}
                 </p>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {cognitiveGames.map((game) => (
+            {/* 4 Games in Full-Width Grid (2x2 on tablet/desktop, 4 cols on xl) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+              {cognitiveGames.map((game) => {
+                const isPlayableMarket = game.id === 'game-market-day' || !!game.path;
+
+                return (
                   <div
                     key={game.id}
                     onClick={() => {
@@ -1139,70 +909,279 @@ export default function PatientDashboard() {
                         setSelectedGame(game);
                       }
                     }}
-                    className="bg-stone-50 rounded-2xl p-4 border-2 border-stone-200 hover:border-amber-800/60 shadow-2xs hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between group"
+                    className={`rounded-3xl p-5 sm:p-6 border-2 transition-all cursor-pointer flex flex-col justify-between group shadow-sm hover:shadow-md active:scale-98 ${
+                      isPlayableMarket 
+                        ? 'bg-gradient-to-b from-amber-50/90 to-amber-100/40 border-amber-300 hover:border-amber-600 ring-2 ring-amber-400/20' 
+                        : 'bg-stone-50 hover:bg-amber-50/60 border-stone-200 hover:border-stone-400'
+                    }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-stone-800 bg-white px-2 py-0.5 rounded-md border border-stone-300">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border shadow-2xs ${
+                          isPlayableMarket
+                            ? 'bg-amber-800 text-white border-amber-900'
+                            : 'bg-white text-stone-800 border-stone-300'
+                        }`}>
                           {game.badge || game.category}
                         </span>
-                        <span className="text-[11px] font-bold text-stone-600">
-                          {game.difficulty}
+                        <span className="text-xs font-bold text-stone-600 bg-white/80 px-2 py-0.5 rounded-md border border-stone-200">
+                          {game.duration || '3 Mins'}
                         </span>
                       </div>
 
-                      <h4 className="text-base font-black text-stone-950 group-hover:text-amber-900 transition-colors">
-                        {game.title}
-                      </h4>
-                      <p className="text-xs text-stone-600 font-medium mt-1 line-clamp-2">
-                        {game.description}
-                      </p>
+                      <div>
+                        <h4 className="text-lg sm:text-xl font-black text-stone-950 group-hover:text-amber-900 transition-colors">
+                          {game.title}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-1.5 leading-relaxed">
+                          {game.description}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-stone-200 flex items-center justify-between text-xs text-stone-900 font-black">
-                      <span>{t('dashboard.practiceAnytime')}</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-amber-800 stroke-[3]" />
+                    <div className="mt-5 pt-3.5 border-t border-stone-200/80 flex items-center justify-between text-xs sm:text-sm font-black text-amber-900">
+                      <span className="flex items-center gap-1.5">
+                        {isPlayableMarket ? (
+                          <span className="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs">Play Real Game 🎮</span>
+                        ) : (
+                          <span>{t('dashboard.practiceAnytime')}</span>
+                        )}
+                      </span>
+                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform text-amber-800 stroke-[3]" />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SECTION 4C: QUICK ELDER CARE & EMERGENCY REFERENCE */}
-            <div className="bg-white rounded-3xl p-6 border-2 border-stone-200/90 shadow-sm space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 shrink-0">
-                  <HeartHandshake className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-stone-950">Caregiver & Assistance</h3>
-                  <p className="text-xs text-stone-600 font-semibold">{activePatient.primaryCaregiver || 'Dr. Ananya Sharma'}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs sm:text-sm font-semibold text-stone-700 bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500 font-bold">Emergency Phone:</span>
-                  <span className="font-black text-stone-900">{activePatient.emergencyContact || activePatient.phone || '+91 94350 12345'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-stone-500 font-bold">Active Channel:</span>
-                  <span className="font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">WhatsApp Active</span>
-                </div>
-              </div>
-
-              <a
-                href="https://wa.me/15556680031?text=Hi%20Smriti"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
-              >
-                <span>Chat with Smriti Assistant on WhatsApp</span>
-              </a>
+                );
+              })}
             </div>
 
           </div>
 
+        </div>
+
+        {/* ======================================================== */}
+        {/* 4. CONDENSED TODAY'S REMINDERS (SECONDARY SUPPORTING)    */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm space-y-4">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-stone-200">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Secondary Care Support</span>
+                <span className="text-xs font-black text-stone-700 bg-stone-100 px-2.5 py-0.5 rounded-full border border-stone-300">
+                  {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black text-stone-900 mt-0.5">
+                {t('dashboard.todaysReminders')}
+              </h2>
+            </div>
+
+            {/* Notification Controls */}
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              {notifPermission === 'granted' ? (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black border border-emerald-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                    <span>{t('dashboard.liveAlertsActive')}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleTestNotification}
+                    className="px-3 py-1 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold border border-stone-300 transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                    title="Test browser notification countdown (fires in 5 seconds)"
+                  >
+                    <Bell className="w-3.5 h-3.5 text-stone-700" />
+                    <span>{t('dashboard.testAlert')}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleEnableNotifications}
+                  className="px-3 py-1 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                >
+                  <Bell className="w-3 h-3" />
+                  <span>{t('dashboard.enableAlerts')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Compact Inline Active Reminder Card */}
+          {(() => {
+            const activeRem = chronologicalReminders.find(r => !r.isCompleted && (r.timeState === 'due_now' || r.timeState === 'overdue'))
+              || chronologicalReminders.find(r => !r.isCompleted)
+              || chronologicalReminders[0];
+
+            if (!activeRem) {
+              return (
+                <p className="text-xs text-stone-500 italic p-3">No reminders scheduled for today.</p>
+              );
+            }
+
+            const isDone = activeRem.isCompleted;
+
+            return (
+              <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-2 transition-all ${
+                isDone 
+                  ? 'bg-emerald-50/70 border-emerald-300'
+                  : 'bg-amber-50/60 border-amber-300'
+              }`}>
+                {/* Left info */}
+                <div className="flex items-center gap-3.5">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-bold shadow-2xs ${
+                    isDone ? 'bg-emerald-700 text-white' : 'bg-amber-800 text-white'
+                  }`}>
+                    {getReminderIcon(activeRem.type)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white text-stone-800 border border-stone-200">
+                        {isDone ? 'Completed' : 'Next Up'} ({activeRem.formattedTime})
+                      </span>
+                      <span className="text-[11px] font-bold text-stone-500">
+                        {activeRem.type}
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black text-stone-950 mt-0.5">
+                      {activeRem.title}
+                    </h3>
+                    <p className="text-xs text-stone-600 font-medium">
+                      {activeRem.detail}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right quick actions */}
+                <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleReminderDone(activeRem.id, activeRem.title)}
+                    className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95 ${
+                      isDone
+                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                        : 'bg-amber-800 hover:bg-amber-900 text-white'
+                    }`}
+                  >
+                    <Check className="w-4 h-4 stroke-[3]" />
+                    <span>{isDone ? 'Done ✓' : 'Mark Done'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate('/patient/reminders')}
+                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-black text-xs sm:text-sm border border-stone-300 transition-all cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <ListOrdered className="w-4 h-4 text-stone-700" />
+                    <span>View All ({chronologicalReminders.length})</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+        </div>
+
+        {/* ======================================================== */}
+        {/* 5. FAMILY MEMORIES & PHOTOS (FULL WIDTH GALLERY)         */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-stone-950 flex items-center gap-2">
+                <span>{t('dashboard.familyMemories')}</span>
+                <span>🌸</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-stone-600 font-semibold mt-0.5">
+                {t('dashboard.familyMemoriesDesc')}
+              </p>
+            </div>
+            <span className="text-xs text-stone-600 font-bold hidden sm:inline">{t('dashboard.scrollHorizontal')}</span>
+          </div>
+
+          <div className="flex gap-4 sm:gap-5 overflow-x-auto pb-3 pt-1 no-scrollbar">
+            {vaultPhotos.map((photo, pIdx) => (
+              <div
+                key={photo._id || photo.id || pIdx}
+                onClick={() => {
+                  setSelectedPhoto(photo);
+                  speakText(`${photo.title}. ${photo.audioNote || photo.audioPrompt || photo.description || ''}`);
+                }}
+                className="min-w-[260px] sm:min-w-[280px] bg-stone-50 rounded-2xl p-4 border-2 border-stone-200 hover:border-amber-800/60 shadow-xs hover:shadow-md transition-all cursor-pointer shrink-0 group flex flex-col justify-between"
+              >
+                <div className="relative overflow-hidden rounded-xl aspect-[4/3] bg-stone-200 border border-stone-300">
+                  <img
+                    src={photo.photoUrl || photo.imageUrl || photo.image}
+                    alt={photo.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';
+                    }}
+                  />
+                  <div className="absolute top-2.5 right-2.5 bg-stone-950/85 backdrop-blur-xs text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                    {photo.year || '2024'}
+                  </div>
+                  {(photo.relation || photo.taggedName) && (
+                    <div className="absolute bottom-2.5 left-2.5 bg-amber-900/90 backdrop-blur-xs text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                      {photo.relation || photo.taggedName}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 space-y-1">
+                  <h3 className="text-base sm:text-lg font-black text-stone-950 group-hover:text-amber-900 transition-colors">
+                    {photo.title}
+                  </h3>
+                  <p className="text-xs text-stone-600 font-bold">
+                    {photo.location}
+                  </p>
+                  <p className="text-xs text-stone-700 font-medium line-clamp-2 leading-relaxed mt-1">
+                    {photo.description}
+                  </p>
+                </div>
+
+                <div className="mt-3.5 pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-amber-900 font-black">
+                  <span className="flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-amber-800" />
+                    <span>Hear memory 🔊</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform text-amber-800 stroke-[3]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* 6. CAREGIVER & ASSISTANCE (FULL WIDTH BOTTOM CARD)       */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 shrink-0">
+              <HeartHandshake className="w-7 h-7" />
+            </div>
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-300">
+                Primary Caregiver Contact
+              </span>
+              <h3 className="text-lg sm:text-xl font-black text-stone-950 mt-1">
+                {activePatient.primaryCaregiver || 'Dr. Ananya Sharma'}
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-600 font-semibold">
+                Emergency Hotline: <span className="font-black text-stone-900">{activePatient.emergencyContact || activePatient.phone || '+91 94350 12345'}</span>
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="https://wa.me/15556680031?text=Hi%20Smriti"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95 shrink-0"
+          >
+            <span>Chat on WhatsApp</span>
+            <ChevronRight className="w-5 h-5 stroke-[3]" />
+          </a>
         </div>
 
       </div>
