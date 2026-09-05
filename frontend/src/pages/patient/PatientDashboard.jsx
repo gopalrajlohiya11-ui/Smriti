@@ -311,8 +311,11 @@ export default function PatientDashboard() {
   // ========================================================
   const [notifPermission, setNotifPermission] = useState(() => getNotificationPermission());
   const [showPermissionBanner, setShowPermissionBanner] = useState(() => {
-    return getNotificationPermission() === 'default' && sessionStorage.getItem('smriti_dismiss_notif_banner') !== 'true';
+    if (typeof window === 'undefined') return false;
+    const isDismissed = sessionStorage.getItem('smriti_dismiss_notif_banner') === 'true';
+    return getNotificationPermission() === 'default' && !isDismissed;
   });
+  const [isDismissingBanner, setIsDismissingBanner] = useState(false);
   const [testNotifToast, setTestNotifToast] = useState('');
 
   // Track fired notification IDs in this session to prevent duplicate notifications
@@ -320,23 +323,33 @@ export default function PatientDashboard() {
 
   // Request browser permission
   const handleEnableNotifications = async () => {
-    const perm = await requestNotificationPermission();
-    setNotifPermission(perm);
-    if (perm === 'granted') {
+    setIsDismissingBanner(true);
+    sessionStorage.setItem('smriti_dismiss_notif_banner', 'true');
+    setTimeout(() => {
       setShowPermissionBanner(false);
-      sendBrowserNotification({
-        title: '🌸 Smriti Gentle Reminders Active',
-        body: 'You will now receive timely alerts for medicines, hydration, and daily activities.',
-        icon: activePatient.avatar
-      });
-    } else {
-      setShowPermissionBanner(false);
+    }, 250);
+
+    try {
+      const perm = await requestNotificationPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        sendBrowserNotification({
+          title: '🌸 Smriti Gentle Reminders Active',
+          body: 'You will now receive timely alerts for medicines, hydration, and daily activities.',
+          icon: activePatient.avatar
+        });
+      }
+    } catch (err) {
+      console.warn('Error enabling notifications:', err);
     }
   };
 
   const handleDismissPermissionBanner = () => {
-    setShowPermissionBanner(false);
+    setIsDismissingBanner(true);
     sessionStorage.setItem('smriti_dismiss_notif_banner', 'true');
+    setTimeout(() => {
+      setShowPermissionBanner(false);
+    }, 250);
   };
 
   // Test Notification Helper (Triggers an immediate test & a 5-second countdown alert)
@@ -525,7 +538,9 @@ export default function PatientDashboard() {
         
         {/* 0a. BROWSER NOTIFICATION PERMISSION BANNER */}
         {showPermissionBanner && notifPermission === 'default' && (
-          <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className={`bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-500/60 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 ease-out ${
+            isDismissingBanner ? 'opacity-0 -translate-y-3 pointer-events-none scale-98' : 'animate-in fade-in slide-in-from-top-2'
+          }`}>
             <div className="flex items-center gap-4">
               <div className="w-13 h-13 rounded-2xl bg-amber-800 text-white flex items-center justify-center shrink-0 shadow-sm">
                 <BellRing className="w-7 h-7 animate-pulse" />
@@ -544,7 +559,7 @@ export default function PatientDashboard() {
               <button
                 type="button"
                 onClick={handleDismissPermissionBanner}
-                className="px-4 py-3 rounded-xl bg-white hover:bg-stone-100 text-stone-800 text-xs sm:text-sm font-bold border-2 border-stone-300 cursor-pointer transition-colors"
+                className="px-4 py-3 rounded-xl bg-white hover:bg-stone-100 text-stone-800 text-xs sm:text-sm font-bold border-2 border-stone-300 cursor-pointer transition-colors active:scale-95"
               >
                 {t('dashboard.notNow')}
               </button>
