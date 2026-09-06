@@ -21,6 +21,7 @@ import {
   Heart,
   Calendar
 } from 'lucide-react';
+import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
 
 const LANGUAGE_CODE_MAP = {
   "hindi": "hi-IN",
@@ -33,9 +34,14 @@ const LANGUAGE_CODE_MAP = {
 };
 
 export default function PatientChatbot() {
-  const { activePatient, activePatientId, isPatientLoggedIn } = useApp();
+  const { activePatient, activePatientId, isPatientLoggedIn, currentLanguage } = useApp();
 
   const getPatientLangCode = () => {
+    if (currentLanguage?.code) {
+      if (currentLanguage.code === 'hi') return 'hi-IN';
+      if (currentLanguage.code === 'as') return 'as-IN';
+      if (currentLanguage.code === 'en') return 'en-IN';
+    }
     const raw = (activePatient?.preferredLanguage || activePatient?.language || activePatient?.nativeLanguage || 'english').toLowerCase().trim();
     return LANGUAGE_CODE_MAP[raw] || 'en-IN';
   };
@@ -46,7 +52,10 @@ export default function PatientChatbot() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  // Chat message history initialized from sessionStorage
   const [messages, setMessages] = useState(() => {
+    if (!activePatientId) return [];
     const saved = sessionStorage.getItem(`smriti_chat_${activePatientId}`);
     if (saved) {
       try {
@@ -57,7 +66,7 @@ export default function PatientChatbot() {
       {
         id: 'welcome-msg',
         sender: 'assistant',
-        text: `Hello! I am Smriti, your caring companion. You can ask me about your medicines, today's schedule, doctor, or family anytime. 🌸`,
+        text: `Hello! I am Smriti, your caring companion. You can ask me about your medicines, today's schedule, doctor, or family anytime.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ];
@@ -101,7 +110,7 @@ export default function PatientChatbot() {
           {
             id: `welcome-${Date.now()}`,
             sender: 'assistant',
-            text: `Hello! I am Smriti, your caring companion. You can ask me about your medicines, today's schedule, doctor, or family anytime. 🌸`,
+            text: `Hello! I am Smriti, your caring companion. You can ask me about your medicines, today's schedule, doctor, or family anytime.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
@@ -314,7 +323,7 @@ export default function PatientChatbot() {
       const actualTranscript = res.transcription || 'Voice Question';
       setMessages(prev => prev.map(m => m.id === tempMsgId ? { ...m, text: actualTranscript } : m));
 
-      const replyText = res.reply || `Hello! I am Smriti, right here with you. How can I assist you? 🌸`;
+      const replyText = res.reply || `Hello! I am Smriti, right here with you. How can I assist you?`;
 
       const botMsg = {
         id: `bot-${Date.now()}`,
@@ -387,7 +396,7 @@ export default function PatientChatbot() {
         historyPayload
       );
 
-      const replyText = res.reply || `Hello! I am Smriti, right here with you. How can I assist you? 🌸`;
+      const replyText = res.reply || `Hello! I am Smriti, right here with you. How can I assist you?`;
 
       const botMsg = {
         id: `bot-${Date.now()}`,
@@ -430,7 +439,7 @@ export default function PatientChatbot() {
       {
         id: `welcome-${Date.now()}`,
         sender: 'assistant',
-        text: `Conversation cleared. I am ready to help you again! 🌸`,
+        text: `Conversation cleared. I am ready to help you again.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ];
@@ -439,37 +448,57 @@ export default function PatientChatbot() {
   };
 
   const quickPrompts = [
-    { label: "What is my next medicine? 💊", query: "What is my next scheduled medicine and when should I take it?", icon: Pill },
-    { label: "Who is my doctor? 🩺", query: "Who is my primary doctor and caregiver?", icon: Stethoscope },
-    { label: "Remind me about my family 🌸", query: "Can you remind me about my family members and memories?", icon: Heart },
-    { label: "What routines are due today? 📅", query: "What are my daily routines scheduled for today?", icon: Calendar }
+    { label: "What is my next medicine?", query: "What is my next scheduled medicine and when should I take it?", icon: Pill },
+    { label: "Who is my doctor?", query: "Who is my primary doctor and caregiver?", icon: Stethoscope },
+    { label: "Remind me about my family", query: "Can you remind me about my family members and memories?", icon: Heart },
+    { label: "What routines are due today?", query: "What are my daily routines scheduled for today?", icon: Calendar }
   ];
 
   if (!isPatientLoggedIn) return null;
 
   return (
     <>
-      {/* 1. FLOATING CIRCULAR CHAT BUTTON (FIXED BOTTOM-RIGHT) */}
+      {/* 1. FLOATING CIRCULAR BUTTONS (FIXED BOTTOM-RIGHT) */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 flex items-center gap-3">
+        <div className="fixed bottom-20 md:bottom-8 right-4 sm:right-8 z-50 flex items-center gap-3.5">
           
+          {/* Direct WhatsApp Bot Link (wa.me) */}
+          <a
+            href="https://wa.me/15556680031?text=Hi%20Smriti"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group bg-[#25D366] hover:bg-[#20bd5a] hover:scale-105 active:scale-95 ring-4 ring-[#25D366]/25 shrink-0"
+            title="Chat with Smriti on WhatsApp"
+            aria-label="Chat with Smriti on WhatsApp"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="32"
+              height="32"
+              fill="currentColor"
+              className="w-8 h-8 fill-current"
+            >
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </a>
+
+          {/* In-app Gemini AI Assistant */}
           <button
             type="button"
             onClick={() => {
               setIsOpen(true);
               if (isSpeakingAloud) stopSpeaking();
             }}
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group bg-gradient-to-tr from-amber-800 via-amber-700 to-amber-800 hover:scale-110 active:scale-95 ring-4 ring-amber-800/20"
-            title="Open Smriti"
-            aria-label="Open AI Companion"
+            className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group bg-[#2C5AA0] hover:bg-[#224780] hover:scale-105 active:scale-95 ring-4 ring-[#2C5AA0]/20 shrink-0"
+            title="Open Smriti AI Assistant"
+            aria-label="Open AI Assistant"
           >
             <div className="relative flex items-center justify-center">
-              <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" />
-              <span className="absolute -top-1 -right-1 text-xs">🌸</span>
+              <MessageCircle className="w-8 h-8" />
             </div>
 
             {(isSpeakingAloud || isRecording) && (
-              <span className="absolute inset-0 rounded-full border-4 border-amber-400 animate-ping" />
+              <span className="absolute inset-0 rounded-full border-4 border-amber-300 animate-ping" />
             )}
           </button>
 
@@ -482,26 +511,26 @@ export default function PatientChatbot() {
           className={
             isFullScreen
               ? "fixed inset-0 z-50 w-screen h-screen bg-[#FAF7F2] flex flex-col overflow-hidden animate-in fade-in duration-200 font-sans"
-              : "fixed bottom-20 sm:bottom-26 right-4 sm:right-8 w-[calc(100vw-32px)] sm:w-[450px] max-w-lg h-[620px] max-h-[84vh] bg-white rounded-3xl sm:rounded-[36px] shadow-2xl border border-stone-200/90 flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans"
+              : "fixed bottom-20 md:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[450px] max-w-lg h-[620px] max-h-[80vh] bg-white rounded-3xl shadow-2xl border border-[#E5E0D8] flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans"
           }
         >
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-amber-800 via-amber-900 to-stone-900 text-white p-4 sm:p-5 flex items-center justify-between shrink-0 shadow-md">
+          <div className="bg-[#2C5AA0] text-white p-4 sm:p-5 flex items-center justify-between shrink-0 shadow-xs">
             
             <div className={`flex items-center gap-3.5 ${isFullScreen ? 'max-w-5xl w-full mx-auto justify-between' : ''}`}>
               
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-2xl shadow-sm">
-                    🌸
+                  <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shadow-xs">
+                    <FoxtailOrchidIcon className="w-6 h-6 text-white" />
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-amber-900 shadow-xs" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#2C5AA0] shadow-xs" />
                 </div>
 
                 <div>
-                  <h3 className="font-black text-xl sm:text-2xl tracking-tight leading-tight">
-                    Smriti
+                  <h3 className="font-black text-xl tracking-tight leading-tight">
+                    Smriti Assistant
                   </h3>
                 </div>
               </div>
@@ -518,8 +547,8 @@ export default function PatientChatbot() {
                   }}
                   className={`p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     autoSpeakEnabled 
-                      ? 'bg-white/20 text-amber-200 hover:bg-white/30 shadow-xs' 
-                      : 'bg-white/10 text-stone-400 hover:bg-white/20'
+                      ? 'bg-white/20 text-white hover:bg-white/30 shadow-xs' 
+                      : 'bg-white/10 text-white/60 hover:bg-white/20'
                   }`}
                   title={autoSpeakEnabled ? 'Voice read-aloud active (tap to mute)' : 'Voice read-aloud muted (tap to enable)'}
                 >
@@ -531,7 +560,7 @@ export default function PatientChatbot() {
                   type="button"
                   onClick={() => setIsFullScreen(!isFullScreen)}
                   className="p-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer shadow-xs"
-                  title={isFullScreen ? "Exit full screen (return to card)" : "Expand to full screen"}
+                  title={isFullScreen ? "Exit full screen" : "Expand to full screen"}
                   aria-label={isFullScreen ? "Minimize" : "Expand"}
                 >
                   {isFullScreen ? (
@@ -545,7 +574,7 @@ export default function PatientChatbot() {
                 <button
                   type="button"
                   onClick={handleClearHistory}
-                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-all cursor-pointer"
+                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
                   title="Clear conversation"
                 >
                   <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -573,45 +602,45 @@ export default function PatientChatbot() {
 
           {/* Status / Alert Banner */}
           {micStatusMsg && (
-            <div className="bg-amber-100 border-b border-amber-300 px-4 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-950 shrink-0 shadow-xs animate-in fade-in">
-              <AlertCircle className="w-4 h-4 text-amber-800 shrink-0" />
+            <div className="bg-[#FDF2F2] border-b border-[#F5B7B1] px-4 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-bold text-[#C0392B] shrink-0 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-[#C0392B] shrink-0" />
               <span>{micStatusMsg}</span>
             </div>
           )}
 
           {/* Live Recording Active Banner */}
           {isRecording && (
-            <div className="bg-rose-50 border-b border-rose-200 px-4 py-3 flex items-center justify-between text-xs sm:text-sm font-bold text-rose-900 shadow-xs">
+            <div className="bg-[#FDF2F2] border-b border-[#F5B7B1] px-4 py-3 flex items-center justify-between text-xs sm:text-sm font-bold text-[#C0392B] shadow-xs">
               <div className="flex items-center gap-3 max-w-5xl mx-auto w-full">
-                <span className="w-3.5 h-3.5 rounded-full bg-rose-600 animate-ping shrink-0" />
-                <span className="px-2.5 py-1 rounded-full bg-rose-200 text-rose-950 font-mono text-xs font-black shadow-xs">
+                <span className="w-3.5 h-3.5 rounded-full bg-[#C0392B] animate-ping shrink-0" />
+                <span className="px-2.5 py-1 rounded-full bg-rose-200 text-[#C0392B] font-mono text-xs font-black shadow-xs">
                   {`00:${recordingSeconds < 10 ? '0' : ''}${recordingSeconds}`}
                 </span>
-                <span className="truncate">🎙️ Recording your voice... Speak comfortably and tap Stop & Send</span>
+                <span className="truncate">Recording your voice... Speak clearly</span>
               </div>
               <button
                 type="button"
                 onClick={toggleVoiceInput}
-                className="text-white font-black cursor-pointer shrink-0 ml-2 bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-all text-xs sm:text-sm"
+                className="text-white font-black cursor-pointer shrink-0 ml-2 bg-[#C0392B] hover:bg-[#a93226] px-4 py-2 rounded-xl shadow-xs flex items-center gap-1.5 active:scale-95 transition-all text-xs sm:text-sm"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Stop & Send 🚀</span>
+                <span>Stop & Send</span>
               </button>
             </div>
           )}
 
           {isSpeakingAloud && (
-            <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-bold text-amber-950 shrink-0 shadow-xs">
+            <div className="bg-[#EFF4FA] border-b border-[#2C5AA0]/20 px-4 py-2.5 flex items-center justify-between text-xs sm:text-sm font-bold text-[#2C5AA0] shrink-0">
               <span className="flex items-center gap-2 max-w-5xl mx-auto w-full">
-                <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-800 animate-bounce" />
-                <span>Speaking reply aloud for you...</span>
+                <Volume2 className="w-4 h-4 text-[#2C5AA0] animate-bounce" />
+                <span>Speaking reply aloud...</span>
               </span>
               <button
                 type="button"
                 onClick={stopSpeaking}
-                className="text-amber-800 underline font-black cursor-pointer shrink-0 ml-2"
+                className="text-[#2C5AA0] underline font-black cursor-pointer shrink-0 ml-2"
               >
-                Stop Audio ⏹️
+                Stop Audio
               </button>
             </div>
           )}
@@ -628,12 +657,12 @@ export default function PatientChatbot() {
                     className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
                   >
                     {/* Avatar */}
-                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold shadow-xs ${
+                    <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold shadow-xs ${
                       isUser 
-                        ? 'bg-amber-800 text-white' 
-                        : 'bg-amber-100 border-2 border-amber-300 text-amber-900'
+                        ? 'bg-[#2C5AA0] text-white' 
+                        : 'bg-[#EFF4FA] border border-[#2C5AA0]/30 text-[#2C5AA0]'
                     }`}>
-                      {isUser ? <User className="w-5 h-5" /> : '🌸'}
+                      {isUser ? <User className="w-5 h-5" /> : <FoxtailOrchidIcon className="w-5 h-5 text-[#2C5AA0]" />}
                     </div>
 
                     {/* Message Bubble */}
@@ -641,20 +670,20 @@ export default function PatientChatbot() {
                       
                       <div className={`p-4 sm:p-5 rounded-3xl leading-relaxed shadow-xs ${
                         isUser
-                          ? 'bg-gradient-to-r from-amber-800 to-amber-900 text-white rounded-tr-xs font-medium text-base sm:text-lg'
-                          : 'bg-white text-stone-900 border border-stone-200/90 rounded-tl-xs font-medium text-base sm:text-lg'
+                          ? 'bg-[#2C5AA0] text-white rounded-tr-xs font-medium text-base sm:text-lg'
+                          : 'bg-white text-[#2B2B2B] border border-[#E5E0D8] rounded-tl-xs font-medium text-base sm:text-lg'
                       }`}>
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       </div>
 
                       {/* Bottom Timestamp & Voice replay button for assistant */}
-                      <div className={`flex items-center gap-3 text-xs sm:text-sm text-stone-400 font-medium px-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex items-center gap-3 text-xs sm:text-sm text-[#6B6B6B] font-medium px-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
                         <span>{msg.timestamp}</span>
                         {!isUser && (
                           <button
                             type="button"
                             onClick={() => speakText(msg.text)}
-                            className="hover:text-amber-800 font-bold flex items-center gap-1.5 cursor-pointer text-amber-900 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 shadow-2xs hover:bg-amber-100 transition-colors"
+                            className="hover:text-[#2C5AA0] font-bold flex items-center gap-1.5 cursor-pointer text-[#2C5AA0] bg-[#EFF4FA] px-3 py-1 rounded-full border border-[#2C5AA0]/20 shadow-2xs hover:bg-[#dce8f5] transition-colors"
                             title="Listen to this message again"
                           >
                             <Volume2 className="w-3.5 h-3.5" />
@@ -672,12 +701,12 @@ export default function PatientChatbot() {
               {/* Loading Indicator */}
               {isLoading && (
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-amber-100 border-2 border-amber-300 text-amber-900 shrink-0 flex items-center justify-center text-sm shadow-xs">
-                    🌸
+                  <div className="w-10 h-10 rounded-full bg-[#EFF4FA] border border-[#2C5AA0]/30 text-[#2C5AA0] shrink-0 flex items-center justify-center text-sm shadow-xs">
+                    <FoxtailOrchidIcon className="w-5 h-5 text-[#2C5AA0] animate-pulse" />
                   </div>
-                  <div className="p-4 sm:p-5 rounded-3xl bg-white border border-stone-200/90 rounded-tl-xs shadow-xs flex items-center gap-3 text-stone-600 text-base font-bold">
-                    <Loader2 className="w-5 h-5 text-amber-800 animate-spin" />
-                    <span className="text-sm sm:text-base text-stone-600">Smriti is thinking for you...</span>
+                  <div className="p-4 sm:p-5 rounded-3xl bg-white border border-[#E5E0D8] rounded-tl-xs shadow-xs flex items-center gap-3 text-[#6B6B6B] text-base font-bold">
+                    <Loader2 className="w-5 h-5 text-[#2C5AA0] animate-spin" />
+                    <span className="text-sm sm:text-base text-[#6B6B6B]">Thinking for you...</span>
                   </div>
                 </div>
               )}
@@ -688,16 +717,16 @@ export default function PatientChatbot() {
           </div>
 
           {/* Quick Prompt Suggestion Chips */}
-          <div className="bg-stone-100/90 border-t border-stone-200/80 shrink-0 py-2.5">
+          <div className="bg-stone-50 border-t border-[#E5E0D8] shrink-0 py-2.5">
             <div className={`${isFullScreen ? 'max-w-4xl mx-auto px-6' : 'px-4'} overflow-x-auto no-scrollbar flex items-center gap-2.5`}>
               {quickPrompts.map((p, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleSendMessage(p.query)}
-                  className="shrink-0 px-3.5 py-2 rounded-full bg-white hover:bg-amber-50 hover:border-amber-300 text-stone-800 hover:text-amber-950 border border-stone-200 text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  className="shrink-0 px-4 py-2.5 rounded-full bg-white hover:bg-[#EFF4FA] hover:border-[#2C5AA0] text-[#2B2B2B] hover:text-[#2C5AA0] border border-[#E5E0D8] text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer active:scale-95 flex items-center gap-2 min-h-[44px]"
                 >
-                  <p.icon className="w-3.5 h-3.5 text-amber-800" />
+                  <p.icon className="w-4 h-4 text-[#2C5AA0]" />
                   <span>{p.label}</span>
                 </button>
               ))}
@@ -705,7 +734,7 @@ export default function PatientChatbot() {
           </div>
 
           {/* Input & Action Bar */}
-          <div className="bg-white border-t border-stone-200 shrink-0">
+          <div className="bg-white border-t border-[#E5E0D8] shrink-0">
             <div className={`${isFullScreen ? 'max-w-4xl mx-auto p-4 sm:p-6' : 'p-3.5 sm:p-4'}`}>
               
               <form
@@ -715,23 +744,22 @@ export default function PatientChatbot() {
                 }}
                 className="flex items-center gap-2.5 sm:gap-3"
               >
-                {/* Responsive Hardware Mic Button */}
-                {/* Responsive Hardware Mic Button */}
+                {/* Responsive Hardware Mic Button (Min 56px) */}
                 <button
                   type="button"
                   onClick={toggleVoiceInput}
                   disabled={isLoading}
-                  className={`p-3.5 sm:p-4 rounded-2xl transition-all shrink-0 shadow-xs flex items-center justify-center ${
+                  className={`w-14 h-14 rounded-2xl transition-all shrink-0 shadow-xs flex items-center justify-center min-h-[56px] min-w-[56px] ${
                     isLoading 
-                      ? 'bg-stone-200 text-stone-400 cursor-not-allowed border border-stone-300'
+                      ? 'bg-stone-200 text-stone-400 cursor-not-allowed border border-[#E5E0D8]'
                       : (isRecording
-                          ? 'bg-rose-600 text-white animate-pulse ring-4 ring-rose-400/40 cursor-pointer'
-                          : 'bg-amber-100 hover:bg-amber-200 text-amber-900 active:scale-95 border border-amber-300 cursor-pointer')
+                          ? 'bg-[#C0392B] text-white animate-pulse ring-4 ring-rose-400/40 cursor-pointer'
+                          : 'bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white active:scale-95 border border-[#2C5AA0]/30 cursor-pointer')
                   }`}
-                  title={isLoading ? 'Smriti is thinking...' : (isRecording ? 'Tap to finish speaking and send' : 'Tap to speak your question')}
+                  title={isLoading ? 'Thinking...' : (isRecording ? 'Tap to finish speaking and send' : 'Tap to speak')}
                   aria-label="Voice input"
                 >
-                  {isRecording ? <Square className="w-5 h-5 sm:w-6 sm:h-6 fill-current" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-amber-900" />}
+                  {isRecording ? <Square className="w-6 h-6 fill-current" /> : <Mic className="w-6 h-6" />}
                 </button>
 
                 {/* Text Input */}
@@ -739,23 +767,23 @@ export default function PatientChatbot() {
                   type="text"
                   value={inputQuery}
                   onChange={(e) => setInputQuery(e.target.value)}
-                  placeholder={isLoading ? "Smriti is thinking..." : (isRecording ? "Recording your voice... Speak now!" : "Type or tap the mic to speak...")}
+                  placeholder={isLoading ? "Thinking..." : (isRecording ? "Recording your voice..." : "Type or tap mic to speak...")}
                   disabled={isLoading || isRecording}
-                  className={`flex-1 py-3.5 sm:py-4 px-4 sm:px-5 border-2 rounded-2xl text-base sm:text-lg font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none transition-all shadow-inner ${
+                  className={`flex-1 min-h-[56px] py-3.5 sm:py-4 px-4 sm:px-5 border-2 rounded-2xl text-base font-medium text-[#2B2B2B] placeholder:text-stone-400 focus:outline-none transition-all shadow-2xs ${
                     isRecording 
-                      ? 'bg-rose-50/40 border-rose-400 ring-4 ring-rose-300/20' 
-                      : 'bg-stone-50 border-stone-300 focus:border-amber-800 focus:bg-white focus:ring-4 focus:ring-amber-800/10'
+                      ? 'bg-[#FDF2F2] border-[#F5B7B1]' 
+                      : 'bg-[#FAF7F2] border-[#E5E0D8] focus:border-[#2C5AA0] focus:bg-white'
                   }`}
                 />
 
-                {/* Send Button */}
+                {/* Send Button (Min 56px) */}
                 <button
                   type="submit"
                   disabled={!inputQuery.trim() || isLoading || isRecording}
-                  className={`p-3.5 sm:p-4 rounded-2xl text-white font-black transition-all shrink-0 shadow-md ${
+                  className={`w-14 h-14 rounded-2xl text-white font-black transition-all shrink-0 shadow-xs flex items-center justify-center min-h-[56px] min-w-[56px] ${
                     inputQuery.trim() && !isLoading && !isRecording
-                      ? 'bg-amber-800 hover:bg-amber-900 active:scale-95 cursor-pointer'
-                      : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                      ? 'bg-[#2C5AA0] hover:bg-[#224780] active:scale-95 cursor-pointer'
+                      : 'bg-stone-200 text-stone-400 cursor-not-allowed'
                   }`}
                   title="Send message"
                 >

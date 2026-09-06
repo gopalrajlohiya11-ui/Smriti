@@ -236,7 +236,98 @@ async function seed() {
       }
     }
 
-    console.log('🎉 Seed & Clean completed successfully with 10 daily reminders per patient!');
+    // 4. Seed all 4 cognitive games for all patients
+    const GameSession = require('./models/GameSession');
+    for (const p of allPatients) {
+      const existingGameTypes = await GameSession.distinct('gameType', { patientId: p._id });
+      const nowMs = Date.now();
+
+      const gameConfigs = [
+        {
+          gameType: 'market-day-basket',
+          title: 'Market Day Basket',
+          category: 'Pattern & Math Recall',
+          score: 95,
+          difficultyLevel: 'medium',
+          duration: '2 Mins',
+          offset: 15 * 60 * 1000,
+          roundDetails: [
+            { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 8 },
+            { level: 2, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+            { level: 3, itemCount: 4, mode: 'categorization', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 11 },
+            { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+            { level: 5, itemCount: 5, mode: 'categorization', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 14 }
+          ]
+        },
+        {
+          gameType: 'sound-rhythm-match',
+          title: 'Sound & Rhythm Match',
+          category: 'Auditory & Rhythm Recall',
+          score: 90,
+          difficultyLevel: 'medium',
+          duration: '2 Mins',
+          offset: 2 * 3600 * 1000,
+          roundDetails: [
+            { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 7 },
+            { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 8 },
+            { level: 3, itemCount: 4, mode: 'rhythm_pattern', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 12 },
+            { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 13 },
+            { level: 5, itemCount: 5, mode: 'rhythm_pattern', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 15 }
+          ]
+        },
+        {
+          gameType: 'faces-family-recall',
+          title: 'Faces & Family Recall',
+          category: 'Family & People Recall',
+          score: 98,
+          difficultyLevel: 'medium',
+          duration: '2 Mins',
+          offset: 5 * 3600 * 1000,
+          roundDetails: [
+            { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+            { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+            { level: 3, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+            { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+            { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 }
+          ]
+        },
+        {
+          gameType: 'daily-routine-sequencer',
+          title: 'Daily Routine Sequencer',
+          category: 'Sequence & Routine Recall',
+          score: 92,
+          difficultyLevel: 'medium',
+          duration: '3 Mins',
+          offset: 24 * 3600 * 1000,
+          roundDetails: [
+            { level: 1, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 14 },
+            { level: 2, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 16 },
+            { level: 3, itemCount: 4, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 22 },
+            { level: 4, itemCount: 5, mode: 'routine_ordering', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 15 },
+            { level: 5, itemCount: 5, mode: 'routine_ordering', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 19 }
+          ]
+        }
+      ];
+
+      for (const g of gameConfigs) {
+        if (!existingGameTypes.includes(g.gameType)) {
+          await GameSession.create({
+            patientId: p._id,
+            gameType: g.gameType,
+            title: g.title,
+            category: g.category,
+            score: g.score,
+            difficultyLevel: g.difficultyLevel,
+            duration: g.duration,
+            timestamp: new Date(nowMs - g.offset),
+            roundDetails: g.roundDetails
+          });
+          console.log(`🎮 Seeded game session [${g.title}] for ${p.name}`);
+        }
+      }
+    }
+
+    console.log('🎉 Seed & Clean completed successfully with all 4 cognitive games and 10 daily reminders per patient!');
     process.exit(0);
   } catch (err) {
     console.error('❌ Seeding error:', err);

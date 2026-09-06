@@ -1,9 +1,11 @@
+import { calculatePatientStreak } from '../utils/streakUtils';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { initialPatients, initialRedFlags, regionalLanguages } from '../data/mockData';
 import { 
   fetchRealPatients, 
   fetchCurrentPatientApi,
   fetchDefaultPatientApi,
+  fetchPublicPatientApi,
   fetchPatientReminders, 
   toggleReminderStatus,
   dismissReminderApi,
@@ -48,7 +50,7 @@ export function AppProvider({ children }) {
       const found = regionalLanguages.find(l => l.code === savedLangCode || l.name === savedLangCode);
       if (found) {
         if (i18n && typeof i18n.changeLanguage === 'function') {
-          i18n.changeLanguage(found.code === 'as' ? 'as' : 'en');
+          i18n.changeLanguage(['as', 'hi'].includes(found.code) ? found.code : 'en');
         }
         return found;
       }
@@ -63,7 +65,7 @@ export function AppProvider({ children }) {
       localStorage.setItem('smriti_language', lang.code);
       localStorage.setItem('smriti_selected_lang', lang.code);
       if (i18n && typeof i18n.changeLanguage === 'function') {
-        i18n.changeLanguage(lang.code === 'as' ? 'as' : 'en');
+        i18n.changeLanguage(['as', 'hi'].includes(lang.code) ? lang.code : 'en');
       }
     }
   }, []);
@@ -182,7 +184,11 @@ export function AppProvider({ children }) {
           patientRecord = await fetchCurrentPatientApi();
         }
         if (!patientRecord || !patientRecord._id) {
-          patientRecord = await fetchDefaultPatientApi();
+          const currentTargetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+          patientRecord = await fetchPublicPatientApi(currentTargetId);
+          if (!patientRecord || !patientRecord._id) {
+            patientRecord = await fetchDefaultPatientApi();
+          }
         }
 
         if (patientRecord && patientRecord._id) {
@@ -233,7 +239,7 @@ export function AppProvider({ children }) {
             nativeLanguage: patientRecord.language || 'Assamese',
             avatar: patientRecord.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
             lastActive: 'Active on WhatsApp',
-            streakDays: isDemo ? 14 : 1,
+            streakDays: isDemo ? 14 : calculatePatientStreak(patientRecord, [], formattedReminders),
             cognitiveStage: patientRecord.cognitiveStage || 'Early Memory Support',
             primaryCaregiver: patientRecord.primaryCaregiver || 'Dr. Ananya Sharma',
             emergencyContact: patientRecord.emergencyContact || (patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345'),
@@ -333,7 +339,7 @@ export function AppProvider({ children }) {
           nativeLanguage: bp.language || fallbackPatient.nativeLanguage,
           avatar: bp.avatar || fallbackPatient.avatar,
           lastActive: isDemo ? 'Active on WhatsApp' : 'New Patient Registered',
-          streakDays: isDemo ? (fallbackPatient.streakDays || 14) : 0,
+          streakDays: isDemo ? (fallbackPatient.streakDays || 14) : calculatePatientStreak(bp, [], formattedReminders),
           cognitiveStage: bp.cognitiveStage || `Tier ${bp.tier || 1} Cognitive Care`,
           primaryCaregiver: bp.primaryCaregiver || fallbackPatient.primaryCaregiver,
           emergencyContact: bp.emergencyContact || (bp.phoneNumber ? `+${bp.phoneNumber}` : fallbackPatient.emergencyContact),
@@ -546,7 +552,7 @@ export function AppProvider({ children }) {
         nativeLanguage: newPatientData.nativeLanguage || "Assamese",
         avatar: newPatientData.avatar || `https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80`,
         lastActive: "Just now",
-        streakDays: 1,
+        streakDays: 0,
         cognitiveStage: newPatientData.cognitiveStage || "Early Memory Support",
         primaryCaregiver: caregiverUser.name,
         emergencyContact: newPatientData.emergencyContact || newPatientData.phone,
@@ -668,18 +674,36 @@ export function AppProvider({ children }) {
     let targetReminder = null;
 
     setPatients(prev => {
-      const updated = prev.map(p => {
-        if (p.id === patientId || p._id === patientId) {
-          const updatedReminders = (p.todayReminders || []).map(r => {
-            if (r.id === reminderId || r._id === reminderId) {
-              const nextStatus = r.status === 'completed' ? 'pending' : 'completed';
+      const targetPId = patientId || activePatientId;
+      const updated = prev.map((p, pIdx) => {
+        const isTargetPatient = 
+          !targetPId ||
+          p.id === targetPId || 
+          p._id === targetPId || 
+          p.id === activePatientId || 
+          p._id === activePatientId ||
+          (targetPId === 'pat-2' && (p.name?.includes('Meera') || pIdx === 1)) ||
+          (targetPId === 'pat-3' && (p.name?.includes('Biren') || pIdx === 2)) ||
+          (targetPId === 'pat-1' && (p.name?.includes('Ramesh') || pIdx === 0)) ||
+          prev.length === 1;
+
+        if (isTargetPatient) {
+          const updatedReminders = (p.todayReminders || []).map((r, rIdx) => {
+            const isMatch = 
+              r.id === reminderId || 
+              r._id === reminderId || 
+              (typeof reminderId === 'string' && reminderId.startsWith('rem-') && parseInt(reminderId.replace('rem-', ''), 10) - 1 === rIdx) ||
+              (typeof reminderId === 'string' && r.title && reminderId.toLowerCase() === r.title.toLowerCase());
+
+            if (isMatch) {
+              const nextStatus = (r.status === 'completed' || r.acknowledged === true) ? 'pending' : 'completed';
               targetAcknowledged = nextStatus === 'completed';
-              targetReminder = r;
-              return {
-                ...r,
-                status: nextStatus,
-                acknowledged: targetAcknowledged
+              targetReminder = { 
+                ...r, 
+                status: nextStatus, 
+                acknowledged: targetAcknowledged 
               };
+              return targetReminder;
             }
             return r;
           });
@@ -688,18 +712,21 @@ export function AppProvider({ children }) {
         }
         return p;
       });
+      try {
+        localStorage.setItem('smriti_patients', JSON.stringify(updated));
+      } catch (e) {}
       return updated;
     });
 
     if (targetPatient) {
-      await cachePatientData(patientId, targetPatient);
+      await cachePatientData(targetPatient.id || patientId, targetPatient);
     }
 
     const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
     if (!online) {
       await queueOfflineAction({
         action: 'toggleReminder',
-        patientId,
+        patientId: targetPatient?.id || patientId,
         reminderId,
         targetAcknowledged,
         reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined
@@ -712,14 +739,14 @@ export function AppProvider({ children }) {
       await toggleReminderStatus(
         reminderId,
         targetAcknowledged,
-        patientId,
+        targetPatient?.id || patientId,
         targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : {}
       );
     } catch (err) {
       console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
       await queueOfflineAction({
         action: 'toggleReminder',
-        patientId,
+        patientId: targetPatient?.id || patientId,
         reminderId,
         targetAcknowledged,
         reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined

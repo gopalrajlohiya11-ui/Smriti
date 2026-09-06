@@ -245,6 +245,20 @@ export async function fetchDefaultPatientApi() {
   }
 }
 
+// 6d. Fetch Specific Public Patient Profile
+export async function fetchPublicPatientApi(patientId = 'default') {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/public/${patientId}`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not fetch public patient ${patientId}:`, err.message);
+    return null;
+  }
+}
+
 // 7. Fetch Real Reminders for Patient
 export async function fetchPatientReminders(patientId) {
   try {
@@ -328,13 +342,20 @@ export async function deletePatientPhotoApi(patientId, photoId) {
   }
 }
 
-// 8e. Fetch Game Sessions from MongoDB
+// 8e. Fetch Game Sessions from MongoDB (GET /api/game-sessions/:patientId)
 export async function fetchPatientGameSessions(patientId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
+    const response = await fetch(`${API_BASE_URL}/game-sessions/${patientId}`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    if (!response.ok) {
+      // Fallback to /api/patients/:id/games
+      const fallbackRes = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
+        headers: getAuthHeaders()
+      });
+      if (fallbackRes.ok) return await fallbackRes.json();
+      throw new Error(`HTTP error ${response.status}`);
+    }
     return await response.json();
   } catch (err) {
     console.warn(`⚠️ Could not fetch game sessions for patient ${patientId}:`, err.message);

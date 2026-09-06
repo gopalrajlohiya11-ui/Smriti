@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../context/AppContext';
 import { submitGameSessionApi } from '../../../services/api';
 import { queueOfflineAction } from '../../../utils/offlineDb';
+import { speakLocalized, stopSpeech } from '../../../utils/speechUtils';
 import confetti from 'canvas-confetti';
 import { 
   ArrowLeft, 
@@ -56,6 +57,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'bhut_jolokia',
     name: 'King Chilli / Bhut Jolokia',
+    hindiName: 'भूत जोलोकिया (तीखी राजा मिर्च)',
     localName: 'ভূত জলকীয়া',
     emoji: '🌶️',
     image: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80',
@@ -70,6 +72,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'bamboo_shoot',
     name: 'Tender Bamboo Shoot (Khorisa)',
+    hindiName: 'ताज़ा बांस का करील (खोरिसा)',
     localName: 'বাঁহ গাজ',
     emoji: '🎍',
     image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80',
@@ -84,6 +87,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'assam_tea',
     name: 'Fresh Assam Tea Leaves',
+    hindiName: 'असमिया हरी चाय पत्ती',
     localName: 'অসমীয়া সেউজীয়া চাহ',
     emoji: '🍵',
     image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80',
@@ -98,6 +102,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'kaji_nemu',
     name: 'Assam Lemon (Kaji Nemu)',
+    hindiName: 'असम कागज़ी नींबू (काजी नेमु)',
     localName: 'কাজী নেমু',
     emoji: '🍋',
     image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&auto=format&fit=crop&q=80',
@@ -112,6 +117,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'pineapple',
     name: 'Tripura Queen Pineapple',
+    hindiName: 'त्रिपुरा रसीला अनानास',
     localName: 'ৰসাল আনাৰস',
     emoji: '🍍',
     image: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&auto=format&fit=crop&q=80',
@@ -126,6 +132,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'banana',
     name: 'Malbhog Sweet Banana',
+    hindiName: 'मीठा मालभोग केला',
     localName: 'মালভোগ কল',
     emoji: '🍌',
     image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80',
@@ -140,6 +147,7 @@ const PRODUCE_CATALOGUE = [
   {
     id: 'lai_xaak',
     name: 'Lai Xaak (Mustard Greens)',
+    hindiName: 'लाई साग (सरसों का साग)',
     localName: 'লাই শাক',
     emoji: '🥬',
     image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&auto=format&fit=crop&q=80',
@@ -198,7 +206,7 @@ const PRODUCE_CATALOGUE = [
 export default function MarketDayBasket() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activePatient, isOnline, toggleReminder, loadRealData } = useApp();
+  const { activePatient, isOnline, toggleReminder, loadRealData, currentLanguage } = useApp();
 
   // Total levels/rounds per play session
   const TOTAL_ROUNDS = 5;
@@ -224,9 +232,19 @@ export default function MarketDayBasket() {
   const [isTransitioningLevel, setIsTransitioningLevel] = useState(false);
   const [nextLevelInfo, setNextLevelInfo] = useState(null);
   const transitionTimerRef = useRef(null);
+  const autoProceedTimerRef = useRef(null);
 
   // Audio / Speech State
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
+      stopSpeech();
+    };
+  }, []);
 
   // Round Interactive State
   const [selectedItemsInRound, setSelectedItemsInRound] = useState(new Set());
@@ -239,7 +257,74 @@ export default function MarketDayBasket() {
   const sessionStartTimeRef = useRef(Date.now());
 
   // Generate Round Definitions
+    // Generate Round Definitions with multi-language support
+  const isHindi = (currentLanguage?.code || '').startsWith('hi');
+
   const roundsConfig = useMemo(() => {
+    if (isHindi) {
+      return [
+        {
+          id: 'round-1',
+          levelNumber: 1,
+          type: 'categorization',
+          title: 'सब्जी मंडी की हरी टोकरी',
+          instruction: 'अपनी बास्केट में डालने के लिए केवल हरी सब्जियाँ और चाय की पत्तियाँ चुनें!',
+          criteria: (item) => item.isGreen === true && item.isVegetable === true,
+          criteriaHint: 'हरी पत्तेदार सब्जियां और कोमल पत्ते',
+          targetLabel: 'हरी सब्जियाँ 🥬',
+          themeColor: 'from-emerald-600 to-teal-700'
+        },
+        {
+          id: 'round-2',
+          levelNumber: 2,
+          type: 'math',
+          title: 'सुबह की चाय पत्ती खरीदारी',
+          scenario: 'आप ₹10 प्रति पैकेट की दर से असम चाय पत्ती के 2 पैकेट खरीदते हैं। कुल मूल्य कितना होगा?',
+          itemEmoji: '🍵',
+          itemImage: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80',
+          mathEquation: '2 × ₹10 = ₹20',
+          correctAnswer: 20,
+          options: [15, 20, 25, 30],
+          themeColor: 'from-amber-600 to-orange-700'
+        },
+        {
+          id: 'round-3',
+          levelNumber: 3,
+          type: 'categorization',
+          title: 'मीठे और रसीले ताज़ा फल',
+          instruction: 'अपनी बास्केट में रखने के लिए केवल ताज़ा फल चुनें!',
+          criteria: (item) => item.isFruit === true,
+          criteriaHint: 'काजी नेमु, पपीता, कमरख, केला',
+          targetLabel: 'रसीले फल 🍋',
+          themeColor: 'from-orange-500 to-amber-600'
+        },
+        {
+          id: 'round-4',
+          levelNumber: 4,
+          type: 'math',
+          title: 'ताज़ा नींबू और सब्जी हिसाब',
+          scenario: 'आप ₹35 के ताज़ा नींबू के लिए ₹50 का नोट देते हैं। आपको कितने रुपये वापस मिलेंगे?',
+          itemEmoji: '🍋',
+          itemImage: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&auto=format&fit=crop&q=80',
+          mathEquation: '₹50 - ₹35 = ₹15',
+          correctAnswer: 15,
+          options: [10, 15, 20, 25],
+          themeColor: 'from-emerald-600 to-teal-700'
+        },
+        {
+          id: 'round-5',
+          levelNumber: 5,
+          type: 'categorization',
+          title: 'उत्तर-पूर्व के विशेष स्थानीय उत्पाद',
+          instruction: 'अपनी बास्केट पूरी करने के लिए उत्तर-पूर्व के विशेष स्थानीय उत्पाद चुनें!',
+          criteria: (item) => item.isNER === true || item.isRegionalSpecialty === true,
+          criteriaHint: 'ढेकीया साग, भूत जोलोकिया, बांस का करील, काजी नेमु',
+          targetLabel: 'स्थानीय विशेष उत्पाद',
+          themeColor: 'from-purple-600 to-indigo-700'
+        }
+      ];
+    }
+
     return [
       {
         id: 'round-1',
@@ -269,55 +354,80 @@ export default function MarketDayBasket() {
         id: 'round-3',
         levelNumber: 3,
         type: 'categorization',
-        title: 'Sweet & Refreshing Fruits',
-        instruction: 'Tap ALL the Delicious Fruits (Pineapple, Banana, Lemon, Coconut)!',
+        title: 'Sweet & Tangy Fresh Market Fruits',
+        instruction: 'Tap ONLY the Fresh Fruits to place inside your basket!',
         criteria: (item) => item.isFruit === true,
-        criteriaHint: 'Juicy lemons, sweet pineapples, bananas & coconuts',
-        targetLabel: 'Fresh Fruits 🍍',
-        themeColor: 'from-yellow-500 to-amber-700'
+        criteriaHint: 'Kazi Nemu, Papaya, Starfruit, Bananas',
+        targetLabel: 'Juicy Fruits 🍋',
+        themeColor: 'from-orange-500 to-amber-600'
       },
       {
         id: 'round-4',
         levelNumber: 4,
         type: 'math',
-        title: 'Bazaar Change Return',
-        scenario: 'You bought spicy King Chilli for ₹35 and gave a ₹50 note. How much change should you get back?',
-        itemEmoji: '🌶️',
-        itemImage: 'https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=400&auto=format&fit=crop&q=80',
-        mathEquation: '₹50 − ₹35 = ₹15',
+        title: 'Fresh Lemons & Vegetable Math',
+        scenario: 'You hand the vendor a ₹50 note for ₹35 worth of Kazi Nemu lemons. How much change do you receive?',
+        itemEmoji: '🍋',
+        itemImage: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&auto=format&fit=crop&q=80',
+        mathEquation: '₹50 - ₹35 = ₹15',
         correctAnswer: 15,
         options: [10, 15, 20, 25],
-        themeColor: 'from-rose-600 to-red-700'
+        themeColor: 'from-emerald-600 to-teal-700'
       },
       {
         id: 'round-5',
         levelNumber: 5,
         type: 'categorization',
-        title: 'Assam Signature Produce',
-        instruction: 'Tap ALL authentic North-East regional specialties for your family dinner!',
-        criteria: (item) => item.isNER === true,
-        criteriaHint: 'Specialties native to Assam, Nagaland & Tripura',
-        targetLabel: 'NER Specialties 🌸',
+        title: 'North-East Regional Market Delicacies',
+        instruction: 'Tap the Authentic NE Regional Special produce to complete your basket!',
+        criteria: (item) => item.isNER === true || item.isRegionalSpecialty === true,
+        criteriaHint: 'Dhekia Xak, Bhut Jolokia, Bamboo Shoot, Kazi Nemu',
+        targetLabel: 'Regional Specialties',
         themeColor: 'from-purple-600 to-indigo-700'
       }
     ];
-  }, []);
+  }, [isHindi]);
 
   const activeRound = roundsConfig[currentRoundIndex] || roundsConfig[0];
 
-  // Helper to Speak Instructions for Elderly Clarity
-  const speakInstruction = useCallback((text) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.85;
-      utterance.pitch = 1.0;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
+  // Get localized speech text for current round
+  const getRoundSpeechText = useCallback((round) => {
+    const isHindi = (currentLanguage?.code || '').startsWith('hi');
+    if (isHindi) {
+      if (round.id === 'round-1') {
+        return "स्तर 1। अपनी बास्केट में डालने के लिए केवल हरी सब्जियाँ और चाय की पत्तियाँ चुनें!";
+      }
+      if (round.id === 'round-2') {
+        return "स्तर 2। आप ₹10 प्रति पैकेट की दर से असम चाय पत्ती के 2 पैकेट खरीदते हैं। कुल मूल्य कितना होगा?";
+      }
+      if (round.id === 'round-3') {
+        return "स्तर 3। अपनी बास्केट में रखने के लिए केवल ताज़ा फल चुनें!";
+      }
+      if (round.id === 'round-4') {
+        return "स्तर 4। आप ₹35 के ताज़ा नींबू के लिए ₹50 का नोट देते हैं। आपको कितने रुपये वापस मिलेंगे?";
+      }
+      if (round.id === 'round-5') {
+        return "स्तर 5। अपनी बास्केट पूरी करने के लिए उत्तर-पूर्व के विशेष स्थानीय उत्पाद चुनें!";
+      }
     }
-  }, []);
+    return round.type === 'categorization'
+      ? `${round.title}. ${round.instruction}`
+      : `${round.title}. ${round.scenario}`;
+  }, [currentLanguage]);
+
+
+  // Helper to Speak Instructions for Elderly Clarity (always cancels previous speech to prevent clashes)
+  const speakInstruction = useCallback((text) => {
+    speakLocalized({
+      text,
+      langCode: currentLanguage?.code || 'en',
+      rate: 0.85,
+      pitch: 1.0,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false)
+    });
+  }, [currentLanguage]);
 
   // Compute Current Session Accuracy
   const currentAccuracy = useMemo(() => {
@@ -340,11 +450,11 @@ export default function MarketDayBasket() {
     const numTargets = Math.min(shuffledMatching.length, Math.max(1, Math.floor(itemCount / 2) + 1));
     const numDistractors = Math.max(1, itemCount - numTargets);
 
-    const selectedTargets = shuffledMatching.slice(0, numTargets);
-    const selectedDistractors = shuffledNonMatching.slice(0, numDistractors);
+    const chosenTargets = shuffledMatching.slice(0, numTargets);
+    const chosenDistractors = shuffledNonMatching.slice(0, numDistractors);
 
-    const combined = [...selectedTargets, ...selectedDistractors].sort(() => 0.5 - Math.random());
-    return combined;
+    const merged = [...chosenTargets, ...chosenDistractors].sort(() => 0.5 - Math.random());
+    return merged;
   }, [activeRound, itemCount]);
 
   // Reset per-round timer and counters when a new round starts
@@ -364,16 +474,11 @@ export default function MarketDayBasket() {
     }
   }, [currentRoundIndex, activeRound, isTransitioningLevel, isSessionComplete, speakInstruction]);
 
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-    };
-  }, []);
-
-  // Handle Categorization Item Tap
+  // Handle Item Tap / Click (Categorization Mode)
   const handleItemTap = (item) => {
-    if (roundCompleted) return;
+    if (roundCompleted || isTransitioningLevel || isSessionComplete) return;
+
+    if (selectedItemsInRound.has(item.id)) return;
 
     setTotalAttempts(prev => prev + 1);
     roundAttemptsRef.current += 1;
@@ -406,6 +511,12 @@ export default function MarketDayBasket() {
           origin: { y: 0.6 },
           colors: ['#15803d', '#f59e0b', '#9a3412']
         });
+
+        // Auto-advance automatically after 1.2s
+        if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
+        autoProceedTimerRef.current = setTimeout(() => {
+          handleNextRound();
+        }, 1200);
       }
     } else {
       // Wrong Match: Gentle wobble shake without score penalty
@@ -414,9 +525,11 @@ export default function MarketDayBasket() {
     }
   };
 
+  const handleItemClick = handleItemTap;
+
   // Handle Math Answer Selection
   const handleMathAnswer = (option) => {
-    if (roundCompleted) return;
+    if (roundCompleted || isTransitioningLevel || isSessionComplete) return;
 
     setTotalAttempts(prev => prev + 1);
     roundAttemptsRef.current += 1;
@@ -438,6 +551,12 @@ export default function MarketDayBasket() {
         origin: { y: 0.6 },
         colors: ['#15803d', '#22c55e', '#f59e0b']
       });
+
+      // Auto-advance automatically after 1.2s
+      if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
+      autoProceedTimerRef.current = setTimeout(() => {
+        handleNextRound();
+      }, 1200);
     } else {
       setMathAnswerFeedback('wrong');
       setTimeout(() => {
@@ -447,8 +566,10 @@ export default function MarketDayBasket() {
     }
   };
 
-  // Advance to Next Level with Warm Interstitial Transition Moment
+  // Advance to Next Level with Warm Interstitial Transition Moment (Auto Proceeds)
   const handleNextRound = () => {
+    if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
+
     // 1. Calculate per-round stats for ML Logging
     const roundTimeTaken = Math.max(1, Math.round((Date.now() - roundStartTimeRef.current) / 1000));
     const roundAcc = roundAttemptsRef.current > 0 
@@ -482,27 +603,30 @@ export default function MarketDayBasket() {
     const nextLevelNum = currentRoundIndex + 2;
     const nextRoundObj = roundsConfig[currentRoundIndex + 1];
 
+    const isHindi = (currentLanguage?.code || '').startsWith('hi');
     setNextLevelInfo({
       levelNumber: nextLevelNum,
-      title: nextRoundObj?.title || `Level ${nextLevelNum}`,
-      type: nextRoundObj?.type === 'categorization' ? 'Produce Search 🧺' : 'Shopping Math 🧮'
+      title: nextRoundObj?.title || (isHindi ? `स्तर ${nextLevelNum}` : `Level ${nextLevelNum}`),
+      type: isHindi 
+        ? (nextRoundObj?.type === 'categorization' ? 'फल-सब्जी खोज 🧺' : 'बाज़ार गणित 🧮')
+        : (nextRoundObj?.type === 'categorization' ? 'Produce Search 🧺' : 'Shopping Math 🧮')
     });
 
     setIsTransitioningLevel(true);
 
-    // Provide warm celebratory spoken reinforcement
-    speakInstruction(`Great job! Moving to Level ${nextLevelNum}`);
+    speakInstruction(isHindi ? `शानदार! स्तर ${nextLevelNum} शुरू हो रहा है` : `Great job! Moving to Level ${nextLevelNum}`);
 
-    // Auto-advance after 2.2 seconds (or user can tap immediately)
+    // Auto-advance after 1.8 seconds automatically
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     transitionTimerRef.current = setTimeout(() => {
       proceedToNextLevel();
-    }, 2200);
+    }, 1800);
   };
 
   // Actually switch to next level state
   const proceedToNextLevel = () => {
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
     setIsTransitioningLevel(false);
     setNextLevelInfo(null);
     setCurrentRoundIndex(prev => prev + 1);
@@ -616,26 +740,28 @@ export default function MarketDayBasket() {
           <div className="flex items-center gap-3.5">
             <button
               type="button"
-              onClick={() => navigate('/patient')}
-              className="px-3.5 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 border-2 border-stone-300 font-black text-sm flex items-center gap-2 transition-all cursor-pointer group active:scale-95 shrink-0"
-              title="Return to Patient Dashboard"
+              onClick={() => navigate('/patient/games')}
+              className="px-4 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-800 border-2 border-rose-300 font-black text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer group active:scale-95 shrink-0 shadow-xs"
+              title="Leave Game and return to Patient Dashboard"
             >
-              <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1 text-amber-800" />
-              <span className="hidden xs:inline">Back</span>
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1 text-rose-800 stroke-[3]" />
+              <span>{isHindi ? 'खेल छोड़ें' : 'Leave Game'}</span>
             </button>
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-950 text-xs sm:text-sm font-black border-2 border-amber-300 flex items-center gap-1.5 shadow-xs">
                   <Star className="w-4 h-4 fill-amber-600 text-amber-600" />
-                  <span>Level {currentRoundIndex + 1} of {TOTAL_ROUNDS}</span>
+                  <span>{isHindi ? `स्तर ${currentRoundIndex + 1} / ${TOTAL_ROUNDS}` : `Level ${currentRoundIndex + 1} of ${TOTAL_ROUNDS}`}</span>
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300">
-                  {mapItemCountToDifficulty(itemCount).toUpperCase()}
-                </span>
+    {isHindi 
+      ? (mapItemCountToDifficulty(itemCount) === 'easy' ? 'सरल' : mapItemCountToDifficulty(itemCount) === 'medium' ? 'मध्यम' : 'कठिन')
+      : mapItemCountToDifficulty(itemCount).toUpperCase()}
+  </span>
               </div>
               <h1 className="text-lg sm:text-xl font-black text-stone-950 mt-1">
-                Market Day Basket (হাটৰ পাচলি)
+                {isHindi ? 'सब्जी मंडी की टोकरी (Market Day Basket)' : 'Market Day Basket (হাটৰ পাচলি)'}
               </h1>
             </div>
           </div>
@@ -647,7 +773,7 @@ export default function MarketDayBasket() {
             <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black flex items-center gap-2 shadow-sm border border-amber-600">
               <Sparkles className="w-5 h-5 text-amber-100 animate-pulse" />
               <div>
-                <p className="text-[10px] font-bold text-amber-100 uppercase leading-none">Live Score</p>
+                <p className="text-[10px] font-bold text-amber-100 uppercase leading-none">{isHindi ? 'लाइव स्कोर' : 'Live Score'}</p>
                 <p className="text-lg sm:text-xl font-black leading-none mt-0.5">{runningScore} pts</p>
               </div>
             </div>
@@ -693,8 +819,10 @@ export default function MarketDayBasket() {
                   {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : idx + 1}
                 </div>
                 <span className="hidden md:inline text-xs font-bold text-stone-700">
-                  {round.type === 'categorization' ? 'Basket' : 'Math'}
-                </span>
+    {isHindi 
+      ? (round.type === 'categorization' ? 'टोकरी' : 'गणित')
+      : (round.type === 'categorization' ? 'Basket' : 'Math')}
+  </span>
                 {idx < roundsConfig.length - 1 && (
                   <div className={`hidden sm:block w-8 lg:w-14 h-1 rounded-full ${idx < currentRoundIndex ? 'bg-emerald-500' : 'bg-stone-200'}`} />
                 )}
@@ -714,25 +842,23 @@ export default function MarketDayBasket() {
 
             <div className="space-y-2">
               <span className="px-4 py-1.5 rounded-full bg-white/20 border border-white/40 text-xs sm:text-sm font-black uppercase tracking-wider inline-block">
-                Level {currentRoundIndex + 1} Complete! 🌟
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-                Great Job! Moving to Level {nextLevelInfo.levelNumber}
-              </h2>
-              <p className="text-amber-100 font-bold text-base sm:text-lg max-w-md mx-auto">
-                Next Challenge: {nextLevelInfo.title} ({nextLevelInfo.type})
-              </p>
+    {isHindi ? `स्तर ${currentRoundIndex + 1} पूरा हुआ! 🌟` : `Level ${currentRoundIndex + 1} Complete! 🌟`}
+  </span>
+  <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
+    {isHindi ? `शानदार! स्तर ${nextLevelInfo.levelNumber} शुरू हो रहा है` : `Great Job! Moving to Level ${nextLevelInfo.levelNumber}`}
+  </h2>
+  <p className="text-amber-100 font-bold text-base sm:text-lg max-w-md mx-auto">
+    {isHindi ? `अगली चुनौती: ${nextLevelInfo.title} (${nextLevelInfo.type})` : `Next Challenge: ${nextLevelInfo.title} (${nextLevelInfo.type})`}
+  </p>
             </div>
 
-            <div className="pt-2 flex justify-center">
-              <button
-                type="button"
-                onClick={proceedToNextLevel}
-                className="px-8 py-3.5 rounded-2xl bg-white text-stone-950 hover:bg-stone-100 font-black text-base sm:text-lg shadow-lg flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
-              >
-                <span>Continue to Level {nextLevelInfo.levelNumber}</span>
-                <ChevronRight className="w-6 h-6 text-amber-700 stroke-[3]" />
-              </button>
+            <div className="pt-2 max-w-xs mx-auto space-y-2">
+              <div className="w-full bg-white/30 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-white h-full w-full animate-pulse transition-all" />
+              </div>
+              <p className="text-xs font-bold text-white/80">
+    {isHindi ? `स्तर ${nextLevelInfo.levelNumber} शुरू हो रहा है...` : `Starting Level ${nextLevelInfo.levelNumber}...`}
+  </p>
             </div>
           </div>
         )}
@@ -803,9 +929,7 @@ export default function MarketDayBasket() {
 
                         {/* Produce Titles */}
                         <div className="pt-2 w-full">
-                          <p className="text-xs sm:text-sm font-black leading-tight line-clamp-1 text-stone-950">
-                            {item.name}
-                          </p>
+                          <p className="text-xs sm:text-sm font-black leading-tight line-clamp-1 text-stone-950">{(currentLanguage?.code || '').startsWith('hi') ? (item.hindiName || item.name) : item.name}</p>
                           <p className="text-[11px] sm:text-xs font-bold text-stone-600 mt-0.5">
                             {item.localName}
                           </p>
@@ -819,22 +943,16 @@ export default function MarketDayBasket() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t-2 border-stone-100">
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-black text-stone-700 bg-stone-100 px-4 py-2.5 rounded-2xl border border-stone-300">
                     <ShoppingBasket className="w-5 h-5 text-amber-800" />
-                    <span>Basket Items: {collectedBasket.length} collected</span>
+                    <span>{isHindi ? `टोकरी में वस्तुएं: ${collectedBasket.length} एकत्रित` : `Basket Items: ${collectedBasket.length} collected`}</span>
                   </div>
 
                   {roundCompleted ? (
-                    <button
-                      type="button"
-                      onClick={handleNextRound}
-                      className="px-8 py-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-base sm:text-lg font-black shadow-md flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-95 animate-in fade-in"
-                    >
-                      <span>{currentRoundIndex + 1 < TOTAL_ROUNDS ? `Proceed to Level ${currentRoundIndex + 2}` : 'Complete Challenge'}</span>
-                      <ChevronRight className="w-6 h-6 stroke-[3]" />
-                    </button>
+                    <div className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-100 text-emerald-950 font-black text-xs sm:text-sm border border-emerald-300 animate-pulse">
+                      <Check className="w-5 h-5 text-emerald-700 stroke-[3]" />
+                      <span>{(currentLanguage?.code || '').startsWith('hi') ? "बधाई! टोकरी पूरी हुई! अगली चुनौती शुरू हो रही है..." : "Basket Complete! Advancing to next challenge..."}</span>
+                    </div>
                   ) : (
-                    <p className="text-xs sm:text-sm font-bold text-stone-500 italic">
-                      Tap all matching produce to complete this basket!
-                    </p>
+                    <p className="text-xs sm:text-sm font-bold text-stone-500 italic">{(currentLanguage?.code || '').startsWith('hi') ? "अपनी टोकरी पूरी करने के लिए सभी सही फल-सब्जियों पर टैप करें!" : "Tap all matching produce to complete this basket!"}</p>
                   )}
                 </div>
 
@@ -891,21 +1009,16 @@ export default function MarketDayBasket() {
                   })}
                 </div>
 
-                {/* Feedback & Next Round Trigger */}
+                {/* Feedback & Auto Progression */}
                 {roundCompleted && (
-                  <div className="p-4 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in">
+                  <div className="p-4 bg-emerald-50 border-2 border-emerald-300 rounded-2xl flex items-center justify-between gap-3 animate-in fade-in">
                     <p className="text-base font-black text-emerald-950 flex items-center gap-2">
                       <CheckCircle2 className="w-6 h-6 text-emerald-700" />
                       <span>Correct calculation! ({activeRound.mathEquation})</span>
                     </p>
-
-                    <button
-                      type="button"
-                      onClick={handleNextRound}
-                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-base font-black shadow-xs transition-all cursor-pointer active:scale-95"
-                    >
-                      {currentRoundIndex + 1 < TOTAL_ROUNDS ? `Level ${currentRoundIndex + 2} →` : 'Finish →'}
-                    </button>
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-xl animate-pulse">
+                      Advancing...
+                    </span>
                   </div>
                 )}
 
@@ -927,41 +1040,45 @@ export default function MarketDayBasket() {
 
             <div className="space-y-2">
               <span className="px-4 py-1 rounded-full bg-emerald-100 text-emerald-950 text-xs font-black uppercase tracking-wider border border-emerald-300">
-                ★ All 5 Levels Completed! ★
+                {isHindi ? '★ सभी 5 स्तर पूरे हुए! ★' : '★ All 5 Levels Completed! ★'}
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-stone-950">
-                Wonderful job at the Market, {activePatient?.name?.split(' ')[0] || 'Elder'}! 🌟
+                {isHindi ? `मंडी में शानदार अभ्यास, ${activePatient?.name?.split(' ')[0] || ''} जी! 🌟` : `Wonderful job at the Market, ${activePatient?.name?.split(' ')[0] || 'Elder'}! 🌟`}
               </h2>
               <p className="text-stone-700 font-bold text-base max-w-lg mx-auto">
-                You scored <span className="font-black text-amber-800">{finalScoreSummary?.score || runningScore} points</span> across all 5 levels and kept your cognitive memory streak active!
+                {isHindi ? (
+    <span>आपने सभी 5 स्तरों में <span className="font-black text-amber-800">{finalScoreSummary?.score || runningScore} अंक</span> प्राप्त किए और अपनी स्मृति स्ट्रीक को सक्रिय रखा!</span>
+  ) : (
+    <span>You scored <span className="font-black text-amber-800">{finalScoreSummary?.score || runningScore} points</span> across all 5 levels and kept your cognitive memory streak active!</span>
+  )}
               </p>
             </div>
 
             {/* Score Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
               <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-200">
-                <p className="text-xs font-black text-amber-900 uppercase">Total Score</p>
+                <p className="text-xs font-black text-amber-900 uppercase">{isHindi ? 'कुल अंक' : 'Total Score'}</p>
                 <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
                   {finalScoreSummary?.score || runningScore} pts
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200">
-                <p className="text-xs font-black text-emerald-900 uppercase">Accuracy</p>
+                <p className="text-xs font-black text-emerald-900 uppercase">{isHindi ? 'सटीकता' : 'Accuracy'}</p>
                 <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
                   {finalScoreSummary?.accuracy || 100}%
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-sky-50 border-2 border-sky-200">
-                <p className="text-xs font-black text-sky-900 uppercase">Produce Collected</p>
+                <p className="text-xs font-black text-sky-900 uppercase">{isHindi ? 'एकत्रित फल-सब्जियां' : 'Produce Collected'}</p>
                 <p className="text-2xl sm:text-3xl font-black text-stone-950 mt-1">
                   {finalScoreSummary?.itemsCollected || 0} 🧺
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-200">
-                <p className="text-xs font-black text-purple-900 uppercase">Levels Cleared</p>
+                <p className="text-xs font-black text-purple-900 uppercase">{isHindi ? 'पूरे किए गए स्तर' : 'Levels Cleared'}</p>
                 <p className="text-xl sm:text-2xl font-black text-stone-950 mt-1">
                   5 / 5 🌟
                 </p>
@@ -987,7 +1104,7 @@ export default function MarketDayBasket() {
             {/* Routine & Streak Celebration Card */}
             <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-black flex items-center justify-center gap-3 shadow-md max-w-md mx-auto">
               <Flame className="w-7 h-7 fill-amber-200 text-amber-200 animate-bounce" />
-              <span className="text-base sm:text-lg">Daily Memory Routine Completed! +1 Day Streak 🔥</span>
+              <span className="text-base sm:text-lg">{isHindi ? 'दैनिक स्मृति अभ्यास पूरा हुआ! +1 दिन स्ट्रीक 🔥' : 'Daily Memory Routine Completed! +1 Day Streak 🔥'}</span>
             </div>
 
             {/* Bottom Actions */}
@@ -998,15 +1115,15 @@ export default function MarketDayBasket() {
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-900 font-black text-base border-2 border-stone-300 shadow-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
               >
                 <RotateCcw className="w-5 h-5" />
-                <span>Play Another Session</span>
+                <span>{isHindi ? 'फिर से खेलें' : 'Play Another Session'}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => navigate('/patient')}
+                onClick={() => navigate('/patient/games')}
                 className="w-full sm:w-auto px-9 py-4 rounded-2xl bg-amber-800 hover:bg-amber-900 text-white font-black text-base shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
               >
-                <span>Return to Daily Dashboard 🌸</span>
+                <span>{isHindi ? 'खेल सूची पर वापस जाएं' : 'Return to Daily Dashboard'}</span>
               </button>
             </div>
 

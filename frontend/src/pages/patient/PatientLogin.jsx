@@ -17,7 +17,9 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import FoxtailOrchidIcon from '../../components/FoxtailOrchidIcon';
 import { GoogleLogin } from '@react-oauth/google';
+import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
@@ -40,92 +42,78 @@ export default function PatientLogin({ defaultRole }) {
 
   // Admin Form States
   const [adminEmail, setAdminEmail] = useState('dr.ananya@smriti.in');
-  const [adminPassword, setAdminPassword] = useState('demo1234');
+  const [adminPassword, setAdminPassword] = useState('caregiver123');
   const [rememberAdmin, setRememberAdmin] = useState(true);
 
-  // UI Feedback
+  // UI Feedback States
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [biometricStatus, setBiometricStatus] = useState(''); // 'verifying' | 'success' | 'failed' | ''
-  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
-
-  // Voice Guidance State
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const speechSynthRef = useRef(null);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [biometricScanning, setBiometricScanning] = useState(false);
 
-  // Check WebAuthn Biometric Support
+  // Check WebAuthn support
   useEffect(() => {
-    if (
-      window.PublicKeyCredential && 
-      typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function'
-    ) {
-      window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-        .then(available => {
-          setIsBiometricAvailable(available || true);
-        })
-        .catch(() => {
-          setIsBiometricAvailable(true);
-        });
-    } else {
+    if (window.PublicKeyCredential) {
       setIsBiometricAvailable(true);
     }
   }, []);
 
   // Voice Guidance implementation using Web Speech API
   const handleVoiceGuidance = () => {
-    if (!('speechSynthesis' in window)) {
-      setErrorMsg('Voice guidance is not supported in this browser.');
-      return;
-    }
-
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      stopSpeech();
       setIsSpeaking(false);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    const isHindi = (currentLanguage?.code || '').startsWith('hi');
+    const isAssamese = (currentLanguage?.code || '').startsWith('as');
 
     let guidanceText = '';
-    if (activeRole === 'patient') {
-      guidanceText = `Welcome to Smriti. Please enter your name, age, and 4-digit PIN using the large buttons below. You can also sign in with Google or fingerprint unlock.`;
+    if (isHindi) {
+      if (activeRole === 'patient') {
+        guidanceText = 'स्मृति में आपका स्वागत है। कृपया नीचे दिए गए बड़े बटनों का उपयोग करके अपना नाम, उम्र और 4-अंकों का पिन दर्ज करें। आप बायोमेट्रिक या गूगल से भी साइन इन कर सकते हैं।';
+      } else {
+        guidanceText = 'स्मृति एडमिन में आपका स्वागत है। कृपया क्लिनिकल डैशबोर्ड तक पहुंचने के लिए अपना ईमेल और पासवर्ड दर्ज करें।';
+      }
+    } else if (isAssamese) {
+      guidanceText = 'স্মৃতিত আপোনাক স্বাগতম। অনুগ্ৰহ কৰি তলৰ ডাঙৰ বুটামবোৰ ব্যৱহাৰ কৰি আপোনাৰ নাম আৰু ৪-অংকৰ পিন প্ৰৱেশ কৰক।';
     } else {
-      guidanceText = `Welcome to Smriti Admin. Please enter your caregiver email and password, or sign in with Google or fingerprint unlock to access clinical dashboards.`;
+      if (activeRole === 'patient') {
+        guidanceText = 'Welcome to Smriti. Please enter your name, age, and 4-digit PIN using the large buttons below. You can also sign in with Google or fingerprint unlock.';
+      } else {
+        guidanceText = 'Welcome to Smriti Admin. Please enter your caregiver email and password, or sign in with Google or fingerprint unlock to access clinical dashboards.';
+      }
     }
 
-    const utterance = new SpeechSynthesisUtterance(guidanceText);
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    const friendlyVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('en-GB') || v.lang.includes('en-US'));
-    if (friendlyVoice) utterance.voice = friendlyVoice;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    speechSynthRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    speakLocalized({
+      text: guidanceText,
+      langCode: currentLanguage?.code || 'en',
+      rate: 0.9,
+      pitch: 1.0,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+      onNotice: (notice) => {
+        setErrorMsg(notice);
+        setTimeout(() => setErrorMsg(''), 4000);
+      }
+    });
   };
 
   const speakText = (text) => {
-    if (!text || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech synthesis error:', e);
-    }
+    speakLocalized({
+      text,
+      langCode: currentLanguage?.code || 'en',
+      rate: 0.9,
+      pitch: 1.0
+    });
   };
 
   useEffect(() => {
     return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopSpeech();
     };
   }, [activeRole]);
 
@@ -323,8 +311,8 @@ export default function PatientLogin({ defaultRole }) {
               onClick={handleVoiceGuidance}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border ${
                 isSpeaking 
-                  ? 'bg-amber-800 text-white border-amber-900 animate-pulse shadow-sm' 
-                  : 'bg-white hover:bg-amber-50 text-stone-700 hover:text-amber-900 border-stone-300 shadow-2xs'
+                  ? 'bg-[#B5502E] text-white border-[#B5502E] animate-pulse shadow-xs' 
+                  : 'bg-white hover:bg-[#FDF6F0] text-[#2B2B2B] hover:text-[#B5502E] border-[#E5E0D8] shadow-2xs'
               }`}
               title="Listen to instructions aloud"
             >
@@ -335,21 +323,21 @@ export default function PatientLogin({ defaultRole }) {
                 </>
               ) : (
                 <>
-                  <Volume2 className="w-3.5 h-3.5 text-amber-800" />
+                  <Volume2 className="w-3.5 h-3.5 text-[#B5502E]" />
                   <span>Voice Guidance 🔊</span>
                 </>
               )}
             </button>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight flex items-center justify-center gap-2.5">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#2B2B2B] tracking-tight flex items-center justify-center gap-2.5">
             <span>Smriti</span>
-            <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-800 text-white text-base sm:text-lg shadow-2xs">
-              🌸
+            <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#B5502E] text-white text-base sm:text-lg shadow-2xs">
+              <FoxtailOrchidIcon className="w-5 h-5 text-white" />
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-stone-600 font-medium">
+          <p className="text-sm sm:text-base text-[#6B6B6B] font-medium">
             {activeRole === 'patient' 
               ? 'Your warm, caring memory companion' 
               : 'Clinical Caregiver & Family Supervision Portal'}
@@ -358,27 +346,13 @@ export default function PatientLogin({ defaultRole }) {
         </div>
 
         {/* 3. CENTRAL CARD CONTAINER WITH ROLE-SPECIFIC FORM */}
-        <div className="bg-white rounded-3xl sm:rounded-[36px] border border-stone-200/90 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-10 space-y-6">
+        <div className="bg-white rounded-3xl sm:rounded-[36px] border border-[#E5E0D8] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 sm:p-10 space-y-6">
 
           {/* Feedback Messages */}
           {errorMsg && (
-            <div className="p-4 bg-rose-50 border border-rose-300 text-rose-900 rounded-2xl text-sm font-bold flex items-center gap-2.5 animate-in fade-in">
-              <AlertCircle className="w-5 h-5 shrink-0 text-rose-700" />
+            <div className="p-4 bg-[#FDF2F2] border border-[#F5B7B1] text-[#C0392B] rounded-2xl text-sm font-bold flex items-center gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-5 h-5 shrink-0 text-[#C0392B]" />
               <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {biometricStatus === 'verifying' && (
-            <div className="p-4 bg-amber-50 border border-amber-300 text-amber-950 rounded-2xl text-sm font-bold flex items-center justify-center gap-2.5 animate-pulse">
-              <Fingerprint className="w-5 h-5 animate-bounce text-amber-800" />
-              <span>Scanning Fingerprint / Face Unlock sensor...</span>
-            </div>
-          )}
-
-          {biometricStatus === 'success' && (
-            <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-2xl text-sm font-bold flex items-center justify-center gap-2.5 animate-in fade-in">
-              <CheckCircle2 className="w-5 h-5 text-emerald-700" />
-              <span>Identity Verified! Signing you in...</span>
             </div>
           )}
 
@@ -392,7 +366,7 @@ export default function PatientLogin({ defaultRole }) {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-base sm:text-lg font-extrabold text-stone-900 mb-1.5">
+                    <label className="block text-base sm:text-lg font-extrabold text-[#2B2B2B] mb-1.5">
                       Your Full Name
                     </label>
                     <input
@@ -400,12 +374,12 @@ export default function PatientLogin({ defaultRole }) {
                       value={patientName}
                       onChange={(e) => setPatientName(e.target.value)}
                       placeholder="e.g. Ramesh Sharma"
-                      className="w-full text-lg sm:text-xl font-bold px-5 py-4 bg-stone-50/90 border-2 border-stone-300/90 rounded-2xl text-stone-900 focus:outline-none focus:border-amber-800 focus:bg-white focus:ring-4 focus:ring-amber-800/10 transition-all shadow-inner"
+                      className="w-full text-lg sm:text-xl font-bold px-5 py-4 bg-[#FAF7F2] border-2 border-[#E5E0D8] rounded-2xl text-[#2B2B2B] focus:outline-none focus:border-[#B5502E] focus:bg-white transition-all shadow-inner"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-base sm:text-lg font-extrabold text-stone-900 mb-1.5">
+                    <label className="block text-base sm:text-lg font-extrabold text-[#2B2B2B] mb-1.5">
                       Your Age
                     </label>
                     <input
@@ -413,7 +387,7 @@ export default function PatientLogin({ defaultRole }) {
                       value={patientAge}
                       onChange={(e) => setPatientAge(e.target.value)}
                       placeholder="e.g. 74"
-                      className="w-full text-lg sm:text-xl font-bold px-5 py-4 bg-stone-50/90 border-2 border-stone-300/90 rounded-2xl text-stone-900 focus:outline-none focus:border-amber-800 focus:bg-white focus:ring-4 focus:ring-amber-800/10 transition-all shadow-inner"
+                      className="w-full text-lg sm:text-xl font-bold px-5 py-4 bg-[#FAF7F2] border-2 border-[#E5E0D8] rounded-2xl text-[#2B2B2B] focus:outline-none focus:border-[#B5502E] focus:bg-white transition-all shadow-inner"
                     />
                   </div>
                 </div>
@@ -421,11 +395,11 @@ export default function PatientLogin({ defaultRole }) {
                 {/* 4-Digit PIN Display */}
                 <div className="space-y-3 pt-1">
                   <div className="flex items-center justify-between">
-                    <label className="block text-base sm:text-lg font-extrabold text-stone-900 flex items-center gap-2">
-                      <KeyRound className="w-5 h-5 text-amber-800" />
+                    <label className="block text-base sm:text-lg font-extrabold text-[#2B2B2B] flex items-center gap-2">
+                      <KeyRound className="w-5 h-5 text-[#B5502E]" />
                       <span>Enter 4-Digit PIN</span>
                     </label>
-                    <span className="text-xs sm:text-sm font-semibold text-stone-500">
+                    <span className="text-xs sm:text-sm font-semibold text-[#6B6B6B]">
                       (Demo PIN: 1234)
                     </span>
                   </div>
@@ -439,8 +413,8 @@ export default function PatientLogin({ defaultRole }) {
                           key={idx}
                           className={`w-14 h-16 sm:w-16 sm:h-18 rounded-2xl border-2 flex items-center justify-center text-3xl sm:text-4xl font-black transition-all duration-150 ${
                             digit
-                              ? 'border-amber-800 bg-amber-50 text-amber-950 shadow-sm scale-105'
-                              : 'border-stone-300 bg-stone-100/70 text-stone-400'
+                              ? 'border-[#B5502E] bg-[#FDF6F0] text-[#B5502E] shadow-xs scale-105'
+                              : 'border-[#E5E0D8] bg-stone-100/70 text-stone-400'
                           }`}
                         >
                           {digit ? '•' : ''}
@@ -457,7 +431,7 @@ export default function PatientLogin({ defaultRole }) {
                       key={num}
                       type="button"
                       onClick={() => handleKeyPress(num.toString())}
-                      className="h-16 sm:h-18 rounded-2xl bg-stone-100 hover:bg-stone-200 active:bg-amber-100 text-stone-900 text-2xl sm:text-3xl font-black border border-stone-300/90 active:scale-95 transition-transform duration-100 shadow-2xs flex items-center justify-center cursor-pointer select-none"
+                      className="h-16 sm:h-18 rounded-2xl bg-stone-100 hover:bg-stone-200 active:bg-[#FDF6F0] text-[#2B2B2B] text-2xl sm:text-3xl font-black border border-[#E5E0D8] active:scale-95 transition-transform duration-100 shadow-2xs flex items-center justify-center cursor-pointer select-none"
                     >
                       {num}
                     </button>
@@ -466,7 +440,7 @@ export default function PatientLogin({ defaultRole }) {
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="h-16 sm:h-18 rounded-2xl bg-stone-200/80 hover:bg-stone-300 active:bg-stone-400 text-stone-700 text-sm sm:text-base font-extrabold border border-stone-300 active:scale-95 transition-transform duration-100 flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="h-16 sm:h-18 rounded-2xl bg-stone-200/80 hover:bg-stone-300 text-[#2B2B2B] text-sm sm:text-base font-extrabold border border-[#E5E0D8] active:scale-95 transition-transform duration-100 flex items-center justify-center gap-1.5 cursor-pointer"
                     title="Clear all digits"
                   >
                     <RotateCcw className="w-5 h-5" />
@@ -476,7 +450,7 @@ export default function PatientLogin({ defaultRole }) {
                   <button
                     type="button"
                     onClick={() => handleKeyPress('0')}
-                    className="h-16 sm:h-18 rounded-2xl bg-stone-100 hover:bg-stone-200 active:bg-amber-100 text-stone-900 text-2xl sm:text-3xl font-black border border-stone-300/90 active:scale-95 transition-transform duration-100 shadow-2xs flex items-center justify-center cursor-pointer select-none"
+                    className="h-16 sm:h-18 rounded-2xl bg-stone-100 hover:bg-stone-200 active:bg-[#FDF6F0] text-[#2B2B2B] text-2xl sm:text-3xl font-black border border-[#E5E0D8] active:scale-95 transition-transform duration-100 shadow-2xs flex items-center justify-center cursor-pointer select-none"
                   >
                     0
                   </button>
@@ -484,7 +458,7 @@ export default function PatientLogin({ defaultRole }) {
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="h-16 sm:h-18 rounded-2xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-800 text-sm sm:text-base font-extrabold border border-rose-200 active:scale-95 transition-transform duration-100 flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="h-16 sm:h-18 rounded-2xl bg-[#FDF2F2] hover:bg-rose-100 active:bg-rose-200 text-[#C0392B] text-sm sm:text-base font-extrabold border border-[#F5B7B1] active:scale-95 transition-transform duration-100 flex items-center justify-center gap-1.5 cursor-pointer"
                     title="Delete last digit"
                   >
                     <Delete className="w-5 h-5" />
@@ -494,21 +468,21 @@ export default function PatientLogin({ defaultRole }) {
 
                 {/* Remember Me Checkbox */}
                 <div className="flex items-center justify-center gap-3 pt-1">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-sm sm:text-base font-semibold text-stone-700">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-sm sm:text-base font-semibold text-[#6B6B6B]">
                     <input
                       type="checkbox"
                       checked={rememberPatient}
                       onChange={(e) => setRememberPatient(e.target.checked)}
-                      className="w-5 h-5 text-amber-800 rounded border-stone-300 focus:ring-amber-800"
+                      className="w-5 h-5 text-[#B5502E] rounded border-[#E5E0D8] focus:ring-[#B5502E]"
                     />
-                    <span>Remember me on this tablet</span>
+                    <span>Remember me on this device</span>
                   </label>
                 </div>
 
-                {/* Big Submit Button */}
+                {/* Big Submit Button (Min 56px) */}
                 <button
                   type="submit"
-                  className="w-full py-4.5 sm:py-5 px-6 rounded-2xl bg-amber-800 hover:bg-amber-900 active:scale-95 text-white text-lg sm:text-xl font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer"
+                  className="w-full min-h-[56px] py-4 px-6 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] active:scale-95 text-white text-lg sm:text-xl font-black shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer"
                 >
                   <span>Enter My Space</span>
                   <ArrowRight className="w-6 h-6" />
@@ -541,7 +515,7 @@ export default function PatientLogin({ defaultRole }) {
               {/* Quick Select Profile Shortcuts */}
               <div className="pt-3 border-t border-stone-200">
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-3">
-                  🌸 Or Tap to Log In As:
+                  Or tap your profile to log in:
                 </p>
                 <div className="grid grid-cols-3 gap-2.5">
                   {patients.slice(0, 3).map((p) => (

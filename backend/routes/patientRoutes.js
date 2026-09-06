@@ -147,15 +147,26 @@ router.get('/public/default', async (req, res) => {
 // 1e. Get Specific Patient: GET /api/patients/public/:id
 router.get('/public/:id', async (req, res) => {
   try {
+    const { id } = req.params;
     let patient = null;
-    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-      patient = await Patient.findById(req.params.id);
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      patient = await Patient.findById(id);
     }
-    if (!patient) {
+    if (!patient && id === 'pat-2') {
+      patient = await Patient.findOne({ name: /Meera/i });
+    }
+    if (!patient && id === 'pat-3') {
+      patient = await Patient.findOne({ name: /Biren/i });
+    }
+    if (!patient && (id === 'pat-1' || id === 'default')) {
       patient = await Patient.findOne({ name: /Ramesh Sharma/i });
     }
     if (!patient) {
-      patient = await Patient.findOne();
+      patient = await Patient.findOne({ name: new RegExp(id.trim(), 'i') });
+    }
+    if (!patient) {
+      patient = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
     }
     if (!patient) {
       return res.status(404).json({ error: 'Patient profile not found' });
@@ -385,8 +396,24 @@ router.get('/:id/reminders', optionalAuth, async (req, res) => {
   try {
     let patientId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(patientId)) {
-      const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
-      if (demoPat) patientId = demoPat._id;
+      if (patientId === 'pat-2') {
+        const p = await Patient.findOne({ name: /Meera/i });
+        if (p) patientId = p._id;
+      } else if (patientId === 'pat-3') {
+        const p = await Patient.findOne({ name: /Biren/i });
+        if (p) patientId = p._id;
+      } else if (patientId === 'pat-1' || patientId === 'default') {
+        const p = await Patient.findOne({ name: /Ramesh/i });
+        if (p) patientId = p._id;
+      } else {
+        const byName = await Patient.findOne({ name: new RegExp(patientId.trim(), 'i') });
+        if (byName) {
+          patientId = byName._id;
+        } else {
+          const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+          if (demoPat) patientId = demoPat._id;
+        }
+      }
     }
     const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);

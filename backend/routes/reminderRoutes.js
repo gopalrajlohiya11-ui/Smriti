@@ -104,14 +104,39 @@ router.patch('/:id/dismiss', authenticateCaregiver, async (req, res) => {
   }
 });
 
+// Helper to resolve input patient ID or mock code (e.g. 'pat-2') to real MongoDB patient ID
+const resolvePatientId = async (inputPatientId) => {
+  if (!inputPatientId) {
+    const demo = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+    return demo ? demo._id : null;
+  }
+  if (mongoose.Types.ObjectId.isValid(inputPatientId)) {
+    return inputPatientId;
+  }
+  if (inputPatientId === 'pat-2') {
+    const p = await Patient.findOne({ name: /Meera/i });
+    if (p) return p._id;
+  }
+  if (inputPatientId === 'pat-3') {
+    const p = await Patient.findOne({ name: /Biren/i });
+    if (p) return p._id;
+  }
+  if (inputPatientId === 'pat-1' || inputPatientId === 'default') {
+    const p = await Patient.findOne({ name: /Ramesh/i });
+    if (p) return p._id;
+  }
+  const byName = await Patient.findOne({ name: new RegExp(inputPatientId.trim(), 'i') });
+  if (byName) return byName._id;
+
+  const demo = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+  return demo ? demo._id : null;
+};
+
 // 4. Get all reminders for a patient (Supports auth or public patient lookup)
 router.get('/:patientId', optionalAuth, async (req, res) => {
   try {
-    let patientId = req.params.patientId;
-    if (!mongoose.Types.ObjectId.isValid(patientId)) {
-      const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
-      if (demoPat) patientId = demoPat._id;
-    }
+    const patientId = await resolvePatientId(req.params.patientId);
+    if (!patientId) return res.status(404).json({ error: 'Patient not found' });
     const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);
   } catch (err) {
@@ -129,31 +154,46 @@ router.patch('/:id', optionalAuth, async (req, res) => {
       reminder = await Reminder.findById(id);
     }
 
-    // Fallback: If not found by ObjectId or if given a mock ID (e.g. "rem-1"), find by patient + title / type
+    // Fallback: If not found by ObjectId or if given a mock ID (e.g. "rem-10"), find by patient + title / sequence / type
     if (!reminder) {
-      let pId = req.body.patientId;
-      if (!pId || !mongoose.Types.ObjectId.isValid(pId)) {
-        const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
-        if (demoPat) pId = demoPat._id;
-      }
+      const pId = await resolvePatientId(req.body.patientId);
 
       if (pId) {
+        // 1. Match by full title or primary title prefix (e.g. "Night Routine" vs "Night Medicine")
         if (req.body.title) {
-          reminder = await Reminder.findOne({ patientId: pId, title: new RegExp(req.body.title.trim(), 'i') });
+          const cleanTitle = req.body.title.trim();
+          const firstWord = cleanTitle.split(' ')[0];
+          reminder = await Reminder.findOne({
+            patientId: pId,
+            $or: [
+              { title: new RegExp(`^${cleanTitle}$`, 'i') },
+              { title: new RegExp(cleanTitle, 'i') },
+              { title: new RegExp(`^${firstWord}`, 'i') }
+            ]
+          });
         }
+
+        // 2. Check by sequence index if ID is like "rem-1", "rem-10"
+        if (!reminder && typeof id === 'string' && id.startsWith('rem-')) {
+          const idx = parseInt(id.replace('rem-', ''), 10) - 1;
+          const allRems = await Reminder.find({ patientId: pId }).sort({ scheduledTime: 1 });
+          if (allRems && allRems[idx]) {
+            reminder = allRems[idx];
+          }
+        }
+
+        // 3. Match by type (prefer unacknowledged first)
         if (!reminder && req.body.type) {
-          reminder = await Reminder.findOne({ patientId: pId, type: req.body.type });
+          reminder = await Reminder.findOne({ patientId: pId, type: req.body.type, acknowledged: false });
+          if (!reminder) {
+            reminder = await Reminder.findOne({ patientId: pId, type: req.body.type });
+          }
         }
       }
     }
 
     if (!reminder) {
-      // If still not found, create a new record so it is permanently saved in MongoDB
-      let pId = req.body.patientId;
-      if (!pId || !mongoose.Types.ObjectId.isValid(pId)) {
-        const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
-        if (demoPat) pId = demoPat._id;
-      }
+      const pId = await resolvePatientId(req.body.patientId);
       if (pId) {
         reminder = new Reminder({
           patientId: pId,
