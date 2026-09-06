@@ -755,13 +755,13 @@ export default function PatientLogin({ defaultRole }) {
               <div className="space-y-3 pt-2">
                 <div className="relative flex items-center justify-center">
                   <div className="border-t border-stone-200 w-full" />
-                  <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider">
+                  <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">
                     {isCaregiverSignup ? 'Or Sign Up With' : 'Or Sign In With'}
                   </span>
                 </div>
 
-                {/* Google Sign In / Sign Up Button */}
-                <div className="w-full flex justify-center py-1">
+                {/* Google Sign In / Sign Up Button (Full Width matching Dashboard submit button) */}
+                <div className="w-full flex justify-center py-1 [&>div]:!w-full [&>div>iframe]:!w-full [&_iframe]:!w-full [&_iframe]:!min-w-full [&_iframe]:!max-w-none">
                   <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginError}
@@ -769,7 +769,7 @@ export default function PatientLogin({ defaultRole }) {
                     size="large"
                     shape="rectangular"
                     text={isCaregiverSignup ? 'signup_with' : 'signin_with'}
-                    width="360"
+                    width="100%"
                   />
                 </div>
 
