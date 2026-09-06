@@ -1,4 +1,5 @@
 import { calculatePatientStreak } from '../utils/streakUtils';
+import { getVoiceAutoPlaySetting, setVoiceAutoPlaySetting } from '../utils/speechUtils';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { initialPatients, initialRedFlags, regionalLanguages } from '../data/mockData';
 import { 
@@ -86,6 +87,28 @@ export function AppProvider({ children }) {
   const [isPatientLoggedIn, setIsPatientLoggedIn] = useState(() => {
     return localStorage.getItem('smriti_patient_auth') === 'true';
   });
+
+  // Voice Auto-Play setting (Defaults to true - ON)
+  const [voiceAutoPlay, setVoiceAutoPlayState] = useState(() => {
+    return getVoiceAutoPlaySetting(activePatientId);
+  });
+
+  useEffect(() => {
+    setVoiceAutoPlayState(getVoiceAutoPlaySetting(activePatientId));
+  }, [activePatientId]);
+
+  const setVoiceAutoPlay = useCallback((enabled) => {
+    setVoiceAutoPlayState(enabled);
+    setVoiceAutoPlaySetting(enabled, activePatientId);
+  }, [activePatientId]);
+
+  const toggleVoiceAutoPlay = useCallback(() => {
+    setVoiceAutoPlayState(prev => {
+      const next = !prev;
+      setVoiceAutoPlaySetting(next, activePatientId);
+      return next;
+    });
+  }, [activePatientId]);
 
   // Patients Data Store
   const [patients, setPatients] = useState(() => {
@@ -820,6 +843,10 @@ export function AppProvider({ children }) {
         registerPatientBiometric,
         logoutPatient,
         toggleReminder,
+        // Voice Auto-Play setting
+        voiceAutoPlay,
+        setVoiceAutoPlay,
+        toggleVoiceAutoPlay,
         // Real MongoDB Memory Bank Photos & Game Sessions
         loadPatientPhotos,
         addPatientPhoto,

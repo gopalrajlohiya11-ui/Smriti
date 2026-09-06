@@ -17,6 +17,7 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Volume2, 
+  VolumeX,
   LogOut,
   Sparkles,
   Calendar,
@@ -27,7 +28,15 @@ import {
 export default function PatientProfile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activePatient, logoutPatient, currentLanguage, updatePatient, loadGameSessions } = useApp();
+  const { 
+    activePatient, 
+    logoutPatient, 
+    currentLanguage, 
+    updatePatient, 
+    loadGameSessions,
+    voiceAutoPlay,
+    toggleVoiceAutoPlay
+  } = useApp();
   const [patientSessions, setPatientSessions] = useState([]);
 
   useEffect(() => {
@@ -260,6 +269,75 @@ export default function PatientProfile() {
             </div>
           </div>
 
+        </div>
+
+        {/* ======================================================== */}
+        {/* VOICE AUTO-PLAY ACCESSIBILITY TOGGLE                     */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 border-2 border-[#E5E0D8] shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            <div className="flex items-start sm:items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
+                voiceAutoPlay 
+                  ? 'bg-[#EDF7F2] border-[#A3D9C1] text-[#1F6B4A]' 
+                  : 'bg-stone-100 border-stone-200 text-[#6B6B6B]'
+              }`}>
+                {voiceAutoPlay ? <Volume2 className="w-7 h-7" /> : <VolumeX className="w-7 h-7" />}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
+                    {isHindi ? "आवाज का स्वतः प्ले (Auto-Play)" : "Auto-Play Voice Greetings"}
+                  </h3>
+                  <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
+                    voiceAutoPlay
+                      ? 'bg-[#EDF7F2] text-[#1F6B4A] border-[#A3D9C1]'
+                      : 'bg-stone-100 text-[#6B6B6B] border-stone-200'
+                  }`}>
+                    {voiceAutoPlay ? (isHindi ? "सक्रिय (ON)" : "Enabled (ON)") : (isHindi ? "बंद (OFF)" : "Muted (OFF)")}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
+                  {isHindi 
+                    ? "पेज खोलने या कार्य समाप्त होने पर स्मृति स्वतः आवाज में बोलेगी।" 
+                    : "Smriti will speak automatically when you open a page or finish an activity."}
+                </p>
+              </div>
+            </div>
+
+            {/* Accessible Toggle Button */}
+            <div className="flex items-center gap-3 self-end sm:self-center">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={voiceAutoPlay}
+                onClick={toggleVoiceAutoPlay}
+                className={`relative inline-flex h-10 w-20 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-xs ${
+                  voiceAutoPlay ? 'bg-[#1F6B4A]' : 'bg-stone-300'
+                }`}
+                aria-label="Toggle auto-play voice greetings"
+              >
+                <span
+                  className={`pointer-events-none inline-flex h-9 w-9 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out items-center justify-center text-[10px] font-black ${
+                    voiceAutoPlay ? 'translate-x-10 text-[#1F6B4A]' : 'translate-x-0 text-[#6B6B6B]'
+                  }`}
+                >
+                  {voiceAutoPlay ? 'ON' : 'OFF'}
+                </span>
+              </button>
+            </div>
+
+          </div>
+
+          <div className="pt-3 border-t border-stone-100 text-xs text-[#6B6B6B] flex items-center gap-2">
+            <span className="text-base">💡</span>
+            <span>
+              {isHindi 
+                ? "नोट: स्वतः प्ले बंद होने पर भी आप जब चाहें किसी भी '🔊 सुनें' बटन को दबाकर आवाज सुन सकते हैं।" 
+                : "Note: When turned OFF, manual '🔊 Listen' buttons will always work when explicitly tapped."}
+            </span>
+          </div>
         </div>
 
         {/* NOTIFICATION PREFERENCES */}

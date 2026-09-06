@@ -242,12 +242,13 @@ export default function OddOneOut() {
   const roundStartTimeRef = useRef(Date.now());
   const gameStartTimeRef = useRef(Date.now());
 
-  const speakText = useCallback((text) => {
+  const speakText = useCallback((text, isAutoPlay = false) => {
     if (isAudioMuted) return;
     speakLocalized({
       text,
       langCode: isHindi ? 'hi-IN' : (currentLanguage?.code || 'en'),
-      rate: 0.90
+      rate: 0.90,
+      isAutoPlay
     });
   }, [isAudioMuted, isHindi, currentLanguage]);
 
@@ -293,7 +294,7 @@ export default function OddOneOut() {
     const voicePrompt = isHindi 
       ? `स्तर ${levelNum}। ${theme.hindiPrompt}` 
       : `Level ${levelNum}. ${theme.prompt}`;
-    speakText(voicePrompt);
+    speakText(voicePrompt, true);
   }, [isHindi, speakText]);
 
   // Start game on mount

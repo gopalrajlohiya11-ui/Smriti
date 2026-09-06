@@ -220,13 +220,14 @@ export default function DailyRoutineSequencer() {
     return `Level ${level}. Tap the activities in the order you do them during the day, from morning to night.`;
   }, [currentLanguage]);
 
-  const speakText = useCallback((text) => {
+  const speakText = useCallback((text, isAutoPlay = false) => {
     if (!text) return;
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.85,
       pitch: 1.0,
+      isAutoPlay,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
@@ -253,9 +254,9 @@ export default function DailyRoutineSequencer() {
     setRoundMistakes(0);
     roundStartTimeRef.current = Date.now();
 
-    // Voice instruction for round start
+    // Voice instruction for round start (Automatic speech trigger -> isAutoPlay: true)
     const introMsg = `Level ${levelNum}. Tap the activities in the order you do them during the day, from morning to night.`;
-    speakText(introMsg);
+    speakText(introMsg, true);
   }, [speakText]);
 
   // Start game on mount

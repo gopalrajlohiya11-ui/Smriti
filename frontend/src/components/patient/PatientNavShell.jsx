@@ -16,6 +16,7 @@ import {
   UserCheck,
   CheckCircle2,
   Volume2,
+  VolumeX,
   SlidersHorizontal,
   X,
   Check
@@ -31,7 +32,9 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     setCurrentLanguage, 
     regionalLanguages, 
     activePatient, 
-    logoutPatient 
+    logoutPatient,
+    voiceAutoPlay,
+    toggleVoiceAutoPlay
   } = useApp();
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -445,6 +448,46 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Voice Auto-Play Toggle */}
+            <div className="pt-1 border-t border-stone-100">
+              <div className="flex items-center justify-between gap-3 p-3 bg-stone-50 rounded-2xl border border-stone-200">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    voiceAutoPlay ? 'bg-[#EDF7F2] text-[#1F6B4A]' : 'bg-stone-200 text-[#6B6B6B]'
+                  }`}>
+                    {voiceAutoPlay ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-[#2B2B2B]">
+                      {isHindi ? "आवाज का स्वतः प्ले" : "Auto-Play Voice Greetings"}
+                    </p>
+                    <p className="text-[10px] text-[#6B6B6B] font-medium">
+                      {isHindi ? "पेज खोलने पर आवाज" : "Speak automatically on page open"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={voiceAutoPlay}
+                  onClick={toggleVoiceAutoPlay}
+                  className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none shadow-2xs ${
+                    voiceAutoPlay ? 'bg-[#1F6B4A]' : 'bg-stone-300'
+                  }`}
+                  aria-label="Toggle voice auto-play"
+                >
+                  <span
+                    className={`pointer-events-none inline-flex h-7 w-7 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out items-center justify-center text-[9px] font-black ${
+                      voiceAutoPlay ? 'translate-x-6 text-[#1F6B4A]' : 'translate-x-0 text-[#6B6B6B]'
+                    }`}
+                  >
+                    {voiceAutoPlay ? 'ON' : 'OFF'}
+                  </span>
+                </button>
               </div>
             </div>
 

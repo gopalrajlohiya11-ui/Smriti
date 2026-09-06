@@ -417,12 +417,13 @@ export default function MarketDayBasket() {
 
 
   // Helper to Speak Instructions for Elderly Clarity (always cancels previous speech to prevent clashes)
-  const speakInstruction = useCallback((text) => {
+  const speakInstruction = useCallback((text, isAutoPlay = false) => {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.85,
       pitch: 1.0,
+      isAutoPlay,
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false)
@@ -464,13 +465,13 @@ export default function MarketDayBasket() {
     roundCorrectRef.current = 0;
   }, [currentRoundIndex]);
 
-  // Voice narration when a new round starts (unless transitioning)
+  // Voice narration when a new round starts (Automatic trigger -> isAutoPlay: true)
   useEffect(() => {
     if (activeRound && !isTransitioningLevel && !isSessionComplete) {
       const speechText = activeRound.type === 'categorization' 
         ? `${activeRound.title}. ${activeRound.instruction}`
         : `${activeRound.title}. ${activeRound.scenario}`;
-      speakInstruction(speechText);
+      speakInstruction(speechText, true);
     }
   }, [currentRoundIndex, activeRound, isTransitioningLevel, isSessionComplete, speakInstruction]);
 

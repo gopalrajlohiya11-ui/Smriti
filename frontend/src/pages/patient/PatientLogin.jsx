@@ -106,12 +106,13 @@ export default function PatientLogin({ defaultRole }) {
     });
   };
 
-  const speakText = (text) => {
+  const speakText = (text, isAutoPlay = false) => {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.9,
-      pitch: 1.0
+      pitch: 1.0,
+      isAutoPlay
     });
   };
 
@@ -274,7 +275,7 @@ export default function PatientLogin({ defaultRole }) {
         setBiometricStatus('success');
         const credId = credential?.id || 'webauthn-sensor-touch';
         await loginPatientBiometric(credId, null, patientName);
-        speakText(`Welcome back, ${patientName}! Your fingerprint was recognized.`);
+        speakText(`Welcome back, ${patientName}! Your fingerprint was recognized.`, true);
         setTimeout(() => {
           navigate('/patient');
         }, 600);

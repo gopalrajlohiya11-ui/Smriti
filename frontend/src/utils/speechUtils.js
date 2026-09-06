@@ -150,6 +150,42 @@ export const stopSpeech = () => {
 };
 
 /**
+ * Gets the persistent Voice Auto-Play setting for a patient (defaults to true).
+ */
+export const getVoiceAutoPlaySetting = (patientId = null) => {
+  if (typeof window === 'undefined') return true;
+  try {
+    if (patientId) {
+      const patVal = localStorage.getItem(`smriti_voice_autoplay_${patientId}`);
+      if (patVal === 'false') return false;
+      if (patVal === 'true') return true;
+    }
+    const globalVal = localStorage.getItem('smriti_voice_autoplay');
+    if (globalVal === 'false') return false;
+    return true; // default ON (enabled)
+  } catch (e) {
+    return true;
+  }
+};
+
+/**
+ * Sets the persistent Voice Auto-Play setting for a patient.
+ */
+export const setVoiceAutoPlaySetting = (enabled, patientId = null) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const val = enabled ? 'true' : 'false';
+    localStorage.setItem('smriti_voice_autoplay', val);
+    if (patientId) {
+      localStorage.setItem(`smriti_voice_autoplay_${patientId}`, val);
+    }
+    window.dispatchEvent(new CustomEvent('smriti_autoplay_changed', { detail: { enabled, patientId } }));
+  } catch (e) {
+    console.warn('Failed to save voice autoplay setting:', e);
+  }
+};
+
+/**
  * Main speech synthesis trigger with async voice loading, retry, and detailed diagnostic logs.
  */
 export const speakLocalized = async ({
@@ -157,12 +193,24 @@ export const speakLocalized = async ({
   langCode = 'en',
   rate = 0.88,
   pitch = 1.0,
+  isAutoPlay = false,
+  patientId = null,
   onStart,
   onEnd,
   onError,
   onNotice
 }) => {
   if (typeof window === 'undefined') return;
+
+  // Suppress automatic speech if user disabled Voice Auto-Play
+  if (isAutoPlay) {
+    const isEnabled = getVoiceAutoPlaySetting(patientId);
+    if (!isEnabled) {
+      console.log('🔇 [SpeechSynthesis] Auto-play suppressed by user preference.');
+      if (onEnd) onEnd();
+      return;
+    }
+  }
 
   const code = (langCode || 'en').toLowerCase();
 

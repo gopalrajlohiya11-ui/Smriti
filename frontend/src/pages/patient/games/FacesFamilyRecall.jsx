@@ -203,13 +203,14 @@ export default function FacesFamilyRecall() {
   }, []);
 
   // Speech Helper (always cancels prior speech to prevent audio clashes)
-  const speakText = useCallback((text) => {
+  const speakText = useCallback((text, isAutoPlay = false) => {
     if (!text) return;
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.85,
       pitch: 1.0,
+      isAutoPlay,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
@@ -266,13 +267,13 @@ export default function FacesFamilyRecall() {
     setRoundMistakes(0);
     roundStartTimeRef.current = Date.now();
 
-    // Voice prompt for question
+    // Voice prompt for question (Automatic speech trigger -> isAutoPlay: true)
     const isHindi = (currentLanguage?.code || '').startsWith('hi');
     const promptText = isHindi
       ? (mode === 'name' ? `स्तर ${levelNum}। तस्वीर में यह कौन हैं?` : `स्तर ${levelNum}। इनका आपसे क्या रिश्ता है?`)
       : (mode === 'name' ? `Level ${levelNum}. Who is this in the photo?` : `Level ${levelNum}. What is their relationship to you?`);
-    speakText(promptText);
-  }, [speakText]);
+    speakText(promptText, true);
+  }, [speakText, currentLanguage]);
 
   // Start game on mount
   useEffect(() => {
