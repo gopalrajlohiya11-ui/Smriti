@@ -19,7 +19,8 @@ import {
   Pill,
   Stethoscope,
   Heart,
-  Calendar
+  Calendar,
+  ArrowLeft
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
 
@@ -511,25 +512,41 @@ export default function PatientChatbot() {
           className={
             isFullScreen
               ? "fixed inset-0 z-50 w-screen h-screen bg-[#FAF7F2] flex flex-col overflow-hidden animate-in fade-in duration-200 font-sans"
-              : "fixed bottom-20 md:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[450px] max-w-lg h-[620px] max-h-[80vh] bg-white rounded-3xl shadow-2xl border border-[#E5E0D8] flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans"
+              : "fixed inset-0 sm:inset-auto sm:bottom-8 sm:right-8 w-screen sm:w-[450px] sm:max-w-lg h-screen sm:h-[620px] sm:max-h-[85vh] bg-white sm:rounded-3xl shadow-2xl sm:border border-[#E5E0D8] flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans"
           }
         >
           
           {/* Header */}
-          <div className="bg-[#2C5AA0] text-white p-4 sm:p-5 flex items-center justify-between shrink-0 shadow-xs">
+          <div className="bg-[#2C5AA0] text-white p-3.5 sm:p-5 flex items-center justify-between shrink-0 shadow-xs">
             
-            <div className={`flex items-center gap-3.5 ${isFullScreen ? 'max-w-5xl w-full mx-auto justify-between' : ''}`}>
+            <div className={`flex items-center gap-2.5 sm:gap-3.5 w-full justify-between`}>
               
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* Mobile Back Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopSpeaking();
+                    stopVoiceRecording();
+                    setIsOpen(false);
+                  }}
+                  className="sm:hidden p-2 rounded-xl bg-white/15 active:bg-white/25 text-white flex items-center gap-1 font-bold text-xs cursor-pointer"
+                  title="Close and go back"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
+                  <span>Back</span>
+                </button>
+
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shadow-xs">
-                    <FoxtailOrchidIcon className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shadow-xs">
+                    <FoxtailOrchidIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#2C5AA0] shadow-xs" />
                 </div>
 
                 <div>
-                  <h3 className="font-black text-xl tracking-tight leading-tight">
+                  <h3 className="font-black text-lg sm:text-xl tracking-tight leading-tight">
                     Smriti Assistant
                   </h3>
                 </div>
@@ -545,7 +562,7 @@ export default function PatientChatbot() {
                     if (isSpeakingAloud) stopSpeaking();
                     setAutoSpeakEnabled(!autoSpeakEnabled);
                   }}
-                  className={`p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`p-2 sm:p-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     autoSpeakEnabled 
                       ? 'bg-white/20 text-white hover:bg-white/30 shadow-xs' 
                       : 'bg-white/10 text-white/60 hover:bg-white/20'
@@ -555,11 +572,11 @@ export default function PatientChatbot() {
                   {autoSpeakEnabled ? <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
 
-                {/* Expand / Minimize Fullscreen Button */}
+                {/* Expand / Minimize Fullscreen Button (Desktop Only) */}
                 <button
                   type="button"
                   onClick={() => setIsFullScreen(!isFullScreen)}
-                  className="p-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer shadow-xs"
+                  className="hidden sm:flex p-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all cursor-pointer shadow-xs"
                   title={isFullScreen ? "Exit full screen" : "Expand to full screen"}
                   aria-label={isFullScreen ? "Minimize" : "Expand"}
                 >
@@ -574,13 +591,13 @@ export default function PatientChatbot() {
                 <button
                   type="button"
                   onClick={handleClearHistory}
-                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                  className="p-2 sm:p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
                   title="Clear conversation"
                 >
                   <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
-                {/* Close Window */}
+                {/* Close Window (Desktop) */}
                 <button
                   type="button"
                   onClick={() => {
@@ -588,7 +605,7 @@ export default function PatientChatbot() {
                     stopVoiceRecording();
                     setIsOpen(false);
                   }}
-                  className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                  className="hidden sm:flex p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
                   title="Close chat"
                 >
                   <X className="w-5 h-5 sm:w-6 sm:h-6" />

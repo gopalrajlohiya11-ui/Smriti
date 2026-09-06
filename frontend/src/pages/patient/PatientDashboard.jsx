@@ -294,33 +294,50 @@ export default function PatientDashboard() {
         {/* 1. STATUS HEADER: GREETING & VOICE BUTTON                */}
         {/* ======================================================== */}
         <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#E5E0D8] shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-3.5 sm:gap-4">
               <img
                 src={activePatient?.avatar || "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80"}
                 alt={activePatient?.name || "Patient"}
-                className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
+                className="w-20 h-20 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
               />
               <div className="space-y-0.5">
                 <p className="text-xs font-semibold text-[#6B6B6B] uppercase tracking-wider">
                   {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
                 </p>
-                <h1 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
-                  {greetingWord}, <span className="text-[#B5502E]">{(activePatient?.name || 'Ramesh').split(' ')[0]}</span>
-                </h1>
-                <p className="text-xs text-[#6B6B6B] font-medium flex items-center gap-1.5">
+                
+                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
+                    {greetingWord}, <span className="text-[#B5502E]">{(activePatient?.name || 'Ramesh').split(' ')[0]}</span>
+                  </h1>
+
+                  {/* Mobile-only inline circular listen button */}
+                  <button
+                    type="button"
+                    onClick={handleStatusAudio}
+                    className={`sm:hidden w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer ${
+                      isPlayingAudio ? 'bg-[#2C5AA0] ring-4 ring-[#2C5AA0]/30 animate-pulse' : 'bg-[#2C5AA0] active:bg-[#224780]'
+                    }`}
+                    title="Listen to daily status"
+                    aria-label="Listen to Status"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-[#6B6B6B] font-medium flex items-center justify-center sm:justify-start gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-[#B5502E]" />
                   <span>{activePatient?.location || 'Guwahati, Assam'}</span>
                 </p>
               </div>
             </div>
 
-            {/* Listen Button (56px touch target) */}
+            {/* Desktop-only Listen Button (56px touch target) */}
             <button
               type="button"
               onClick={handleStatusAudio}
-              className={`min-h-[56px] px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-sm sm:text-base font-black shadow-xs transition-all cursor-pointer active:scale-98 ${
+              className={`hidden sm:flex min-h-[56px] px-6 py-3.5 rounded-2xl items-center justify-center gap-2.5 text-sm sm:text-base font-black shadow-xs transition-all cursor-pointer active:scale-98 shrink-0 ${
                 isPlayingAudio
                   ? 'bg-[#2C5AA0] text-white ring-4 ring-[#2C5AA0]/30 animate-pulse'
                   : 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
@@ -345,7 +362,7 @@ export default function PatientDashboard() {
         {dailyFeaturedGame && (
           isTodayGameDone ? (
             /* COMPLETED TODAY'S GAME STATE */
-            <div className="bg-[#EDF7F2] rounded-3xl p-6 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs space-y-5 animate-in fade-in">
+            <div className="bg-[#EDF7F2] rounded-3xl p-5 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs space-y-4 sm:space-y-5 animate-in fade-in">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#1F6B4A] text-xs font-black uppercase tracking-wider border border-[#A3D9C1] shadow-2xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#1F6B4A]" />
@@ -358,14 +375,14 @@ export default function PatientDashboard() {
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="flex items-start sm:items-center gap-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                   <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#1F6B4A] text-white flex items-center justify-center shrink-0 shadow-xs">
                     <Check className="w-9 h-9 stroke-[3]" />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-2xl sm:text-3xl font-black text-[#1F6B4A]">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <h3 className="text-xl sm:text-3xl font-black text-[#1F6B4A]">
                         {isHindi ? "शाबाश! आज का खेल पूरा हुआ" : "Great Job! Today's Game Done"}
                       </h3>
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-[#1F6B4A] border border-[#A3D9C1]">
@@ -374,17 +391,17 @@ export default function PatientDashboard() {
                     </div>
                     <p className="text-xs sm:text-sm text-stone-600 font-medium">
                       {isHindi 
-                        ? `आपने आज की मस्तिष्क चुनौती (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरी कर ली है! दिमाग को सक्रिय रखने के लिए और खेल खेलें।` 
+                        ? `आपने आज की मस्तिष्क चुनौती (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरी कर ली है!` 
                         : `You've completed today's brain workout (${dailyFeaturedGame.title})! Keep your mind energized with more exercises.`}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
+                <div className="w-full sm:w-auto shrink-0">
                   <button
                     type="button"
                     onClick={() => navigate('/patient/games')}
-                    className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#185339] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
+                    className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#185339] text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
                   >
                     <BrainCircuit className="w-5 h-5" />
                     <span>{isHindi ? "और खेल खेलें" : "Play More Games"}</span>
@@ -394,7 +411,7 @@ export default function PatientDashboard() {
             </div>
           ) : (
             /* UNCOMPLETED / PENDING CHALLENGE STATE */
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#B5502E]/30 shadow-2xs space-y-5">
+            <div className="bg-white rounded-3xl p-5 sm:p-8 border-2 border-[#B5502E]/30 shadow-2xs space-y-4 sm:space-y-5">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] text-xs font-black uppercase tracking-wider border border-[#B5502E]/20">
                   <Flame className="w-3.5 h-3.5 fill-[#B5502E]" />
@@ -406,14 +423,14 @@ export default function PatientDashboard() {
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div className="flex items-start sm:items-center gap-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                   <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 flex items-center justify-center shrink-0 shadow-2xs">
                     <GameIcon icon={dailyFeaturedGame.icon} className="w-9 h-9 text-[#B5502E]" />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                      <h3 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
                         {isHindi ? (dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title) : dailyFeaturedGame.title}
                       </h3>
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#6B6B6B] border border-[#E5E0D8]">
@@ -426,17 +443,19 @@ export default function PatientDashboard() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = dailyFeaturedGame.path || dailyFeaturedGame.route || '/patient/games';
-                    navigate(target);
-                  }}
-                  className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
-                >
-                  <Play className="w-5 h-5 fill-current" />
-                  <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
-                </button>
+                <div className="w-full sm:w-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = dailyFeaturedGame.path || dailyFeaturedGame.route || '/patient/games';
+                      navigate(target);
+                    }}
+                    className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
+                  >
+                    <Play className="w-5 h-5 fill-current" />
+                    <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )
@@ -451,8 +470,8 @@ export default function PatientDashboard() {
           // Case A: All Routines Completed
           if (priority === 'all_completed' || !routine) {
             return (
-              <div className="bg-[#EDF7F2] rounded-3xl p-6 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-6 animate-in fade-in">
-                <div className="flex items-center gap-5 text-center sm:text-left">
+              <div className="bg-[#EDF7F2] rounded-3xl p-5 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                   <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#1F6B4A] text-white flex items-center justify-center shrink-0 shadow-xs">
                     <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
                   </div>
@@ -461,7 +480,7 @@ export default function PatientDashboard() {
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                       <span>{isHindi ? "आज के सभी कार्य पूरे हो चुके हैं 🎉" : "You're All Caught Up For Today 🎉"}</span>
                     </span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
+                    <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
                       {isHindi ? `शानदार! आज की सभी ${totalCount} दिनचर्याएं पूरी हुईं।` : `Great job! All ${totalCount} daily routines are done.`}
                     </h2>
                     <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
@@ -473,7 +492,7 @@ export default function PatientDashboard() {
                 <button
                   type="button"
                   onClick={() => navigate('/patient/reminders')}
-                  className="w-full sm:w-auto min-h-[56px] px-6 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#18553B] text-white text-base font-black shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shrink-0"
+                  className="w-full sm:w-auto min-h-[56px] px-6 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#18553B] text-white text-base sm:text-lg font-black shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shrink-0"
                 >
                   <span>{isHindi ? "शेड्यूल देखें" : "View Timeline"}</span>
                   <ArrowRight className="w-5 h-5" />
@@ -486,7 +505,7 @@ export default function PatientDashboard() {
           const isDueNow = priority === 'due_now';
 
           return (
-            <div className={`rounded-3xl p-6 sm:p-8 border-2 shadow-sm transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 animate-in fade-in ${
+            <div className={`rounded-3xl p-5 sm:p-8 border-2 shadow-sm transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in ${
               isOverdue
                 ? 'bg-[#FDF2F2] border-[#F5B7B1]'
                 : isDueNow
@@ -494,7 +513,7 @@ export default function PatientDashboard() {
                 : 'bg-white border-[#E5E0D8]'
             }`}>
               {/* Left Details */}
-              <div className="flex items-start sm:items-center gap-5">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                 <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
                   isOverdue
                     ? 'bg-[#C0392B] text-white'
@@ -506,7 +525,7 @@ export default function PatientDashboard() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                     {isOverdue && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C0392B] text-white text-xs font-black uppercase tracking-wider">
                         <AlertTriangle className="w-3.5 h-3.5" />
@@ -530,22 +549,22 @@ export default function PatientDashboard() {
                     </span>
                   </div>
 
-                  <h2 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
-    {isHindi ? (routine.hindiTitle || routine.title) : routine.title}
-  </h2>
+                  <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
+                    {isHindi ? (routine.hindiTitle || routine.title) : routine.title}
+                  </h2>
 
                   <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
-    {isHindi ? (routine.hindiDetail || routine.detail || routine.title) : (routine.detail || routine.title)}
-  </p>
+                    {isHindi ? (routine.hindiDetail || routine.detail || routine.title) : (routine.detail || routine.title)}
+                  </p>
                 </div>
               </div>
 
               {/* Right: Large 56px Action Button */}
-              <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+              <div className="w-full sm:w-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => handleReminderDone(routine.id || routine._id, routine.title)}
-                  className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 ${
+                  className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 ${
                     isOverdue
                       ? 'bg-[#C0392B] hover:bg-[#A93226] text-white'
                       : isDueNow
@@ -563,23 +582,23 @@ export default function PatientDashboard() {
         })()}
 
         {/* ======================================================== */}
-        {/* 4. FOUR LARGE QUICK DESTINATION TILES (2x2 GRID)         */}
+        {/* 4. FOUR LARGE QUICK DESTINATION TILES                    */}
         {/* ======================================================== */}
         <div>
-          <h2 className="text-lg font-black text-[#2B2B2B] mb-3">
-    {isHindi ? "त्वरित नेविगेशन शॉर्टकट" : "Quick Navigation Shortcuts"}
-  </h2>
+          <h2 className="text-lg font-black text-[#2B2B2B] mb-3.5">
+            {isHindi ? "त्वरित नेविगेशन शॉर्टकट" : "Quick Navigation Shortcuts"}
+          </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-6">
             
             {/* Tile 1: Daily Reminders */}
             <div
               onClick={() => navigate('/patient/reminders')}
-              className="bg-white rounded-3xl p-6 border-2 border-[#E5E0D8] hover:border-[#2C5AA0] shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-5"
+              className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#E5E0D8] hover:border-[#2C5AA0] shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#EFF4FA] border border-[#2C5AA0]/20 text-[#2C5AA0] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Bell className="w-8 h-8" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#EFF4FA] border border-[#2C5AA0]/20 text-[#2C5AA0] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Bell className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <span className="text-xs font-black px-3 py-1 rounded-full bg-[#EDF7F2] text-[#1F6B4A] border border-[#A3D9C1]">
                   {completedCount} / {totalCount} {isHindi ? "पूर्ण" : "Done"}
@@ -588,11 +607,11 @@ export default function PatientDashboard() {
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B] group-hover:text-[#2C5AA0] transition-colors">
-    {isHindi ? "दैनिक अनुस्मारक" : "Daily Reminders"}
-  </h3>
+                  {isHindi ? "दैनिक अनुस्मारक" : "Daily Reminders"}
+                </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-    {isHindi ? "दवा, पानी, भोजन और डॉक्टर संवाद" : "Medicine, hydration, meals, and doctor check-ins"}
-  </p>
+                  {isHindi ? "दवा, पानी, भोजन और डॉक्टर संवाद" : "Medicine, hydration, meals, and doctor check-ins"}
+                </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#2C5AA0]">
@@ -604,11 +623,11 @@ export default function PatientDashboard() {
             {/* Tile 2: Brain Games */}
             <div
               onClick={() => navigate('/patient/games')}
-              className="bg-white rounded-3xl p-6 border-2 border-[#E5E0D8] hover:border-[#B5502E] shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-5"
+              className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#E5E0D8] hover:border-[#B5502E] shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 text-[#B5502E] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <BrainCircuit className="w-8 h-8" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 text-[#B5502E] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <BrainCircuit className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <span className="text-xs font-black px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5" />
@@ -618,11 +637,11 @@ export default function PatientDashboard() {
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B] group-hover:text-[#B5502E] transition-colors">
-    {isHindi ? "दिमागी खेल" : "Brain Games"}
-  </h3>
+                  {isHindi ? "दिमागी खेल" : "Brain Games"}
+                </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-    {isHindi ? "आज की विशेष चुनौती और 5 सरल दिमागी अभ्यास" : "Game of the Day challenge & 5 gentle memory exercises"}
-  </p>
+                  {isHindi ? "आज की विशेष चुनौती और 5 सरल दिमागी अभ्यास" : "Game of the Day challenge & 5 gentle memory exercises"}
+                </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#B5502E]">
@@ -634,11 +653,11 @@ export default function PatientDashboard() {
             {/* Tile 3: Family Photos */}
             <div
               onClick={() => navigate('/patient/family')}
-              className="bg-white rounded-3xl p-6 border-2 border-[#E5E0D8] hover:border-rose-300 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-5"
+              className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#E5E0D8] hover:border-rose-300 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Heart className="w-8 h-8 fill-rose-100" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Heart className="w-7 h-7 sm:w-8 sm:h-8 fill-rose-100" />
                 </div>
                 <span className="text-xs font-black px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                   Memory Vault
@@ -647,11 +666,11 @@ export default function PatientDashboard() {
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B] group-hover:text-rose-600 transition-colors">
-    {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
-  </h3>
+                  {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
+                </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-    {isHindi ? "प्यारी पारिवारिक तस्वीरें और आवाज के साथ सुनाई जाने वाली यादें" : "Cherished family photos with voice narration stories"}
-  </p>
+                  {isHindi ? "प्यारी पारिवारिक तस्वीरें और आवाज के साथ सुनाई जाने वाली यादें" : "Cherished family photos with voice narration stories"}
+                </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-rose-600">
@@ -663,11 +682,11 @@ export default function PatientDashboard() {
             {/* Tile 4: Profile & Care */}
             <div
               onClick={() => navigate('/patient/profile')}
-              className="bg-white rounded-3xl p-6 border-2 border-[#E5E0D8] hover:border-emerald-300 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-5"
+              className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#E5E0D8] hover:border-emerald-300 shadow-2xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between gap-4"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#EDF7F2] border border-[#1F6B4A]/20 text-[#1F6B4A] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <User className="w-8 h-8" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#EDF7F2] border border-[#1F6B4A]/20 text-[#1F6B4A] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <User className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
                 <span className="text-xs font-black px-3 py-1 rounded-full bg-[#EDF7F2] text-[#1F6B4A] border border-[#A3D9C1]">
                   Care Team
@@ -676,11 +695,11 @@ export default function PatientDashboard() {
 
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B] group-hover:text-[#1F6B4A] transition-colors">
-    {isHindi ? "मेरी प्रोफाइल और संपर्क" : "Profile & Care Contacts"}
-  </h3>
+                  {isHindi ? "मेरी प्रोफाइल और संपर्क" : "Profile & Care Contacts"}
+                </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-    {isHindi ? "डॉक्टर संपर्क, आपातकालीन नंबर और सेटिंग्स" : "Doctor contact, emergency number, and account settings"}
-  </p>
+                  {isHindi ? "डॉक्टर संपर्क, आपातकालीन नंबर और सेटिंग्स" : "Doctor contact, emergency number, and account settings"}
+                </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#1F6B4A]">

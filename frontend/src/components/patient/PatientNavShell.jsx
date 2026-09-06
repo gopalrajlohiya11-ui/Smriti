@@ -15,7 +15,10 @@ import {
   ArrowLeft,
   UserCheck,
   CheckCircle2,
-  Volume2
+  Volume2,
+  SlidersHorizontal,
+  X,
+  Check
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
 
@@ -32,6 +35,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
   } = useApp();
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const [comingSoonToast, setComingSoonToast] = useState('');
 
   // A+ / A- Text Size Accessibility (NHS-Style)
@@ -81,6 +85,8 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     if (item.exact) return location.pathname === item.path;
     return location.pathname.startsWith(item.path);
   };
+
+  const isHindi = (currentLanguage?.code || '').startsWith('hi');
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col md:flex-row text-[#2B2B2B]">
@@ -183,44 +189,63 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         )}
 
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E5E0D8] px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3 shadow-2xs">
+        <header className="sticky top-0 z-20 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E5E0D8] px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 shadow-2xs">
           
-          {/* Left: Mobile Brand OR Screen Title & Back Button */}
-          <div className="flex items-center gap-3">
+          {/* Left: Mobile Brand OR Back Button + Title */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             {showBack ? (
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-stone-100 text-[#2B2B2B] border border-[#E5E0D8] font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs"
+                className="min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-stone-100 text-[#2B2B2B] border border-[#E5E0D8] font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
                 title="Go Back"
               >
                 <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
                 <span>Back</span>
               </button>
             ) : (
-              <div className="md:hidden flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#B5502E] flex items-center justify-center text-white shadow-xs">
-                  <FoxtailOrchidIcon className="w-5 h-5 text-white" />
+              <Link to="/patient" className="md:hidden flex items-center gap-2 shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-[#B5502E] flex items-center justify-center text-white shadow-xs">
+                  <FoxtailOrchidIcon className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-xl font-black text-[#2B2B2B]">Smriti</span>
-              </div>
+                <div className="flex flex-col">
+                  <span className="text-base font-black text-[#2B2B2B] leading-none">Smriti</span>
+                  <span className="text-[10px] text-[#B5502E] font-bold leading-none mt-0.5">
+                    {(activePatient?.name || 'Ramesh').split(' ')[0]}
+                  </span>
+                </div>
+              </Link>
             )}
 
             {pageTitle && (
-              <h1 className="hidden sm:block text-lg font-black text-[#2B2B2B]">
+              <h1 className="text-sm sm:text-lg font-black text-[#2B2B2B] truncate">
                 {pageTitle}
               </h1>
             )}
           </div>
 
-          {/* Right: Accessibility Text Size Toggle + Language Dropdown */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Controls: Desktop Inline controls vs Mobile Compact Settings Sheet Trigger */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
-            {/* NHS.uk-Style Text Size Adjuster (A- / A+) */}
+            {/* MOBILE ONLY: Single Settings Button (Opens Slide-up Sheet) */}
+            <div className="md:hidden">
+              <button
+                type="button"
+                onClick={() => setMobileSettingsOpen(true)}
+                className="min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl bg-white active:bg-stone-100 text-[#2B2B2B] border border-[#E5E0D8] flex items-center justify-center gap-1.5 font-black text-xs shadow-2xs"
+                title="Settings & Language"
+                aria-label="Settings"
+              >
+                <SlidersHorizontal className="w-4 h-4 text-[#B5502E]" />
+                <span className="text-[11px] font-bold">{currentLanguage.code.toUpperCase()}</span>
+              </button>
+            </div>
+
+            {/* DESKTOP ONLY: Inline A+ / A- Text Size Adjuster */}
             <button
               type="button"
               onClick={toggleFontSize}
-              className="min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-[#FDF6F0] text-[#2B2B2B] hover:text-[#B5502E] border border-[#E5E0D8] hover:border-[#B5502E]/40 text-xs sm:text-sm font-black flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+              className="hidden md:flex min-h-[44px] px-3 py-2 rounded-xl bg-white hover:bg-[#FDF6F0] text-[#2B2B2B] hover:text-[#B5502E] border border-[#E5E0D8] hover:border-[#B5502E]/40 text-xs sm:text-sm font-black items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
               title="Adjust text size for easier reading"
               aria-label="Toggle Text Size"
             >
@@ -230,8 +255,8 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
               </span>
             </button>
 
-            {/* Language Selector */}
-            <div className="relative">
+            {/* DESKTOP ONLY: Inline Language Selector */}
+            <div className="hidden md:block relative">
               <button
                 type="button"
                 onClick={() => setLangDropdownOpen(!langDropdownOpen)}
@@ -239,8 +264,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 aria-expanded={langDropdownOpen}
               >
                 <Globe className="w-4 h-4 text-[#6B6B6B]" />
-                <span className="hidden sm:inline">{currentLanguage.name.split(' ')[0]}</span>
-                <span className="sm:hidden">{currentLanguage.code.toUpperCase()}</span>
+                <span>{currentLanguage.name.split(' ')[0]}</span>
                 <ChevronDown className={`w-3.5 h-3.5 text-[#6B6B6B] transition-transform ${langDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -291,17 +315,17 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         {/* ======================================================== */}
         {/* 3. MAIN SINGLE-COLUMN SCREEN CONTENT                     */}
         {/* ======================================================== */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 xl:px-10 py-6 pb-28 md:pb-12 max-w-5xl w-full mx-auto">
+        <main className="flex-1 px-3 sm:px-6 lg:px-8 xl:px-10 py-5 sm:py-6 pb-28 md:pb-12 max-w-5xl w-full mx-auto">
           {children}
         </main>
 
       </div>
 
       {/* ======================================================== */}
-      {/* 4. MOBILE PERSISTENT BOTTOM TAB BAR (THUMB-REACHABLE)    */}
+      {/* 4. MOBILE PERSISTENT BOTTOM TAB BAR (MIN-HEIGHT 64px)    */}
       {/* ======================================================== */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] px-2 py-1.5 flex items-center justify-around shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E0D8] px-1 py-1.5 min-h-[64px] flex items-stretch justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         aria-label="Mobile Navigation"
       >
         {navItems.map((item) => {
@@ -312,18 +336,137 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             <Link
               key={item.path}
               to={item.path}
-              className={`flex-1 min-h-[52px] py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-[11px] font-black transition-all cursor-pointer ${
+              className={`flex-1 min-h-[52px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                 active
-                  ? 'bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/25 shadow-2xs'
-                  : 'text-[#6B6B6B] hover:text-[#2B2B2B] active:bg-stone-100'
+                  ? 'bg-[#FDF6F0] text-[#B5502E] font-black shadow-2xs border border-[#B5502E]/25'
+                  : 'text-[#6B6B6B] hover:text-[#2B2B2B] active:bg-stone-50 font-bold'
               }`}
             >
-              <Icon className={`w-5 h-5 stroke-[2.2] ${active ? 'text-[#B5502E]' : 'text-[#6B6B6B]'}`} />
-              <span className="truncate">{item.label}</span>
+              <Icon className={`w-5 h-5 ${active ? 'text-[#B5502E] stroke-[2.6]' : 'text-[#6B6B6B] stroke-[2]'}`} />
+              <span className="text-[11px] leading-tight tracking-tight truncate max-w-full text-center">
+                {item.label}
+              </span>
             </Link>
           );
         })}
       </nav>
+
+      {/* ======================================================== */}
+      {/* 5. MOBILE SETTINGS SLIDE-UP SHEET MODAL                  */}
+      {/* ======================================================== */}
+      {mobileSettingsOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          onClick={() => setMobileSettingsOpen(false)}
+        >
+          <div 
+            className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 space-y-5 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sheet Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5 text-[#B5502E]" />
+                <h3 className="text-lg font-black text-[#2B2B2B]">
+                  {isHindi ? "सेटिंग्स और भाषा" : "Preferences & Language"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSettingsOpen(false)}
+                className="w-9 h-9 rounded-xl bg-stone-100 text-[#6B6B6B] hover:text-[#2B2B2B] flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Text Size Control */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-[#6B6B6B] uppercase tracking-wider flex items-center gap-1.5">
+                <Type className="w-4 h-4 text-[#B5502E]" />
+                <span>{isHindi ? "अक्षर का आकार (Text Size)" : "Reading Text Size"}</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { level: 'normal', label: 'Normal (A)', preview: 'text-sm' },
+                  { level: 'large', label: 'Large (A+)', preview: 'text-base' },
+                  { level: 'xl', label: 'Max (A++)', preview: 'text-lg' }
+                ].map((item) => (
+                  <button
+                    key={item.level}
+                    type="button"
+                    onClick={() => setFontSizeLevel(item.level)}
+                    className={`min-h-[48px] p-2 rounded-xl font-bold flex flex-col items-center justify-center gap-0.5 border transition-all cursor-pointer ${
+                      fontSizeLevel === item.level
+                        ? 'bg-[#FDF6F0] text-[#B5502E] border-2 border-[#B5502E] shadow-2xs font-black'
+                        : 'bg-stone-50 text-[#2B2B2B] border-stone-200'
+                    }`}
+                  >
+                    <span className={item.preview}>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Language Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-[#6B6B6B] uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-[#2C5AA0]" />
+                <span>{isHindi ? "क्षेत्रीय भाषा चुनें (Select Language)" : "Regional Language"}</span>
+              </label>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {regionalLanguages.map((lang) => {
+                  const isComingSoon = lang.status === 'coming_soon';
+                  const isCurrent = currentLanguage.code === lang.code;
+
+                  return (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => handleLanguageSelect(lang)}
+                      className={`w-full min-h-[48px] px-3.5 py-2.5 rounded-xl text-sm flex items-center justify-between transition-colors cursor-pointer border ${
+                        isCurrent
+                          ? 'bg-[#FDF6F0] text-[#B5502E] border-[#B5502E]/30 font-black'
+                          : 'bg-stone-50 text-[#2B2B2B] border-stone-200 hover:bg-stone-100 font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{lang.name}</span>
+                        {isComingSoon && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-200 text-[#6B6B6B]">
+                            Soon
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#6B6B6B] italic">{lang.greeting.split(' ')[0]}</span>
+                        {isCurrent && <Check className="w-4 h-4 text-[#B5502E] stroke-[3]" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Switch User / Logout */}
+            <div className="pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSettingsOpen(false);
+                  logoutPatient();
+                  navigate('/');
+                }}
+                className="w-full min-h-[50px] px-4 py-2.5 rounded-2xl bg-rose-50 text-[#C0392B] border border-rose-200 font-bold text-sm flex items-center justify-center gap-2 active:bg-rose-100 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{isHindi ? "रोगी बदलें / लॉग आउट" : "Switch Patient / Log Out"}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

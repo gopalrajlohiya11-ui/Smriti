@@ -283,13 +283,13 @@ export default function PatientAllGames() {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
               <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 flex items-center justify-center shrink-0 shadow-2xs">
                 <BrainCircuit className="w-8 h-8 text-[#B5502E]" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
+                <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
                   {isHindi ? todayFeaturedGame.hindiTitle : todayFeaturedGame.title}
                 </h2>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
@@ -298,22 +298,24 @@ export default function PatientAllGames() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsGameOfDayOpen(true)}
-              className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 shrink-0 ${
-                isGameOfDayCompleted
-                  ? 'bg-[#EDF7F2] hover:bg-[#d8efe2] text-[#1F6B4A] border-2 border-[#1F6B4A]'
-                  : 'bg-[#B5502E] hover:bg-[#9E4224] text-white shadow-sm'
-              }`}
-            >
-              <Play className="w-5 h-5 fill-current" />
-              <span>
-                {isGameOfDayCompleted 
-                  ? (isHindi ? 'फिर से खेलें (अभ्यास)' : 'Play Again (Practice)') 
-                  : (isHindi ? 'आज की चुनौती खेलें' : "Play Today's Challenge")}
-              </span>
-            </button>
+            <div className="w-full sm:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsGameOfDayOpen(true)}
+                className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 shrink-0 ${
+                  isGameOfDayCompleted
+                    ? 'bg-[#EDF7F2] hover:bg-[#d8efe2] text-[#1F6B4A] border-2 border-[#1F6B4A]'
+                    : 'bg-[#B5502E] hover:bg-[#9E4224] text-white shadow-sm'
+                }`}
+              >
+                <Play className="w-5 h-5 fill-current" />
+                <span>
+                  {isGameOfDayCompleted 
+                    ? (isHindi ? 'फिर से खेलें (अभ्यास)' : 'Play Again (Practice)') 
+                    : (isHindi ? 'आज की चुनौती खेलें' : "Play Today's Challenge")}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 

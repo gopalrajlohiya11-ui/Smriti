@@ -114,11 +114,11 @@ export default function PatientProfile() {
         </div>
 
         {/* PROFILE HEADER */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0D8] shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="bg-white rounded-3xl p-5 sm:p-8 border border-[#E5E0D8] shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
             
             {/* Avatar & Patient Info */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
               <div className="relative shrink-0">
                 <img
                   src={activePatient?.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'}
@@ -140,7 +140,7 @@ export default function PatientProfile() {
                   {activePatient?.name || 'Ramesh Sharma'}
                 </h1>
 
-                <p className="text-xs sm:text-sm text-[#6B6B6B] font-semibold flex items-center gap-2">
+                <p className="text-xs sm:text-sm text-[#6B6B6B] font-semibold flex items-center justify-center sm:justify-start gap-2">
                   <span>Age {activePatient?.age || 74}</span>
                   <span>•</span>
                   <span>{activePatient?.location || 'Guwahati, Assam'}</span>
@@ -149,18 +149,20 @@ export default function PatientProfile() {
             </div>
 
             {/* Read Aloud Button (Min 56px) */}
-            <button
-              type="button"
-              onClick={handleReadProfileAudio}
-              className={`min-h-[56px] px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer shrink-0 ${
-                isPlayingAudio
-                  ? 'bg-[#2C5AA0] text-white ring-4 ring-[#2C5AA0]/30 animate-pulse'
-                  : 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
-              }`}
-            >
-              <Volume2 className="w-5 h-5 shrink-0" />
-              <span>{isPlayingAudio ? t('profilePage.speaking') : t('profilePage.listenProfile', 'Listen 🔊')}</span>
-            </button>
+            <div className="w-full sm:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={handleReadProfileAudio}
+                className={`w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2.5 text-sm sm:text-base font-bold shadow-xs transition-all cursor-pointer ${
+                  isPlayingAudio
+                    ? 'bg-[#2C5AA0] text-white ring-4 ring-[#2C5AA0]/30 animate-pulse'
+                    : 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
+                }`}
+              >
+                <Volume2 className="w-5 h-5 shrink-0" />
+                <span>{isPlayingAudio ? t('profilePage.speaking') : t('profilePage.listenProfile', 'Listen 🔊')}</span>
+              </button>
+            </div>
 
           </div>
         </div>
