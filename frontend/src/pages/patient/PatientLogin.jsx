@@ -24,7 +24,7 @@ import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverWithGoogle, patients, currentLanguage } = useApp();
+  const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverWithGoogle, signupCaregiver, patients, currentLanguage } = useApp();
 
   // Role toggle: 'patient' | 'admin'
   const [activeRole, setActiveRole] = useState(() => {
@@ -40,10 +40,14 @@ export default function PatientLogin({ defaultRole }) {
   const [pin, setPin] = useState('');
   const [rememberPatient, setRememberPatient] = useState(true);
 
-  // Admin Form States
+  // Admin Form States (Login & Signup)
+  const [isCaregiverSignup, setIsCaregiverSignup] = useState(false);
   const [adminEmail, setAdminEmail] = useState('dr.ananya@smriti.in');
   const [adminPassword, setAdminPassword] = useState('caregiver123');
   const [rememberAdmin, setRememberAdmin] = useState(true);
+  const [signupName, setSignupName] = useState('');
+  const [signupRole, setSignupRole] = useState('clinician');
+  const [signupContact, setSignupContact] = useState('');
 
   // UI Feedback States
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,7 +157,7 @@ export default function PatientLogin({ defaultRole }) {
     }
   };
 
-  // Admin Submit
+  // Admin Submit (Login)
   const handleAdminSubmit = async (e) => {
     if (e) e.preventDefault();
     setErrorMsg('');
@@ -175,6 +179,38 @@ export default function PatientLogin({ defaultRole }) {
       navigate('/caregiver');
     } catch (err) {
       setErrorMsg(err.message || 'Invalid email or password');
+    }
+  };
+
+  // Admin / Caregiver Signup
+  const handleCaregiverSignup = async (e) => {
+    if (e) e.preventDefault();
+    setErrorMsg('');
+    if (!signupName.trim() || signupName.trim().length < 2) {
+      setErrorMsg('Please enter your full name (at least 2 characters)');
+      return;
+    }
+    const email = adminEmail.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMsg('Please enter a valid email address');
+      return;
+    }
+    if (!adminPassword || adminPassword.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      await signupCaregiver({
+        name: signupName.trim(),
+        email: email,
+        password: adminPassword,
+        role: signupRole,
+        contact: signupContact.trim()
+      });
+      navigate('/caregiver');
+    } catch (err) {
+      setErrorMsg(err.message || 'Signup failed. Please try again.');
     }
   };
 
@@ -541,10 +577,10 @@ export default function PatientLogin({ defaultRole }) {
           )}
 
           {/* ======================================================== */}
-          {/* TAB B: ADMIN / CAREGIVER LOGIN FORM                      */}
+          {/* TAB B: ADMIN / CAREGIVER LOGIN & SIGNUP FORM             */}
           {/* ======================================================== */}
           {activeRole === 'admin' && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               
               <div className="text-center space-y-1">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold uppercase tracking-wider">
@@ -552,15 +588,69 @@ export default function PatientLogin({ defaultRole }) {
                   <span>Caregiver & Clinician Portal</span>
                 </div>
                 <p className="text-xs sm:text-sm text-stone-500">
-                  Access patient vitals, adherence rates & WhatsApp routines
+                  {isCaregiverSignup ? 'Register a new clinician or caregiver profile' : 'Access patient vitals, adherence rates & WhatsApp routines'}
                 </p>
               </div>
 
-              <form onSubmit={handleAdminSubmit} className="space-y-4">
+              {/* Sign In vs Sign Up Tab Switcher */}
+              <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCaregiverSignup(false);
+                    setErrorMsg('');
+                  }}
+                  className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                    !isCaregiverSignup
+                      ? 'bg-white text-teal-900 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCaregiverSignup(true);
+                    setErrorMsg('');
+                  }}
+                  className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                    isCaregiverSignup
+                      ? 'bg-white text-teal-900 shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  Create Account (Sign Up)
+                </button>
+              </div>
+
+              <form onSubmit={isCaregiverSignup ? handleCaregiverSignup : handleAdminSubmit} className="space-y-4">
                 
+                {/* Full Name for Signup */}
+                {isCaregiverSignup && (
+                  <div>
+                    <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+                        <UserRound className="w-5 h-5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={signupName}
+                        onChange={(e) => setSignupName(e.target.value)}
+                        placeholder="Dr. Rajesh Baruah / Priya Sharma"
+                        required
+                        className="w-full pl-11 pr-4 py-3.5 bg-stone-50/80 border border-stone-300 rounded-2xl text-stone-900 text-sm sm:text-base font-semibold focus:outline-none focus:border-teal-700 focus:bg-white focus:ring-4 focus:ring-teal-700/10 transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
-                    Email Address
+                    Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
@@ -570,21 +660,55 @@ export default function PatientLogin({ defaultRole }) {
                       type="email"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      placeholder="admin@smriti.in"
+                      placeholder="caregiver@smriti.in"
                       required
                       className="w-full pl-11 pr-4 py-3.5 bg-stone-50/80 border border-stone-300 rounded-2xl text-stone-900 text-sm sm:text-base font-semibold focus:outline-none focus:border-teal-700 focus:bg-white focus:ring-4 focus:ring-teal-700/10 transition-all shadow-inner"
                     />
                   </div>
                 </div>
 
+                {/* Role & Contact for Signup */}
+                {isCaregiverSignup && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
+                        Role
+                      </label>
+                      <select
+                        value={signupRole}
+                        onChange={(e) => setSignupRole(e.target.value)}
+                        className="w-full px-3.5 py-3.5 bg-stone-50/80 border border-stone-300 rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:border-teal-700 focus:bg-white"
+                      >
+                        <option value="clinician">Clinician / Doctor</option>
+                        <option value="caregiver">Family Caregiver / Nurse</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
+                        Phone (Optional)
+                      </label>
+                      <input
+                        type="tel"
+                        value={signupContact}
+                        onChange={(e) => setSignupContact(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="w-full px-3.5 py-3.5 bg-stone-50/80 border border-stone-300 rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:border-teal-700 focus:bg-white shadow-inner"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs sm:text-sm font-bold text-stone-800">
-                      Password
+                      Password <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-xs text-stone-500 font-semibold">
-                      (Demo mode: any password)
-                    </span>
+                    {!isCaregiverSignup && (
+                      <span className="text-xs text-stone-500 font-semibold">
+                        (Demo mode: any password)
+                      </span>
+                    )}
                   </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
@@ -594,31 +718,34 @@ export default function PatientLogin({ defaultRole }) {
                       type="password"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder={isCaregiverSignup ? 'Min. 6 characters' : '••••••••'}
                       required
+                      minLength={isCaregiverSignup ? 6 : 1}
                       className="w-full pl-11 pr-4 py-3.5 bg-stone-50/80 border border-stone-300 rounded-2xl text-stone-900 text-sm sm:text-base font-semibold focus:outline-none focus:border-teal-700 focus:bg-white focus:ring-4 focus:ring-teal-700/10 transition-all shadow-inner"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-stone-700 font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={rememberAdmin}
-                      onChange={(e) => setRememberAdmin(e.target.checked)}
-                      className="w-4 h-4 text-teal-800 rounded border-stone-300 focus:ring-teal-800"
-                    />
-                    <span>Remember this session</span>
-                  </label>
-                </div>
+                {!isCaregiverSignup && (
+                  <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-stone-700 font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={rememberAdmin}
+                        onChange={(e) => setRememberAdmin(e.target.checked)}
+                        className="w-4 h-4 text-teal-800 rounded border-stone-300 focus:ring-teal-800"
+                      />
+                      <span>Remember this session</span>
+                    </label>
+                  </div>
+                )}
 
-                {/* Sign In Button */}
+                {/* Submit Button */}
                 <button
                   type="submit"
                   className="w-full py-4 px-6 rounded-2xl bg-teal-900 hover:bg-teal-950 active:scale-95 text-white text-base sm:text-lg font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                 >
-                  <span>Sign In to Dashboard</span>
+                  <span>{isCaregiverSignup ? 'Create Account & Open Dashboard' : 'Sign In to Dashboard'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
 
