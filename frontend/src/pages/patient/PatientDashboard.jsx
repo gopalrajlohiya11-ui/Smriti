@@ -69,7 +69,36 @@ export default function PatientDashboard() {
     return calculatePatientStreak(activePatient, gameSessions, activePatient?.todayReminders || []);
   }, [activePatient, gameSessions]);
 
-    const isHindi = useMemo(() => {
+  // Check if patient has played any game today
+  const isTodayGameDone = useMemo(() => {
+    const now = new Date();
+    const todayYMD = now.toISOString().slice(0, 10);
+    
+    // 1. Check in fetched game sessions from MongoDB / state
+    const hasSessionToday = Array.isArray(gameSessions) && gameSessions.some(session => {
+      const dateVal = session.timestamp || session.createdAt || session.date;
+      if (!dateVal) return false;
+      const sDate = new Date(dateVal);
+      return (
+        sDate.getFullYear() === now.getFullYear() &&
+        sDate.getMonth() === now.getMonth() &&
+        sDate.getDate() === now.getDate()
+      );
+    });
+
+    if (hasSessionToday) return true;
+
+    // 2. Check localStorage key for instant offline & optimistic updates
+    try {
+      const patKey = activePatient?.id || activePatient?._id || 'guest';
+      const localDate = localStorage.getItem(`smriti_game_played_date_${patKey}`);
+      if (localDate === todayYMD) return true;
+    } catch (e) {}
+
+    return false;
+  }, [gameSessions, activePatient]);
+
+  const isHindi = useMemo(() => {
     return (currentLanguage?.code || '').startsWith('hi');
   }, [currentLanguage]);
   const [nowTime, setNowTime] = useState(new Date());
@@ -314,51 +343,103 @@ export default function PatientDashboard() {
         {/* 2. GAME OF THE DAY (DATE-SEEDED ROTATING CHALLENGE)      */}
         {/* ======================================================== */}
         {dailyFeaturedGame && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#B5502E]/30 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] text-xs font-black uppercase tracking-wider border border-[#B5502E]/20">
-                <Flame className="w-3.5 h-3.5 fill-[#B5502E]" />
-                <span>{isHindi ? "आज की विशेष चुनौती" : "Today's Featured Challenge"}</span>
-              </span>
+          isTodayGameDone ? (
+            /* COMPLETED TODAY'S GAME STATE */
+            <div className="bg-[#EDF7F2] rounded-3xl p-6 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs space-y-5 animate-in fade-in">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#1F6B4A] text-xs font-black uppercase tracking-wider border border-[#A3D9C1] shadow-2xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#1F6B4A]" />
+                  <span>{isHindi ? "✓ आज का खेल पूरा हुआ" : "✓ Today's Game Completed"}</span>
+                </span>
 
-              <span className="text-xs font-bold text-[#6B6B6B]">
-                {dynamicStreakDays} {isHindi ? "दिन लगातार" : (dynamicStreakDays === 1 ? "Day Memory Streak" : "Day Memory Streak")}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div className="flex items-start sm:items-center gap-5">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 flex items-center justify-center shrink-0 shadow-2xs">
-                  <GameIcon icon={dailyFeaturedGame.icon} className="w-9 h-9 text-[#B5502E]" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
-                      {isHindi ? (dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title) : dailyFeaturedGame.title}
-                    </h3>
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#6B6B6B] border border-[#E5E0D8]">
-                      {isHindi ? (dailyFeaturedGame.hindiCategory || dailyFeaturedGame.category) : dailyFeaturedGame.category}
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
-                    {isHindi ? (dailyFeaturedGame.hindiDescription || dailyFeaturedGame.description) : dailyFeaturedGame.description}
-                  </p>
-                </div>
+                <span className="text-xs font-bold text-[#1F6B4A] flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 fill-[#1F6B4A]" />
+                  <span>{dynamicStreakDays} {isHindi ? "दिन लगातार जारी" : `${dynamicStreakDays} Day Streak Maintained`}</span>
+                </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  const target = dailyFeaturedGame.path || dailyFeaturedGame.route || '/patient/games';
-                  navigate(target);
-                }}
-                className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
-              >
-                <Play className="w-5 h-5 fill-current" />
-                <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="flex items-start sm:items-center gap-5">
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#1F6B4A] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Check className="w-9 h-9 stroke-[3]" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-2xl sm:text-3xl font-black text-[#1F6B4A]">
+                        {isHindi ? "शाबाश! आज का खेल पूरा हुआ" : "Great Job! Today's Game Done"}
+                      </h3>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-[#1F6B4A] border border-[#A3D9C1]">
+                        {isHindi ? "पूरा हुआ" : "Done"}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-stone-600 font-medium">
+                      {isHindi 
+                        ? `आपने आज की मस्तिष्क चुनौती (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरी कर ली है! दिमाग को सक्रिय रखने के लिए और खेल खेलें।` 
+                        : `You've completed today's brain workout (${dailyFeaturedGame.title})! Keep your mind energized with more exercises.`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/patient/games')}
+                    className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#185339] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
+                  >
+                    <BrainCircuit className="w-5 h-5" />
+                    <span>{isHindi ? "और खेल खेलें" : "Play More Games"}</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* UNCOMPLETED / PENDING CHALLENGE STATE */
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#B5502E]/30 shadow-2xs space-y-5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] text-xs font-black uppercase tracking-wider border border-[#B5502E]/20">
+                  <Flame className="w-3.5 h-3.5 fill-[#B5502E]" />
+                  <span>{isHindi ? "आज की विशेष चुनौती" : "Today's Featured Challenge"}</span>
+                </span>
+
+                <span className="text-xs font-bold text-[#6B6B6B]">
+                  {dynamicStreakDays} {isHindi ? "दिन लगातार" : (dynamicStreakDays === 1 ? "Day Memory Streak" : "Day Memory Streak")}
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="flex items-start sm:items-center gap-5">
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 flex items-center justify-center shrink-0 shadow-2xs">
+                    <GameIcon icon={dailyFeaturedGame.icon} className="w-9 h-9 text-[#B5502E]" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
+                        {isHindi ? (dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title) : dailyFeaturedGame.title}
+                      </h3>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#6B6B6B] border border-[#E5E0D8]">
+                        {isHindi ? (dailyFeaturedGame.hindiCategory || dailyFeaturedGame.category) : dailyFeaturedGame.category}
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
+                      {isHindi ? (dailyFeaturedGame.hindiDescription || dailyFeaturedGame.description) : dailyFeaturedGame.description}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = dailyFeaturedGame.path || dailyFeaturedGame.route || '/patient/games';
+                    navigate(target);
+                  }}
+                  className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] text-white font-black text-base flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* ======================================================== */}

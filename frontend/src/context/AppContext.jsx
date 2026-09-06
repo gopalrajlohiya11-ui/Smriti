@@ -777,6 +777,10 @@ export function AppProvider({ children }) {
   }, []);
 
   const recordGameSession = async (patientId, gameData) => {
+    try {
+      const todayYMD = new Date().toISOString().slice(0, 10);
+      localStorage.setItem(`smriti_game_played_date_${patientId}`, todayYMD);
+    } catch (e) {}
     return await recordGameSessionApi(patientId, gameData);
   };
 
