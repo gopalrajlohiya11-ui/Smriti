@@ -38,6 +38,7 @@ export default function PatientProfile() {
     toggleVoiceAutoPlay
   } = useApp();
   const [patientSessions, setPatientSessions] = useState([]);
+  const isHindi = (currentLanguage?.code || '').startsWith('hi');
 
   useEffect(() => {
     let isMounted = true;
