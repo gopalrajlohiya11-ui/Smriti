@@ -286,7 +286,7 @@ export const DRUM_PADS = [
 export default function SoundRhythmMatch() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { activePatient, activePatientId, isOnline } = useApp();
+  const { activePatient, activePatientId, isOnline, currentLanguage } = useApp();
 
   // Audio volume state: 'boosted' (high gain 1.40) | 'loud' (1.0) | 'normal' (0.75) | 'muted' (0)
   const [volumeLevel, setVolumeLevel] = useState('boosted');
