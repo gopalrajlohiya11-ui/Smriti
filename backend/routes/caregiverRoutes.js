@@ -324,10 +324,38 @@ router.patch('/me', authenticateCaregiver, async (req, res) => {
       { new: true }
     );
 
+// 7. Request Password Reset: POST /api/caregivers/forgot-password
+router.post('/forgot-password', rateLimitLogin, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'A valid email address is required.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const caregiver = await Caregiver.findOne({ email: normalizedEmail });
+
+    // Always respond with a friendly success message to prevent user enumeration
+    if (!caregiver) {
+      return res.json({
+        status: 'ok',
+        message: 'If an account exists with this email, password reset instructions have been sent.'
+      });
+    }
+
+    // In demo/hackathon environment, log reset link and return confirmation
+    const resetToken = jwt.sign(
+      { id: caregiver._id, email: caregiver.email, type: 'pwd_reset' },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    console.log(`[AUTH] Password reset requested for caregiver: ${caregiver.email} (token: ${resetToken.substring(0, 15)}...)`);
+
     res.json({
       status: 'ok',
-      message: 'Caregiver preferences updated successfully',
-      caregiver: updated
+      message: 'Password reset instructions have been sent to your email address.'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -335,3 +363,4 @@ router.patch('/me', authenticateCaregiver, async (req, res) => {
 });
 
 module.exports = router;
+

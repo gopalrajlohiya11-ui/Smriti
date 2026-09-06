@@ -15,16 +15,18 @@ import {
   VolumeX, 
   ShieldCheck,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  X,
+  Loader2
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../../components/FoxtailOrchidIcon';
-import { GoogleLogin } from '@react-oauth/google';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
+import { requestCaregiverPasswordResetApi } from '../../services/api';
 
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverWithGoogle, signupCaregiver, patients, currentLanguage } = useApp();
+  const { loginPatient, loginPatientBiometric, loginCaregiver, signupCaregiver, patients, currentLanguage } = useApp();
 
   // Role toggle: 'patient' | 'admin'
   const [activeRole, setActiveRole] = useState(() => {
@@ -49,19 +51,36 @@ export default function PatientLogin({ defaultRole }) {
   const [signupRole, setSignupRole] = useState('clinician');
   const [signupContact, setSignupContact] = useState('');
 
+  // Forgot Password Modal States
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotStatus, setForgotStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [forgotMsg, setForgotMsg] = useState('');
+
   // UI Feedback States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
-  const [biometricScanning, setBiometricScanning] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState(''); // '' | 'verifying' | 'success'
 
-  // Check WebAuthn support
+  // Check WebAuthn platform authenticator support
   useEffect(() => {
-    if (window.PublicKeyCredential) {
-      setIsBiometricAvailable(true);
-    }
+    const checkBiometrics = async () => {
+      if (window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+        try {
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          setIsBiometricAvailable(!!available);
+        } catch {
+          setIsBiometricAvailable(false);
+        }
+      } else if (window.PublicKeyCredential) {
+        setIsBiometricAvailable(true);
+      }
+    };
+    checkBiometrics();
   }, []);
+
 
   // Voice Guidance implementation using Web Speech API
   const handleVoiceGuidance = () => {
@@ -77,17 +96,17 @@ export default function PatientLogin({ defaultRole }) {
     let guidanceText = '';
     if (isHindi) {
       if (activeRole === 'patient') {
-        guidanceText = 'स्मृति में आपका स्वागत है। कृपया नीचे दिए गए बड़े बटनों का उपयोग करके अपना नाम, उम्र और 4-अंकों का पिन दर्ज करें। आप बायोमेट्रिक या गूगल से भी साइन इन कर सकते हैं।';
+        guidanceText = 'स्मृति में आपका स्वागत है। कृपया नीचे दिए गए बड़े बटनों का उपयोग करके अपना नाम, उम्र और 4-अंकों का पिन दर्ज करें। आप बायोमेट्रिक से भी साइन इन कर सकते हैं।';
       } else {
-        guidanceText = 'स्मृति एडमिन में आपका स्वागत है। कृपया क्लिनिकल डैशबोर्ड तक पहुंचने के लिए अपना ईमेल और पासवर्ड दर्ज करें।';
+        guidanceText = 'स्मृति केयरगिवर पोर्टल में आपका स्वागत है। कृपया क्लिनिकल डैशबोर्ड तक पहुंचने के लिए अपना ईमेल और पासवर्ड दर्ज करें।';
       }
     } else if (isAssamese) {
       guidanceText = 'স্মৃতিত আপোনাক স্বাগতম। অনুগ্ৰহ কৰি তলৰ ডাঙৰ বুটামবোৰ ব্যৱহাৰ কৰি আপোনাৰ নাম আৰু ৪-অংকৰ পিন প্ৰৱেশ কৰক।';
     } else {
       if (activeRole === 'patient') {
-        guidanceText = 'Welcome to Smriti. Please enter your name, age, and 4-digit PIN using the large buttons below. You can also sign in with Google or fingerprint unlock.';
+        guidanceText = 'Welcome to Smriti. Please enter your name, age, and 4-digit PIN using the large buttons below. You can also sign in with fingerprint unlock.';
       } else {
-        guidanceText = 'Welcome to Smriti Admin. Please enter your caregiver email and password, or sign in with Google or fingerprint unlock to access clinical dashboards.';
+        guidanceText = 'Welcome to Smriti Caregiver Portal. Please enter your caregiver email and password, or use fingerprint unlock to access clinical dashboards.';
       }
     }
 
@@ -215,25 +234,29 @@ export default function PatientLogin({ defaultRole }) {
     }
   };
 
-  // Real Google Sign-In Handlers
-  const handleGoogleLoginSuccess = async (credentialResponse) => {
-    setErrorMsg('');
+  // Forgot Password Request Handler
+  const handleForgotPasswordSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const email = forgotEmail.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setForgotStatus('error');
+      setForgotMsg('Please enter a valid email address.');
+      return;
+    }
+
     try {
-      if (!credentialResponse?.credential) {
-        throw new Error('No Google credential returned');
-      }
-      await loginCaregiverWithGoogle(credentialResponse.credential);
-      navigate('/caregiver');
+      setForgotStatus('loading');
+      setForgotMsg('');
+      const res = await requestCaregiverPasswordResetApi(email);
+      setForgotStatus('success');
+      setForgotMsg(res.message || 'Password reset instructions have been sent to your email.');
     } catch (err) {
-      setErrorMsg(err.message || 'Google authentication failed. Please try again.');
+      setForgotStatus('error');
+      setForgotMsg(err.message || 'Failed to send password reset. Please try again.');
     }
   };
 
-  const handleGoogleLoginError = () => {
-    setErrorMsg('Google Sign-In was cancelled or failed. Please check your network or try again.');
-  };
-
-  // WebAuthn Native Biometric Login (Feature 2)
+  // WebAuthn Native Biometric Login
   const handleBiometricAuth = async () => {
     setErrorMsg('');
     setBiometricStatus('verifying');
@@ -262,8 +285,8 @@ export default function PatientLogin({ defaultRole }) {
               rp: { name: 'Smriti Memory Companion', id: window.location.hostname },
               user: {
                 id: dummyUserId,
-                name: patientName,
-                displayName: patientName
+                name: activeRole === 'patient' ? (patientName || 'Patient User') : (adminEmail || 'Caregiver User'),
+                displayName: activeRole === 'patient' ? (patientName || 'Patient User') : (adminEmail || 'Caregiver User')
               },
               pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
               authenticatorSelection: { userVerification: 'preferred' },
@@ -274,11 +297,21 @@ export default function PatientLogin({ defaultRole }) {
 
         setBiometricStatus('success');
         const credId = credential?.id || 'webauthn-sensor-touch';
-        await loginPatientBiometric(credId, null, patientName);
-        speakText(`Welcome back, ${patientName}! Your fingerprint was recognized.`, true);
-        setTimeout(() => {
-          navigate('/patient');
-        }, 600);
+        if (activeRole === 'patient') {
+          await loginPatientBiometric(credId, null, patientName);
+          speakText(`Welcome back, ${patientName}! Your fingerprint was recognized.`, true);
+          setTimeout(() => {
+            navigate('/patient');
+          }, 600);
+        } else {
+          await loginCaregiver(adminEmail || 'dr.ananya@smriti.in', 'caregiver123');
+          setTimeout(() => {
+            navigate('/caregiver');
+          }, 600);
+        }
+      } else {
+        setBiometricStatus('');
+        setErrorMsg('Biometric authentication is not supported on this device/browser.');
       }
     } catch (err) {
       console.warn('Biometric auth error:', err.message);
@@ -286,6 +319,7 @@ export default function PatientLogin({ defaultRole }) {
       setErrorMsg('Biometrics canceled. You can sign in using your PIN or password below.');
     }
   };
+
 
   const handleQuickSelectPatient = (p) => {
     setPatientName(p.name);
@@ -593,41 +627,9 @@ export default function PatientLogin({ defaultRole }) {
                 </p>
               </div>
 
-              {/* Sign In vs Sign Up Tab Switcher */}
-              <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCaregiverSignup(false);
-                    setErrorMsg('');
-                  }}
-                  className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
-                    !isCaregiverSignup
-                      ? 'bg-white text-teal-900 shadow-xs'
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCaregiverSignup(true);
-                    setErrorMsg('');
-                  }}
-                  className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
-                    isCaregiverSignup
-                      ? 'bg-white text-teal-900 shadow-xs'
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
-                >
-                  Create Account (Sign Up)
-                </button>
-              </div>
-
               <form onSubmit={isCaregiverSignup ? handleCaregiverSignup : handleAdminSubmit} className="space-y-4">
                 
-                {/* Full Name for Signup */}
+                {/* Full Name (Sign Up only) */}
                 {isCaregiverSignup && (
                   <div>
                     <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
@@ -649,6 +651,7 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 )}
 
+                {/* Email Address */}
                 <div>
                   <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
                     Email Address <span className="text-red-500">*</span>
@@ -668,12 +671,12 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 </div>
 
-                {/* Role & Contact for Signup */}
+                {/* Role & Contact for Sign Up */}
                 {isCaregiverSignup && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
-                        Role
+                        Role <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={signupRole}
@@ -700,14 +703,28 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 )}
 
+                {/* Password Field */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs sm:text-sm font-bold text-stone-800">
                       Password <span className="text-red-500">*</span>
                     </label>
-                    {!isCaregiverSignup && (
+                    {!isCaregiverSignup ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(adminEmail);
+                          setForgotStatus('idle');
+                          setForgotMsg('');
+                          setShowForgotPasswordModal(true);
+                        }}
+                        className="text-xs text-teal-700 hover:text-teal-900 font-bold underline cursor-pointer"
+                      >
+                        Forgot Password?
+                      </button>
+                    ) : (
                       <span className="text-xs text-stone-500 font-semibold">
-                        (Demo mode: any password)
+                        (Min. 6 characters)
                       </span>
                     )}
                   </div>
@@ -727,6 +744,7 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 </div>
 
+                {/* Remember Session Checkbox (Sign In view) */}
                 {!isCaregiverSignup && (
                   <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
                     <label className="flex items-center gap-2 cursor-pointer text-stone-700 font-semibold">
@@ -741,7 +759,7 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 )}
 
-                {/* Submit Button */}
+                {/* Primary Action Button */}
                 <button
                   type="submit"
                   className="w-full py-4 px-6 rounded-2xl bg-teal-900 hover:bg-teal-950 active:scale-95 text-white text-base sm:text-lg font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
@@ -750,42 +768,64 @@ export default function PatientLogin({ defaultRole }) {
                   <ArrowRight className="w-5 h-5" />
                 </button>
 
+                {/* Switch between Sign In and Sign Up */}
+                <div className="text-center pt-2">
+                  {!isCaregiverSignup ? (
+                    <p className="text-xs sm:text-sm text-stone-600 font-medium">
+                      Don't have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCaregiverSignup(true);
+                          setErrorMsg('');
+                        }}
+                        className="font-bold text-teal-800 hover:text-teal-950 underline cursor-pointer ml-1"
+                      >
+                        Sign Up
+                      </button>
+                    </p>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-stone-600 font-medium">
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCaregiverSignup(false);
+                          setErrorMsg('');
+                        }}
+                        className="font-bold text-teal-800 hover:text-teal-950 underline cursor-pointer ml-1"
+                      >
+                        Sign In
+                      </button>
+                    </p>
+                  )}
+                </div>
+
               </form>
 
-              {/* ALTERNATIVE ADMIN LOGIN METHODS */}
-              <div className="space-y-3 pt-2">
-                <div className="relative flex items-center justify-center">
-                  <div className="border-t border-stone-200 w-full" />
-                  <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">
-                    {isCaregiverSignup ? 'Or Sign Up With' : 'Or Sign In With'}
-                  </span>
-                </div>
+              {/* Biometric Unlock Option */}
+              {isBiometricAvailable && (
+                <div className="space-y-3 pt-2">
+                  <div className="relative flex items-center justify-center">
+                    <div className="border-t border-stone-200 w-full" />
+                    <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">
+                      Or Quick Access
+                    </span>
+                  </div>
 
-                {/* Google Sign In / Sign Up Button (Full Width matching Dashboard submit button) */}
-                <div className="w-full flex justify-center py-1 [&>div]:!w-full [&>div>iframe]:!w-full [&_iframe]:!w-full [&_iframe]:!min-w-full [&_iframe]:!max-w-none">
-                  <GoogleLogin
-                    onSuccess={handleGoogleLoginSuccess}
-                    onError={handleGoogleLoginError}
-                    theme="outline"
-                    size="large"
-                    shape="rectangular"
-                    text={isCaregiverSignup ? 'signup_with' : 'signin_with'}
-                    width="100%"
-                  />
-                </div>
-
-                {/* Biometric Button */}
-                {isBiometricAvailable && (
                   <button
                     type="button"
                     onClick={handleBiometricAuth}
-                    className="w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold rounded-2xl transition-all flex items-center justify-center gap-2.5 shadow-2xs cursor-pointer active:scale-95"
+                    disabled={biometricStatus === 'verifying'}
+                    className="w-full py-3.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold rounded-2xl transition-all flex items-center justify-center gap-2.5 shadow-2xs cursor-pointer active:scale-95 disabled:opacity-50"
                   >
                     <Fingerprint className="w-5 h-5 text-teal-800" />
-                    <span>Use Fingerprint / Face Unlock</span>
+                    <span>
+                      {biometricStatus === 'verifying' ? 'Verifying Sensor...' : 'Use Fingerprint / Face Unlock'}
+                    </span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Quick Demo Logins for Admin */}
               <div className="pt-3 border-t border-stone-200">
@@ -825,6 +865,120 @@ export default function PatientLogin({ defaultRole }) {
 
       </div>
 
+      {/* ======================================================== */}
+      {/* 3. FORGOT PASSWORD MODAL DIALOG                          */}
+      {/* ======================================================== */}
+      {showForgotPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-stone-200 space-y-5 relative">
+            
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotPasswordModal(false);
+                setForgotStatus('idle');
+                setForgotMsg('');
+              }}
+              className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1.5">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-800 flex items-center justify-center border border-teal-100 mb-2">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black text-stone-900 tracking-tight">
+                Reset Caregiver Password
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-500">
+                Enter your registered caregiver email address and we'll send you instructions to securely reset your password.
+              </p>
+            </div>
+
+            {forgotStatus === 'success' ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs sm:text-sm font-semibold flex items-start gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Instructions Sent!</p>
+                    <p className="mt-0.5 text-emerald-800">{forgotMsg}</p>
+                    <p className="mt-1 text-[11px] text-emerald-700 font-medium">
+                      (Demo mode: You can also sign in directly using any password with demo accounts)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPasswordModal(false);
+                    setForgotStatus('idle');
+                    setForgotMsg('');
+                  }}
+                  className="w-full py-3.5 px-5 bg-teal-900 hover:bg-teal-950 text-white font-bold rounded-2xl text-sm transition-all cursor-pointer shadow-md"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                {forgotStatus === 'error' && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    <span>{forgotMsg}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-stone-800 mb-1.5">
+                    Caregiver Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="caregiver@smriti.in"
+                      required
+                      className="w-full pl-11 pr-4 py-3.5 bg-stone-50 border border-stone-300 rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:border-teal-700 focus:bg-white focus:ring-4 focus:ring-teal-700/10 shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswordModal(false)}
+                    className="flex-1 py-3.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-2xl text-sm transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotStatus === 'loading'}
+                    className="flex-1 py-3.5 px-4 bg-teal-900 hover:bg-teal-950 text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    {forgotStatus === 'loading' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Send Reset Link</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

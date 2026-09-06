@@ -97,6 +97,24 @@ export async function signupCaregiverApi(caregiverData) {
   }
 }
 
+// 2b. Caregiver Forgot Password Reset Request
+export async function requestCaregiverPasswordResetApi(email) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/caregivers/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to send password reset instructions');
+    return data;
+  } catch (err) {
+    console.error('Caregiver forgot password API error:', err.message);
+    throw err;
+  }
+}
+
+
 // 3. Patient Login (Name/Age/PIN keypad)
 export async function loginPatientApi(name, age, pin, phoneNumber) {
   try {

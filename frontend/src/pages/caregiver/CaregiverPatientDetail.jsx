@@ -558,27 +558,27 @@ export default function CaregiverPatientDetail() {
         {/* ======================================================== */}
         {/* 1. PATIENT HEADER CLINICAL CARD                          */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4 sm:space-y-6">
           
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-slate-100">
             
             {/* Avatar & Patient Info */}
-            <div className="flex items-center gap-4 sm:gap-5">
+            <div className="flex items-center gap-3.5 sm:gap-5">
               <img
                 src={selectedPatient.avatar}
                 alt={selectedPatient.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
               />
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="space-y-1 sm:space-y-1.5 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate">
                     {selectedPatient.name}
                   </h1>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 bg-teal-50 text-teal-800 rounded-md border border-teal-200">
+                  <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 bg-teal-50 text-teal-800 rounded-md border border-teal-200">
                     {selectedPatient.cognitiveStage || 'Tier 1'}
                   </span>
                   {selectedPatient.hasBiometric && (
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200 flex items-center gap-1">
+                    <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200 flex items-center gap-1">
                       <Fingerprint className="w-3 h-3 text-emerald-600" />
                       <span>Biometric Ready</span>
                     </span>
@@ -587,18 +587,18 @@ export default function CaregiverPatientDetail() {
                 <p className="text-xs sm:text-sm text-slate-500 font-medium">
                   {selectedPatient.age} yrs • {selectedPatient.location} • {selectedPatient.nativeLanguage}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-[11px] sm:text-xs text-slate-400 truncate">
                   Primary Clinician: <strong className="text-slate-700 font-semibold">{selectedPatient.primaryCaregiver || 'Dr. Ananya Sharma'}</strong>
                 </p>
               </div>
             </div>
 
             {/* Top Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
               <button
                 type="button"
                 onClick={() => handleOpenEditModal(selectedPatient)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer"
                 title="Edit clinical parameters, biometrics & notes"
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -607,7 +607,7 @@ export default function CaregiverPatientDetail() {
 
               <button
                 onClick={() => switchToPatientView(selectedPatient)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] sm:text-xs font-bold transition-all cursor-pointer border border-slate-300"
                 title="Open the elderly-friendly touch/voice companion view"
               >
                 <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
@@ -618,7 +618,7 @@ export default function CaregiverPatientDetail() {
                 <button
                   type="button"
                   disabled
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-400 text-xs font-semibold cursor-not-allowed border border-slate-200"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 text-slate-400 text-[11px] sm:text-xs font-semibold cursor-not-allowed border border-slate-200"
                   title="Demo patient accounts are protected"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
@@ -632,7 +632,7 @@ export default function CaregiverPatientDetail() {
                     setDeleteErrorMsg('');
                     setShowDeleteModal(true);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold transition-colors cursor-pointer border border-rose-200"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-[11px] sm:text-xs font-bold transition-colors cursor-pointer border border-rose-200"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                   <span>Delete Patient</span>
@@ -641,6 +641,7 @@ export default function CaregiverPatientDetail() {
             </div>
 
           </div>
+
 
           {/* Quick Adherence Banner */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
