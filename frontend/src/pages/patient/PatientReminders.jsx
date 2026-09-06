@@ -64,12 +64,14 @@ export default function PatientReminders() {
     return new Date(nowTime);
   };
 
-  const speakText = (text) => {
+  const speakText = (text, isAutoPlay = false) => {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.85,
       pitch: 1.0,
+      isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
@@ -90,7 +92,7 @@ export default function PatientReminders() {
     const msg = isHindi 
       ? `शानदार! आपने ${title} सफलतापूर्वक पूरा कर लिया!`
       : `Wonderful job completing your ${title}!`;
-    speakText(msg);
+    speakText(msg, true);
   };
 
   const chronologicalReminders = useMemo(() => {

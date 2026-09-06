@@ -189,11 +189,13 @@ export default function PatientAllGames() {
     );
   }, [selectedCategory]);
 
-  const speakText = (text) => {
+  const speakText = (text, isAutoPlay = false) => {
     speakLocalized({
       text,
       langCode: isHindi ? 'hi-IN' : (currentLanguage?.code || 'en'),
-      rate: 0.95
+      rate: 0.95,
+      isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id
     });
   };
 
@@ -250,7 +252,7 @@ export default function PatientAllGames() {
     const celebrationMsg = isHindi
       ? `बधाई हो! आपने आज का खेल पूरा कर लिया और अपनी स्मृति स्ट्रीक को ${newStreak} दिन तक बढ़ा दिया!`
       : `Congratulations! You completed today's Game of the Day and increased your memory streak to ${newStreak} days!`;
-    speakText(celebrationMsg);
+    speakText(celebrationMsg, true);
   };
 
   return (

@@ -118,13 +118,15 @@ export default function PatientDashboard() {
     return t('dashboard.goodEvening', 'Good Evening');
   }, [nowTime, t]);
 
-  const speakText = (text) => {
+  const speakText = (text, isAutoPlay = false) => {
     setAudioMessage(text);
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
       rate: 0.85,
       pitch: 1.0,
+      isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
@@ -237,7 +239,7 @@ export default function PatientDashboard() {
     });
 
     const isHindi = (currentLanguage?.code || '').startsWith('hi');
-    speakText(isHindi ? `शानदार! आपने ${title} पूरा कर लिया।` : `Great job! You completed ${title}.`);
+    speakText(isHindi ? `शानदार! आपने ${title} पूरा कर लिया।` : `Great job! You completed ${title}.`, true);
     toggleReminder(activePatient?.id || activePatient?._id, remId);
   };
 

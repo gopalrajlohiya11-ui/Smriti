@@ -211,11 +211,12 @@ export default function FacesFamilyRecall() {
       rate: 0.85,
       pitch: 1.0,
       isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
     });
-  }, [currentLanguage]);
+  }, [currentLanguage, activePatient]);
 
   // Generate a round question
   const generateRound = useCallback((levelNum, numOptions) => {
@@ -308,7 +309,7 @@ export default function FacesFamilyRecall() {
       const isHindi = (currentLanguage?.code || '').startsWith('hi');
       const affirmation = (isHindi && HINDI_PERSON_AFFIRMATIONS[currentPerson.id]) ? HINDI_PERSON_AFFIRMATIONS[currentPerson.id] : currentPerson.affirmation;
       setFeedbackMessage(affirmation);
-      speakText(affirmation);
+      speakText(affirmation, true);
 
       // Record round metrics
       const roundAccuracy = Math.round((1 / totalAtt) * 100);
@@ -339,7 +340,7 @@ export default function FacesFamilyRecall() {
         : `This is actually ${currentPerson.relation} — ${currentPerson.name} 💛`;
 
       setFeedbackMessage(gentleCorrection);
-      speakText(gentleCorrection);
+      speakText(gentleCorrection, true);
 
       // Record round metrics with lower accuracy
       const roundAccuracy = Math.round((1 / Math.max(2, totalAtt + 1)) * 100);
@@ -409,7 +410,7 @@ export default function FacesFamilyRecall() {
     };
     setFinalStats(summaryStats);
 
-    speakText(`Congratulations ${activePatient?.name?.split(' ')[0] || ''}! You completed all 5 levels of Faces and Family Recall with a score of ${finalScaledScore}!`);
+    speakText(`Congratulations ${activePatient?.name?.split(' ')[0] || ''}! You completed all 5 levels of Faces and Family Recall with a score of ${finalScaledScore}!`, true);
 
     // Submit Game Session to MongoDB
     setIsSavingScore(true);

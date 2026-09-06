@@ -1,4 +1,4 @@
-import { speakLocalized } from '../../../utils/speechUtils';
+import { speakLocalized, getVoiceAutoPlaySetting } from '../../../utils/speechUtils';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -78,12 +78,13 @@ class RhythmAudioSynth {
     }
   }
 
-  playDrumTone(drumIndex, isMuted = false, speakVoice = true) {
+  playDrumTone(drumIndex, isMuted = false, speakVoice = true, patientId = null) {
     if (isMuted) return;
     this.init();
 
     // 1. Spoken Vocal Syllable ("Dhoom!", "Dhit!", "Ta!", "Ting!") with instant cancel to prevent clashes
-    if (speakVoice && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    const isAutoPlayOn = getVoiceAutoPlaySetting(patientId);
+    if (speakVoice && isAutoPlayOn && typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel(); // Critical: instantly cancel previous speech to prevent overlapping on fast clicks
         const syllable = DRUM_SYLLABLES_TTS[drumIndex % DRUM_SYLLABLES_TTS.length];
@@ -350,8 +351,9 @@ export default function SoundRhythmMatch() {
   const [roundErrors, setRoundErrors] = useState(0);
 
   // Spoken feedback helper using speech synthesis (always cancels prior speech to prevent audio clashes)
-  const speakText = useCallback((text) => {
+  const speakText = useCallback((text, isAutoPlay = true) => {
     if (isAudioMuted) return;
+    if (isAutoPlay && !getVoiceAutoPlaySetting(activePatientId || activePatient?.id)) return;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -359,7 +361,7 @@ export default function SoundRhythmMatch() {
       utterance.pitch = 1.05;
       window.speechSynthesis.speak(utterance);
     }
-  }, [isAudioMuted]);
+  }, [isAudioMuted, activePatientId, activePatient]);
 
   // Generate random drum sequence of given length
   const generateSequence = useCallback((len) => {
@@ -396,7 +398,7 @@ export default function SoundRhythmMatch() {
         const drumId = targetSeq[step];
         setDemoStepIndex(step);
         setActiveDrumId(drumId);
-        synth.playDrumTone(drumId, isAudioMuted);
+        synth.playDrumTone(drumId, isAudioMuted, true, activePatientId || activePatient?.id);
 
         setTimeout(() => {
           setActiveDrumId(null);
@@ -408,13 +410,13 @@ export default function SoundRhythmMatch() {
         setTimeout(() => {
           setDemoStepIndex(-1);
           setGamePhase('player_turn');
-          speakText('Your turn! Tap the rhythm in the same order.');
+          speakText('Your turn! Tap the rhythm in the same order.', true);
         }, 500);
       }
     }, stepInterval);
 
     return () => clearInterval(intervalId);
-  }, [sequence, isAudioMuted, speakText]);
+  }, [sequence, isAudioMuted, speakText, activePatientId, activePatient]);
 
   // Start a new round
   const startRound = useCallback((levelNum, len) => {
@@ -449,7 +451,7 @@ export default function SoundRhythmMatch() {
 
     // Visual & audio response immediately
     setActiveDrumId(drumId);
-    synth.playDrumTone(drumId, isAudioMuted);
+    synth.playDrumTone(drumId, isAudioMuted, true, activePatientId || activePatient?.id);
     setTimeout(() => setActiveDrumId(null), 300);
 
     const currentStep = playerInputSequence.length;

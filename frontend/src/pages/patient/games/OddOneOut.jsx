@@ -248,9 +248,10 @@ export default function OddOneOut() {
       text,
       langCode: isHindi ? 'hi-IN' : (currentLanguage?.code || 'en'),
       rate: 0.90,
-      isAutoPlay
+      isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id
     });
-  }, [isAudioMuted, isHindi, currentLanguage]);
+  }, [isAudioMuted, isHindi, currentLanguage, activePatient]);
 
   useEffect(() => {
     return () => {
@@ -326,7 +327,7 @@ export default function OddOneOut() {
         ? `शानदार! ${card.name} बाकी सभी से अलग है! 🌟`
         : `Brilliant! ${card.name} is indeed the odd one out! 🌟`;
       setFeedbackMsg(succMsg);
-      speakText(succMsg);
+      speakText(succMsg, true);
 
       const metric = {
         level: currentLevel,
@@ -357,7 +358,7 @@ export default function OddOneOut() {
         ? `यह तो समान वस्तु है। दूसरी वस्तु को ध्यान से देखें! 💛`
         : `This one matches the others. Look closely for the unique one! 💛`;
       setFeedbackMsg(wrongMsg);
-      speakText(wrongMsg);
+      speakText(wrongMsg, true);
 
       const metric = {
         level: currentLevel,
@@ -396,7 +397,7 @@ export default function OddOneOut() {
     const congrats = isHindi
       ? `बधाई हो! आपने 5 स्तर पूरे किए और ${finalScaledScore} अंक प्राप्त किए!`
       : `Congratulations! You completed all 5 levels with a score of ${finalScaledScore}!`;
-    speakText(congrats);
+    speakText(congrats, true);
 
     setIsSaving(true);
     const payload = {

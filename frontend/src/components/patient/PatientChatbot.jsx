@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { sendPatientChatMessage } from '../../services/api';
+import { getVoiceAutoPlaySetting } from '../../utils/speechUtils';
 import { 
   MessageCircle, 
   X, 
@@ -77,7 +78,7 @@ export default function PatientChatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [autoSpeakEnabled, setAutoSpeakEnabled] = useState(true);
+  const [autoSpeakEnabled, setAutoSpeakEnabled] = useState(() => getVoiceAutoPlaySetting(activePatientId));
   const [isSpeakingAloud, setIsSpeakingAloud] = useState(false);
   const [micStatusMsg, setMicStatusMsg] = useState('');
 
@@ -88,6 +89,20 @@ export default function PatientChatbot() {
   const timerIntervalRef = useRef(null);
   const isRecordingRef = useRef(false);
   const isSendingRef = useRef(false);
+
+  // Sync autoSpeak setting when changed globally
+  useEffect(() => {
+    setAutoSpeakEnabled(getVoiceAutoPlaySetting(activePatientId));
+    const handleAutoplayChange = () => {
+      setAutoSpeakEnabled(getVoiceAutoPlaySetting(activePatientId));
+    };
+    window.addEventListener('smriti_autoplay_changed', handleAutoplayChange);
+    window.addEventListener('storage', handleAutoplayChange);
+    return () => {
+      window.removeEventListener('smriti_autoplay_changed', handleAutoplayChange);
+      window.removeEventListener('storage', handleAutoplayChange);
+    };
+  }, [activePatientId]);
 
   // Sync messages to session storage for this patient
   useEffect(() => {

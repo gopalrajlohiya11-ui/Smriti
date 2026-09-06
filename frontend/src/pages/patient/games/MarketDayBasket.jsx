@@ -424,11 +424,12 @@ export default function MarketDayBasket() {
       rate: 0.85,
       pitch: 1.0,
       isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false)
     });
-  }, [currentLanguage]);
+  }, [currentLanguage, activePatient]);
 
   // Compute Current Session Accuracy
   const currentAccuracy = useMemo(() => {
@@ -615,7 +616,7 @@ export default function MarketDayBasket() {
 
     setIsTransitioningLevel(true);
 
-    speakInstruction(isHindi ? `शानदार! स्तर ${nextLevelNum} शुरू हो रहा है` : `Great job! Moving to Level ${nextLevelNum}`);
+    speakInstruction(isHindi ? `शानदार! स्तर ${nextLevelNum} शुरू हो रहा है` : `Great job! Moving to Level ${nextLevelNum}`, true);
 
     // Auto-advance after 1.8 seconds automatically
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);

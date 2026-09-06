@@ -228,11 +228,12 @@ export default function DailyRoutineSequencer() {
       rate: 0.85,
       pitch: 1.0,
       isAutoPlay,
+      patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsPlayingAudio(true),
       onEnd: () => setIsPlayingAudio(false),
       onError: () => setIsPlayingAudio(false)
     });
-  }, [currentLanguage]);
+  }, [currentLanguage, activePatient]);
 
   // Generate round cards based on sequence length
   const generateRound = useCallback((levelNum, length) => {
@@ -304,7 +305,7 @@ export default function DailyRoutineSequencer() {
       ];
       const cheer = cheerPhrases[Math.floor(Math.random() * cheerPhrases.length)];
       setFeedbackToast({ type: 'success', text: `✓ Correct! Step ${nextIdx}: ${card.title}` });
-      speakText(cheer);
+      speakText(cheer, true);
 
       setTimeout(() => {
         setFeedbackToast(null);
@@ -324,7 +325,7 @@ export default function DailyRoutineSequencer() {
         text: `Not quite! Think about what you do earlier in the day.`
       });
 
-      speakText(`Not quite. Think about which activity happens earlier in the day.`);
+      speakText(`Not quite. Think about which activity happens earlier in the day.`, true);
 
       setTimeout(() => {
         setShakingCardId(null);
@@ -381,7 +382,7 @@ export default function DailyRoutineSequencer() {
         : `Level ${currentLevel} Complete! 🌟 Moving to Level ${nextLvl}...`;
       setTransitionMessage(transitionMsg);
       setShowLevelTransition(true);
-      speakText(`Wonderful job! Level ${currentLevel} complete. Moving to Level ${nextLvl}!`);
+      speakText(`Wonderful job! Level ${currentLevel} complete. Moving to Level ${nextLvl}!`, true);
 
       setTimeout(() => {
         setShowLevelTransition(false);
@@ -417,7 +418,7 @@ export default function DailyRoutineSequencer() {
     };
     setFinalStats(summaryStats);
 
-    speakText(`Congratulations ${activePatient?.name?.split(' ')[0] || ''}! You completed all 5 levels of Daily Routine Sequencer with a score of ${finalScaledScore}!`);
+    speakText(`Congratulations ${activePatient?.name?.split(' ')[0] || ''}! You completed all 5 levels of Daily Routine Sequencer with a score of ${finalScaledScore}!`, true);
 
     // Submit Game Session to MongoDB
     setIsSavingScore(true);
