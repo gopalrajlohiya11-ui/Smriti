@@ -756,21 +756,26 @@ export default function PatientLogin({ defaultRole }) {
                 <div className="relative flex items-center justify-center">
                   <div className="border-t border-stone-200 w-full" />
                   <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider">
-                    Or Continue With
+                    {isCaregiverSignup ? 'Or Sign Up With' : 'Or Sign In With'}
                   </span>
                 </div>
 
-                {/* Google Sign In Button */}
-                <div className="w-full flex justify-center py-1">
+                {/* Google Sign In / Sign Up Button */}
+                <div className="w-full flex flex-col items-center gap-1.5 py-1">
                   <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginError}
                     theme="outline"
                     size="large"
                     shape="pill"
-                    text="continue_with"
+                    text={isCaregiverSignup ? 'signup_with' : 'signin_with'}
                     width="100%"
                   />
+                  <p className="text-[11px] text-stone-400 text-center font-medium">
+                    {isCaregiverSignup 
+                      ? '✨ 1-Click registration — no password creation needed'
+                      : '✨ If you signed up with Google, click above to log in'}
+                  </p>
                 </div>
 
                 {/* Biometric Button */}
