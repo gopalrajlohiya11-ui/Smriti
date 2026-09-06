@@ -761,21 +761,16 @@ export default function PatientLogin({ defaultRole }) {
                 </div>
 
                 {/* Google Sign In / Sign Up Button */}
-                <div className="w-full flex flex-col items-center gap-1.5 py-1">
+                <div className="w-full flex justify-center py-1">
                   <GoogleLogin
                     onSuccess={handleGoogleLoginSuccess}
                     onError={handleGoogleLoginError}
                     theme="outline"
                     size="large"
-                    shape="pill"
+                    shape="rectangular"
                     text={isCaregiverSignup ? 'signup_with' : 'signin_with'}
-                    width="100%"
+                    width="360"
                   />
-                  <p className="text-[11px] text-stone-400 text-center font-medium">
-                    {isCaregiverSignup 
-                      ? '✨ 1-Click registration — no password creation needed'
-                      : '✨ If you signed up with Google, click above to log in'}
-                  </p>
                 </div>
 
                 {/* Biometric Button */}
