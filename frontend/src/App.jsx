@@ -20,6 +20,7 @@ import SoundRhythmMatch from './pages/patient/games/SoundRhythmMatch';
 import OddOneOut from './pages/patient/games/OddOneOut';
 import PatientAllGames from './pages/patient/PatientAllGames';
 import PatientChatbot from './components/patient/PatientChatbot';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -62,6 +63,9 @@ function App() {
         </main>
           {/* Floating AI Chatbot for Patient Portal */}
           <PatientChatbot />
+
+          {/* In-App PWA Install Banner & Guidance */}
+          <PwaInstallPrompt />
         </div>
       </Router>
     </AppProvider>

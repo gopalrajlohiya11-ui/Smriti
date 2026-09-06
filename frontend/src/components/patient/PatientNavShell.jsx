@@ -19,7 +19,9 @@ import {
   VolumeX,
   SlidersHorizontal,
   X,
-  Check
+  Check,
+  Download,
+  Smartphone
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
 
@@ -489,6 +491,21 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                   </span>
                 </button>
               </div>
+            </div>
+
+            {/* Install App Button */}
+            <div className="pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSettingsOpen(false);
+                  window.dispatchEvent(new CustomEvent('smriti_trigger_pwa_install'));
+                }}
+                className="w-full min-h-[50px] px-4 py-2.5 rounded-2xl bg-[#FFF7ED] text-[#9a3412] border border-[#9a3412]/30 font-black text-sm flex items-center justify-center gap-2 active:bg-amber-100 transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isHindi ? "📲 ऐप फोन पर इंस्टॉल करें" : "📲 Install App on Phone"}</span>
+              </button>
             </div>
 
             {/* Switch User / Logout */}

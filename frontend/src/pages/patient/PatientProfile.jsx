@@ -22,7 +22,9 @@ import {
   Sparkles,
   Calendar,
   Pill,
-  Clock
+  Clock,
+  Download,
+  Smartphone
 } from 'lucide-react';
 
 export default function PatientProfile() {
@@ -338,6 +340,49 @@ export default function PatientProfile() {
                 ? "नोट: स्वतः प्ले बंद होने पर भी आप जब चाहें किसी भी '🔊 सुनें' बटन को दबाकर आवाज सुन सकते हैं।" 
                 : "Note: When turned OFF, manual '🔊 Listen' buttons will always work when explicitly tapped."}
             </span>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* PWA INSTALL CARD: ADD TO HOME SCREEN                     */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0D8] shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-[#FFF7ED] border border-[#9a3412]/30 text-[#9a3412] flex items-center justify-center shrink-0">
+                <Smartphone className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
+                    {isHindi ? "फोन पर ऐप इंस्टॉल करें" : "Install App on Phone / Desktop"}
+                  </h3>
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    PWA 📲
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
+                  {isHindi 
+                    ? "तेज़ 1-टैप उपयोग और बिना इंटरनेट के ऑफ़लाइन कार्य करने के लिए स्मृति ऐप को होम स्क्रीन पर जोड़ें।" 
+                    : "Add Smriti to your home screen for full-screen view, 1-tap instant launch, and offline memory tools."}
+                </p>
+              </div>
+            </div>
+
+            <div className="self-end sm:self-center">
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('smriti_trigger_pwa_install'));
+                }}
+                className="min-h-[50px] px-6 py-3 rounded-2xl bg-gradient-to-r from-[#9a3412] to-[#c2410c] hover:from-[#7c2d12] hover:to-[#9a3412] text-white font-black text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isHindi ? "📲 ऐप इंस्टॉल करें" : "📲 Install App"}</span>
+              </button>
+            </div>
+
           </div>
         </div>
 
