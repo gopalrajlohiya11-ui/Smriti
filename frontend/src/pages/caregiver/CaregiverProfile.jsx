@@ -10,7 +10,8 @@ import {
   Lock, 
   LogOut, 
   Users,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import NotificationPreferences from '../../components/NotificationPreferences';
 import { updateCaregiverProfileApi } from '../../services/api';
