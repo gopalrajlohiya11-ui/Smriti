@@ -537,69 +537,73 @@ export default function CaregiverDashboard() {
       {/* MODAL: ADD NEW PATIENT                                   */}
       {/* ======================================================== */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 sm:p-8 relative my-8 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full p-6 sm:p-10 relative my-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-5 border-b border-slate-200">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
                   Enroll New Patient
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Register a patient under your clinical care
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  Register a patient under your clinical care roster & daily routine tracking
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddPatientSubmit} className="space-y-4 pt-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <form onSubmit={handleAddPatientSubmit} className="space-y-5 pt-6 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-700 mb-1">Patient Name</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">
+                    Patient Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Ramesh Sharma"
                     value={newPatientForm.name}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Age</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">
+                    Age <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="number"
                     required
                     placeholder="e.g. 74"
                     value={newPatientForm.age}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, age: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Phone Number (WhatsApp)</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">Phone Number (WhatsApp)</label>
                   <input
                     type="text"
                     placeholder="91XXXXXXXXXX"
                     value={newPatientForm.phone}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Gender</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">Gender</label>
                   <select
                     value={newPatientForm.gender}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, gender: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all"
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -608,23 +612,23 @@ export default function CaregiverDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Location</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">Location / City</label>
                   <input
                     type="text"
                     placeholder="e.g. Guwahati, Assam"
                     value={newPatientForm.location}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Cognitive Stage</label>
+                  <label className="block font-bold text-slate-800 mb-1.5">Cognitive Care Tier</label>
                   <select
                     value={newPatientForm.cognitiveStage}
                     onChange={(e) => setNewPatientForm({ ...newPatientForm, cognitiveStage: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all"
                   >
                     <option value="Early Memory Support">Early Memory Support (Tier 1)</option>
                     <option value="Moderate Support">Moderate Support (Tier 2)</option>
@@ -634,13 +638,14 @@ export default function CaregiverDashboard() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Language</label>
+                <label className="block font-bold text-slate-800 mb-1.5">Preferred Regional Language</label>
                 <select
                   value={newPatientForm.nativeLanguage}
                   onChange={(e) => setNewPatientForm({ ...newPatientForm, nativeLanguage: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all"
                 >
                   <option value="Assamese">অসমীয়া (Assamese)</option>
+                  <option value="Hindi">हिन्दी (Hindi)</option>
                   <option value="Khasi">Khasi (Meghalaya)</option>
                   <option value="Mizo">Mizo (Mizoram)</option>
                   <option value="Bengali">বাংলা (Bengali)</option>
@@ -648,19 +653,20 @@ export default function CaregiverDashboard() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+              <div className="flex items-center justify-end gap-3 pt-5 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold cursor-pointer hover:bg-slate-200"
+                  className="px-6 py-3 rounded-2xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors cursor-pointer text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-teal-800 text-white font-bold shadow-xs hover:bg-teal-900 cursor-pointer"
+                  className="px-8 py-3 rounded-2xl bg-teal-800 text-white font-bold shadow-md hover:bg-teal-900 active:scale-95 transition-all cursor-pointer text-sm sm:text-base flex items-center gap-2"
                 >
-                  Enroll Patient
+                  <UserPlus className="w-5 h-5" />
+                  <span>Enroll Patient</span>
                 </button>
               </div>
             </form>
