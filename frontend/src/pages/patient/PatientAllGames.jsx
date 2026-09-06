@@ -255,72 +255,10 @@ export default function PatientAllGames() {
 
   return (
     <PatientNavShell pageTitle={isHindi ? "दिमागी खेल अभ्यास" : "Brain Games Library"}>
-      <div className="space-y-8">
+      <div className="space-y-6">
         
         {/* ======================================================== */}
-        {/* 1. TOP HERO: FEATURED GAME OF THE DAY                    */}
-        {/* ======================================================== */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#B5502E]/30 shadow-2xs space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] text-xs font-black uppercase tracking-wider border border-[#B5502E]/20">
-              <Flame className="w-3.5 h-3.5 fill-[#B5502E]" />
-              <span>
-                {isHindi 
-                  ? `${todayFeaturedGame.hindiDayName} की विशेष स्मृति चुनौती` 
-                  : `${todayFeaturedGame.dayName}'s Featured Memory Challenge`}
-              </span>
-            </span>
-
-            {isGameOfDayCompleted ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EDF7F2] text-[#1F6B4A] text-xs font-black border border-[#A3D9C1]">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{isHindi ? "आज पूरा हुआ (+1 स्ट्रीक!)" : "Completed Today (+1 Streak!)"}</span>
-              </span>
-            ) : (
-              <span className="text-xs font-bold text-[#6B6B6B]">
-                {isHindi ? `${currentStreak} दिन की स्मृति स्ट्रीक` : `${currentStreak} Day Memory Streak`}
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 sm:gap-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
-              <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FDF6F0] border border-[#B5502E]/20 flex items-center justify-center shrink-0 shadow-2xs">
-                <BrainCircuit className="w-8 h-8 text-[#B5502E]" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
-                  {isHindi ? todayFeaturedGame.hindiTitle : todayFeaturedGame.title}
-                </h2>
-                <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
-                  {isHindi ? todayFeaturedGame.hindiDescription : todayFeaturedGame.description}
-                </p>
-              </div>
-            </div>
-
-            <div className="w-full sm:w-auto shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsGameOfDayOpen(true)}
-                className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 shrink-0 ${
-                  isGameOfDayCompleted
-                    ? 'bg-[#EDF7F2] hover:bg-[#d8efe2] text-[#1F6B4A] border-2 border-[#1F6B4A]'
-                    : 'bg-[#B5502E] hover:bg-[#9E4224] text-white shadow-sm'
-                }`}
-              >
-                <Play className="w-5 h-5 fill-current" />
-                <span>
-                  {isGameOfDayCompleted 
-                    ? (isHindi ? 'फिर से खेलें (अभ्यास)' : 'Play Again (Practice)') 
-                    : (isHindi ? 'आज की चुनौती खेलें' : "Play Today's Challenge")}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ======================================================== */}
-        {/* 2. EXPLORE ALL GAMES GRID (WITH CATEGORY FILTER TABS)    */}
+        {/* EXPLORE ALL GAMES GRID (WITH CATEGORY FILTER TABS)       */}
         {/* ======================================================== */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5E0D8] pb-4">

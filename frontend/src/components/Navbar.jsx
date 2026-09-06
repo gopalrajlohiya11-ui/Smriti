@@ -33,13 +33,10 @@ export default function Navbar() {
   const [comingSoonToast, setComingSoonToast] = useState('');
 
   const isCaregiverRoute = location.pathname.startsWith('/caregiver');
-  const isPatientRoute = location.pathname.startsWith('/patient');
+  const isPatientRoute = location.pathname.startsWith('/patient') || location.pathname === '/';
 
-  // Hide top consumer navbar on authenticated caregiver dashboard pages so clinical sidebar takes full height
-  if (isCaregiverRoute && location.pathname !== '/caregiver/login') {
-    return null;
-  }
-  if (isPatientRoute && isPatientLoggedIn) {
+  // Prevent duplicate headers - PatientNavShell and CaregiverShell manage their own dedicated headers
+  if (isCaregiverRoute || isPatientRoute) {
     return null;
   }
 
