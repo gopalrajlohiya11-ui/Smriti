@@ -227,7 +227,7 @@ export function AppProvider({ children }) {
           const realReminders = await fetchPatientReminders(patientRecord._id);
           let formattedReminders = [];
           if (realReminders && realReminders.length > 0) {
-            formattedReminders = realReminders.map(r => {
+            formattedReminders = realReminders.map((r, rIdx) => {
               const timeStr = r.scheduledTime 
                 ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 : '9:00 AM';
@@ -244,11 +244,20 @@ export function AppProvider({ children }) {
                 else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
               }
 
+              const std = standard10Reminders.find(s => 
+                s.id === r._id || 
+                (s.type === r.type && (s.title === r.title || r.title?.includes(s.title?.split(' ')[0]))) ||
+                standard10Reminders[rIdx]?.type === r.type
+              ) || standard10Reminders[rIdx];
+
               return {
                 id: r._id,
                 type: r.type,
                 title: title,
+                hindiTitle: r.hindiTitle || std?.hindiTitle || title,
                 detail: detail,
+                hindiDetail: r.hindiDetail || std?.hindiDetail || detail,
+                icon: r.icon || std?.icon || (r.type === 'medicine' ? 'Pill' : r.type === 'hydration' ? 'Droplets' : r.type === 'game' ? 'BrainCircuit' : r.type === 'activity' ? 'Footprints' : r.type === 'appointment' ? 'Calendar' : 'meal'),
                 time: timeStr,
                 status: r.acknowledged ? 'completed' : 'pending',
                 acknowledged: !!r.acknowledged,
@@ -330,7 +339,7 @@ export function AppProvider({ children }) {
 
         let formattedReminders = [];
         if (realReminders && realReminders.length > 0) {
-          formattedReminders = realReminders.map(r => {
+          formattedReminders = realReminders.map((r, rIdx) => {
             const timeStr = r.scheduledTime 
               ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : '9:00 AM';
@@ -347,14 +356,23 @@ export function AppProvider({ children }) {
               else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
             }
 
+            const std = standard10Reminders.find(s => 
+              s.id === r._id || 
+              (s.type === r.type && (s.title === r.title || r.title?.includes(s.title?.split(' ')[0]))) ||
+              standard10Reminders[rIdx]?.type === r.type
+            ) || standard10Reminders[rIdx];
+
             return {
               id: r._id,
               type: r.type,
               title: title,
+              hindiTitle: r.hindiTitle || std?.hindiTitle || title,
               detail: detail,
+              hindiDetail: r.hindiDetail || std?.hindiDetail || detail,
+              icon: r.icon || std?.icon || (r.type === 'medicine' ? 'Pill' : r.type === 'hydration' ? 'Droplets' : r.type === 'game' ? 'BrainCircuit' : r.type === 'activity' ? 'Footprints' : r.type === 'appointment' ? 'Calendar' : 'meal'),
               time: timeStr,
               status: r.acknowledged ? 'completed' : 'pending',
-              acknowledged: r.acknowledged,
+              acknowledged: !!r.acknowledged,
               dismissed: !!r.dismissed,
               scheduledTime: r.scheduledTime
             };
@@ -765,17 +783,38 @@ export function AppProvider({ children }) {
 
   // 6. Toggle Reminder Completion in real backend + offline caching & sync queue
   const toggleReminder = async (patientId, reminderId) => {
-    let targetAcknowledged = true;
-    let targetPatient = null;
-    let targetReminder = null;
+    const targetPId = patientId || activePatientId || (patients[0]?.id || patients[0]?._id);
+    const foundPatient = patients.find(p => 
+      p.id === targetPId || 
+      p._id === targetPId || 
+      p.id === activePatientId || 
+      p._id === activePatientId ||
+      (targetPId === 'pat-1' && p.name?.includes('Ramesh')) ||
+      (targetPId === 'pat-2' && p.name?.includes('Meera')) ||
+      (targetPId === 'pat-3' && p.name?.includes('Biren'))
+    ) || patients[0];
 
+    const foundReminder = foundPatient?.todayReminders?.find((r, rIdx) => 
+      r.id === reminderId || 
+      r._id === reminderId || 
+      (typeof reminderId === 'string' && reminderId.startsWith('rem-') && parseInt(reminderId.replace('rem-', ''), 10) - 1 === rIdx) ||
+      (typeof reminderId === 'string' && r.title && reminderId.toLowerCase() === r.title.toLowerCase())
+    );
+
+    const currentStatus = foundReminder ? (foundReminder.status === 'completed' || foundReminder.acknowledged === true) : false;
+    const targetAcknowledged = !currentStatus;
+    const resolvedPatientId = foundPatient?.id || foundPatient?._id || patientId;
+    const resolvedReminderId = foundReminder?.id || foundReminder?._id || reminderId;
+
+    // Synchronously update local React state and localStorage
     setPatients(prev => {
-      const targetPId = patientId || activePatientId;
       const updated = prev.map((p, pIdx) => {
         const isTargetPatient = 
           !targetPId ||
           p.id === targetPId || 
           p._id === targetPId || 
+          p.id === resolvedPatientId ||
+          p._id === resolvedPatientId ||
           p.id === activePatientId || 
           p._id === activePatientId ||
           (targetPId === 'pat-2' && (p.name?.includes('Meera') || pIdx === 1)) ||
@@ -788,23 +827,23 @@ export function AppProvider({ children }) {
             const isMatch = 
               r.id === reminderId || 
               r._id === reminderId || 
+              r.id === resolvedReminderId ||
+              r._id === resolvedReminderId ||
               (typeof reminderId === 'string' && reminderId.startsWith('rem-') && parseInt(reminderId.replace('rem-', ''), 10) - 1 === rIdx) ||
               (typeof reminderId === 'string' && r.title && reminderId.toLowerCase() === r.title.toLowerCase());
 
             if (isMatch) {
-              const nextStatus = (r.status === 'completed' || r.acknowledged === true) ? 'pending' : 'completed';
-              targetAcknowledged = nextStatus === 'completed';
-              targetReminder = { 
+              return { 
                 ...r, 
-                status: nextStatus, 
+                status: targetAcknowledged ? 'completed' : 'pending', 
                 acknowledged: targetAcknowledged 
               };
-              return targetReminder;
             }
             return r;
           });
-          targetPatient = { ...p, todayReminders: updatedReminders };
-          return targetPatient;
+          const updatedPatient = { ...p, todayReminders: updatedReminders };
+          cachePatientData(updatedPatient.id || resolvedPatientId, updatedPatient).catch(() => {});
+          return updatedPatient;
         }
         return p;
       });
@@ -818,23 +857,21 @@ export function AppProvider({ children }) {
     if (targetAcknowledged) {
       setRedFlags(prev => prev.filter(f => 
         f.reminderId !== reminderId && 
-        f.id !== `flag-${patientId}-${reminderId}` &&
-        !f.id?.includes(reminderId)
+        f.reminderId !== resolvedReminderId &&
+        f.id !== `flag-${resolvedPatientId}-${resolvedReminderId}` &&
+        !f.id?.includes(reminderId) &&
+        !f.id?.includes(resolvedReminderId)
       ));
-    }
-
-    if (targetPatient) {
-      await cachePatientData(targetPatient.id || patientId, targetPatient);
     }
 
     const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
     if (!online) {
       await queueOfflineAction({
         action: 'toggleReminder',
-        patientId: targetPatient?.id || patientId,
-        reminderId,
+        patientId: resolvedPatientId,
+        reminderId: resolvedReminderId,
         targetAcknowledged,
-        reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined
+        reminderData: foundReminder ? { type: foundReminder.type, title: foundReminder.title, scheduledTime: foundReminder.scheduledTime } : undefined
       });
       await refreshPendingSyncCount();
       return;
@@ -842,10 +879,10 @@ export function AppProvider({ children }) {
 
     try {
       await toggleReminderStatus(
-        reminderId,
+        resolvedReminderId,
         targetAcknowledged,
-        targetPatient?.id || patientId,
-        targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : {}
+        resolvedPatientId,
+        foundReminder ? { type: foundReminder.type, title: foundReminder.title, scheduledTime: foundReminder.scheduledTime } : {}
       );
 
       // Re-fetch backend alerts to ensure full database consistency
@@ -857,10 +894,10 @@ export function AppProvider({ children }) {
       console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
       await queueOfflineAction({
         action: 'toggleReminder',
-        patientId: targetPatient?.id || patientId,
-        reminderId,
+        patientId: resolvedPatientId,
+        reminderId: resolvedReminderId,
         targetAcknowledged,
-        reminderData: targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : undefined
+        reminderData: foundReminder ? { type: foundReminder.type, title: foundReminder.title, scheduledTime: foundReminder.scheduledTime } : undefined
       });
       await refreshPendingSyncCount();
     }
