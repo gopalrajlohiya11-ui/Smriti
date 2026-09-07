@@ -324,8 +324,19 @@ router.patch('/me', authenticateCaregiver, async (req, res) => {
       { new: true }
     );
 
+    res.json({
+      status: 'ok',
+      message: 'Caregiver preferences updated successfully',
+      caregiver: updated
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 7. Request Password Reset: POST /api/caregivers/forgot-password
 router.post('/forgot-password', rateLimitLogin, async (req, res) => {
+
   try {
     const { email } = req.body;
 
