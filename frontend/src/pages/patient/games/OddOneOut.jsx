@@ -333,6 +333,8 @@ export default function OddOneOut() {
         level: currentLevel,
         cardCount: cards.length,
         accuracy: 100,
+        correctCount: 1,
+        totalAttempts: 1,
         timeTakenSeconds: timeTaken
       };
       const updated = [...roundStats, metric];
@@ -364,6 +366,8 @@ export default function OddOneOut() {
         level: currentLevel,
         cardCount: cards.length,
         accuracy: 50,
+        correctCount: 1,
+        totalAttempts: 2,
         timeTakenSeconds: timeTaken + 2
       };
       const updated = [...roundStats, metric];

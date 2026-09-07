@@ -135,21 +135,25 @@ router.post('/', async (req, res) => {
       defaultCategory = 'Visual & Category Discrimination';
     }
 
-    // --- Compute Session Telemetry for Teammate ML Engine ---
+    // --- Compute Session Telemetry for Teammate ML Engine from Real Gameplay ---
     let computedReactionTime = customReactionTime;
     let computedMistakes = customMistakes;
     let computedCurrentLevel = customLevel;
 
     if (Array.isArray(roundDetails) && roundDetails.length > 0) {
       if (computedReactionTime === undefined) {
-        const totalTime = roundDetails.reduce((sum, r) => sum + (r.timeTakenSeconds || 0), 0);
+        const totalTime = roundDetails.reduce((sum, r) => sum + (Number(r.timeTakenSeconds) || 0), 0);
         computedReactionTime = Number((totalTime / roundDetails.length).toFixed(2));
       }
       if (computedMistakes === undefined) {
         computedMistakes = roundDetails.reduce((sum, r) => {
-          const attempts = r.totalAttempts || 0;
-          const correct = r.correctCount || 0;
-          return sum + Math.max(0, attempts - correct);
+          if (typeof r.totalAttempts === 'number' && typeof r.correctCount === 'number') {
+            return sum + Math.max(0, r.totalAttempts - r.correctCount);
+          }
+          if (typeof r.accuracy === 'number') {
+            return sum + (r.accuracy < 60 ? 2 : r.accuracy < 90 ? 1 : 0);
+          }
+          return sum;
         }, 0);
       }
       if (computedCurrentLevel === undefined) {
@@ -157,8 +161,8 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Default telemetry fallbacks if missing
-    if (computedReactionTime === undefined || isNaN(computedReactionTime)) {
+    // Default telemetry fallbacks if session had no round details at all
+    if (computedReactionTime === undefined || isNaN(computedReactionTime) || computedReactionTime <= 0) {
       computedReactionTime = 2.8;
     }
     if (computedMistakes === undefined || isNaN(computedMistakes)) {
@@ -168,6 +172,8 @@ router.post('/', async (req, res) => {
     if (computedCurrentLevel === undefined || isNaN(computedCurrentLevel)) {
       computedCurrentLevel = difficultyLevel === 'hard' ? 3 : difficultyLevel === 'easy' ? 1 : 2;
     }
+
+    console.log(`🎮 [Game Session] Derived ML Telemetry for ${gameType || 'game'}: reactionTime=${computedReactionTime}s, mistakes=${computedMistakes}, level=${computedCurrentLevel} (from ${roundDetails?.length || 0} rounds)`);
 
     // --- 1. Call Teammate ML Adaptive Difficulty Endpoint ---
     const mlDiffResult = await getMLDifficulty({
