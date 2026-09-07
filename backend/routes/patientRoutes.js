@@ -177,6 +177,16 @@ router.get('/public/:id', async (req, res) => {
   }
 });
 
+// 1f. Get All Public / Demo Patients: GET /api/patients/public
+router.get('/public', async (req, res) => {
+  try {
+    const patients = await Patient.find({}).sort({ createdAt: 1 });
+    res.json(patients);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Helper: Verify if a caregiver has access to a specific patient
 const caregiverHasAccessToPatient = (caregiver, patient) => {
   if (!caregiver || !patient) return false;
@@ -186,23 +196,29 @@ const caregiverHasAccessToPatient = (caregiver, patient) => {
   return isDirectOwner || isInAssignedList;
 };
 
-// 2. Get patients: GET /api/patients (Scoped strictly to the authenticated caregiver)
-router.get('/', authenticateCaregiver, async (req, res) => {
+// 2. Get patients: GET /api/patients (Scoped to authenticated caregiver, or public demo fallback)
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const caregiver = req.caregiver;
     
-    // Find all patients owned by or assigned to this caregiver
-    const query = {
-      $or: [
-        { caregiverId: caregiver._id },
-        { _id: { $in: caregiver.patientIds || [] } }
-      ]
-    };
+    if (caregiver) {
+      // Find all patients owned by or assigned to this caregiver
+      const query = {
+        $or: [
+          { caregiverId: caregiver._id },
+          { _id: { $in: caregiver.patientIds || [] } }
+        ]
+      };
 
-    let patients = await Patient.find(query).sort({ createdAt: -1 });
-    if ((!patients || patients.length === 0) && (caregiver.role === 'clinician' || caregiver.email === 'dr.ananya@smriti.in')) {
-      patients = await Patient.find({}).sort({ createdAt: -1 });
+      let patients = await Patient.find(query).sort({ createdAt: 1 });
+      if ((!patients || patients.length === 0) && (caregiver.role === 'clinician' || caregiver.email === 'dr.ananya@smriti.in')) {
+        patients = await Patient.find({}).sort({ createdAt: 1 });
+      }
+      return res.json(patients);
     }
+
+    // Public / Demo fallback if not authenticated
+    const patients = await Patient.find({}).sort({ createdAt: 1 });
     res.json(patients);
   } catch (err) {
     res.status(500).json({ error: err.message });

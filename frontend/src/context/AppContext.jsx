@@ -192,7 +192,7 @@ export function AppProvider({ children }) {
     };
   }, [syncOfflineQueue, refreshPendingSyncCount]);
 
-  // Fetch real data from backend API (Scoped appropriately for Caregiver vs Patient with Offline Cache fallback)
+  // Fetch real data from backend API (Caregiver + Patient rosters synchronized with MongoDB Atlas)
   const loadRealData = useCallback(async () => {
     const hasCaregiverToken = !!localStorage.getItem('smriti_caregiver_token');
     const hasPatientToken = !!localStorage.getItem('smriti_patient_token');
@@ -202,29 +202,26 @@ export function AppProvider({ children }) {
       const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
       const cached = await getCachedPatientData(targetId);
       if (cached) {
-        setPatients([cached]);
+        setPatients(prev => prev.length > 0 ? prev : [cached]);
         setActivePatientId(cached.id);
       }
       return;
     }
 
-    // 1. If in Patient Portal Mode (either with patient token or default patient portal view)
-    if (!hasCaregiverToken) {
-      try {
-        let patientRecord = null;
-        if (hasPatientToken) {
-          patientRecord = await fetchCurrentPatientApi();
-        }
-        if (!patientRecord || !patientRecord._id) {
-          const currentTargetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
-          patientRecord = await fetchPublicPatientApi(currentTargetId);
-          if (!patientRecord || !patientRecord._id) {
-            patientRecord = await fetchDefaultPatientApi();
-          }
-        }
+    try {
+      // 1. Always fetch all patients from backend API
+      let backendPatients = await fetchRealPatients();
+      if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
+        backendPatients = initialPatients;
+      }
 
-        if (patientRecord && patientRecord._id) {
-          const realReminders = await fetchPatientReminders(patientRecord._id);
+      // 2. Load real reminders for each backend patient
+      const enrichedPatients = await Promise.all(
+        backendPatients.map(async (bp, idx) => {
+          const bpId = bp._id || bp.id;
+          const realReminders = bpId ? await fetchPatientReminders(bpId) : null;
+          const fallbackPatient = initialPatients.find(ip => ip.name === bp.name) || initialPatients[idx % initialPatients.length] || initialPatients[0];
+
           let formattedReminders = [];
           if (realReminders && realReminders.length > 0) {
             formattedReminders = realReminders.map((r, rIdx) => {
@@ -265,161 +262,77 @@ export function AppProvider({ children }) {
                 scheduledTime: r.scheduledTime
               };
             });
+          } else {
+            formattedReminders = fallbackPatient.todayReminders;
           }
 
-          const isDemo = patientRecord.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patientRecord.name);
+          const isDemo = bp.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(bp.name);
 
-          const enrichedPatient = {
-            id: patientRecord._id,
-            name: patientRecord.name,
-            age: patientRecord.age || 70,
-            gender: patientRecord.gender || 'Senior',
-            phone: patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345',
-            rawPhone: patientRecord.phoneNumber,
-            location: patientRecord.location || 'Assam',
-            nativeLanguage: patientRecord.language || 'Assamese',
-            avatar: patientRecord.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
-            lastActive: 'Active on WhatsApp',
-            streakDays: isDemo ? 14 : calculatePatientStreak(patientRecord, [], formattedReminders),
-            cognitiveStage: patientRecord.cognitiveStage || 'Early Memory Support',
-            primaryCaregiver: patientRecord.primaryCaregiver || 'Dr. Ananya Sharma',
-            emergencyContact: patientRecord.emergencyContact || (patientRecord.phoneNumber ? `+${patientRecord.phoneNumber}` : '+91 94350 12345'),
-            notes: patientRecord.notes || '',
-            medicalNotes: patientRecord.medicalNotes || '',
+          return {
+            id: bp._id || bp.id,
+            name: bp.name,
+            age: bp.age || fallbackPatient.age,
+            gender: bp.gender || fallbackPatient.gender,
+            phone: bp.phoneNumber ? (bp.phoneNumber.startsWith('+') ? bp.phoneNumber : `+${bp.phoneNumber}`) : fallbackPatient.phone,
+            rawPhone: bp.phoneNumber,
+            location: bp.location || fallbackPatient.location,
+            nativeLanguage: bp.language || fallbackPatient.nativeLanguage,
+            avatar: bp.avatar || fallbackPatient.avatar,
+            lastActive: isDemo ? 'Active on WhatsApp' : 'New Patient Registered',
+            streakDays: isDemo ? (fallbackPatient.streakDays || 14) : calculatePatientStreak(bp, [], formattedReminders),
+            cognitiveStage: bp.cognitiveStage || `Tier ${bp.tier || 1} Cognitive Care`,
+            primaryCaregiver: bp.primaryCaregiver || fallbackPatient.primaryCaregiver,
+            emergencyContact: bp.emergencyContact || (bp.phoneNumber ? `+${bp.phoneNumber}` : fallbackPatient.emergencyContact),
+            notes: bp.notes || `Registered WhatsApp patient. Connected to phone +${bp.phoneNumber}.`,
+            medicalNotes: bp.medicalNotes || (isDemo ? fallbackPatient.medicalNotes : 'No medical evaluation recorded yet.'),
             todayReminders: formattedReminders,
-            reminderHistory: isDemo ? initialPatients[0].reminderHistory : [],
-            weeklyPerformance: isDemo ? initialPatients[0].weeklyPerformance : [],
-            notificationPreference: patientRecord.notificationPreference || 'whatsapp',
+            reminderHistory: isDemo ? fallbackPatient.reminderHistory : [],
+            weeklyPerformance: isDemo ? fallbackPatient.weeklyPerformance : [],
+            notificationPreference: bp.notificationPreference || 'whatsapp',
             isDemoSeed: isDemo
           };
+        })
+      );
 
-          setPatients([enrichedPatient]);
-          setActivePatientId(enrichedPatient.id);
-          localStorage.setItem('smriti_patient_id', enrichedPatient.id);
-          await cachePatientData(enrichedPatient.id, enrichedPatient);
+      setPatients(enrichedPatients);
+      try {
+        localStorage.setItem('smriti_patients', JSON.stringify(enrichedPatients));
+      } catch (e) {}
 
-          // Sync real DB alerts in patient mode too
-          const realDbAlerts = await fetchActiveAlertsApi();
-          if (realDbAlerts && Array.isArray(realDbAlerts)) {
-            setRedFlags(realDbAlerts);
-          }
-          return;
+      // 3. Resolve Active Patient
+      if (hasPatientToken) {
+        const currentPatient = await fetchCurrentPatientApi();
+        if (currentPatient && currentPatient._id) {
+          setActivePatientId(currentPatient._id);
+          localStorage.setItem('smriti_patient_id', currentPatient._id);
         }
-      } catch (err) {
-        console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
-        const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
-        const cached = await getCachedPatientData(targetId);
-        if (cached) {
-          setPatients([cached]);
-          setActivePatientId(cached.id);
+      } else {
+        const storedPatientId = localStorage.getItem('smriti_patient_id');
+        const exists = enrichedPatients.find(p => p.id === activePatientId || p.id === storedPatientId);
+        if (exists) {
+          setActivePatientId(exists.id);
+          localStorage.setItem('smriti_patient_id', exists.id);
+          await cachePatientData(exists.id, exists);
+        } else if (enrichedPatients.length > 0) {
+          setActivePatientId(enrichedPatients[0].id);
+          localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
+          await cachePatientData(enrichedPatients[0].id, enrichedPatients[0]);
         }
-        return;
       }
-    }
 
-    // 2. If Caregiver is logged in (Caregiver Portal Mode)
-    if (!hasCaregiverToken) {
-      return; // Not logged in as caregiver, don't call /api/patients
-    }
-
-    const backendPatients = await fetchRealPatients();
-    if (!backendPatients || !Array.isArray(backendPatients)) return;
-
-    if (backendPatients.length === 0) {
-      setPatients(initialPatients);
-      setActivePatientId(prev => prev || initialPatients[0]?.id || 'pat-1');
-      return;
-    }
-
-    // Load real reminders for each backend patient
-    const enrichedPatients = await Promise.all(
-      backendPatients.map(async (bp, idx) => {
-        const realReminders = await fetchPatientReminders(bp._id);
-        const fallbackPatient = initialPatients[idx % initialPatients.length] || initialPatients[0];
-
-        let formattedReminders = [];
-        if (realReminders && realReminders.length > 0) {
-          formattedReminders = realReminders.map((r, rIdx) => {
-            const timeStr = r.scheduledTime 
-              ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              : '9:00 AM';
-
-            let title = r.title || 'Daily Routine';
-            let detail = r.detail || `Scheduled ${r.type}`;
-            if (!r.title) {
-              if (r.type === 'medicine') title = 'Prescribed Medicine';
-              else if (r.type === 'hydration') title = 'Stay Hydrated (Water/Tea)';
-              else if (r.type === 'meal') title = 'Nourishing Meal & Tea';
-              else if (r.type === 'game') title = 'Memory Game of the Day';
-              else if (r.type === 'activity') title = 'Gentle Movement / Walk';
-              else if (r.type === 'appointment') title = 'Caregiver Check-in';
-              else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
-            }
-
-            const std = standard10Reminders.find(s => 
-              s.id === r._id || 
-              (s.type === r.type && (s.title === r.title || r.title?.includes(s.title?.split(' ')[0]))) ||
-              standard10Reminders[rIdx]?.type === r.type
-            ) || standard10Reminders[rIdx];
-
-            return {
-              id: r._id,
-              type: r.type,
-              title: title,
-              hindiTitle: r.hindiTitle || std?.hindiTitle || title,
-              detail: detail,
-              hindiDetail: r.hindiDetail || std?.hindiDetail || detail,
-              icon: r.icon || std?.icon || (r.type === 'medicine' ? 'Pill' : r.type === 'hydration' ? 'Droplets' : r.type === 'game' ? 'BrainCircuit' : r.type === 'activity' ? 'Footprints' : r.type === 'appointment' ? 'Calendar' : 'meal'),
-              time: timeStr,
-              status: r.acknowledged ? 'completed' : 'pending',
-              acknowledged: !!r.acknowledged,
-              dismissed: !!r.dismissed,
-              scheduledTime: r.scheduledTime
-            };
-          });
-        } else {
-          formattedReminders = fallbackPatient.todayReminders;
-        }
-
-        const isDemo = bp.isDemoSeed === true || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(bp.name);
-
-        return {
-          id: bp._id,
-          name: bp.name,
-          age: bp.age || fallbackPatient.age,
-          gender: bp.gender || fallbackPatient.gender,
-          phone: bp.phoneNumber ? `+${bp.phoneNumber}` : fallbackPatient.phone,
-          rawPhone: bp.phoneNumber,
-          location: bp.location || fallbackPatient.location,
-          nativeLanguage: bp.language || fallbackPatient.nativeLanguage,
-          avatar: bp.avatar || fallbackPatient.avatar,
-          lastActive: isDemo ? 'Active on WhatsApp' : 'New Patient Registered',
-          streakDays: isDemo ? (fallbackPatient.streakDays || 14) : calculatePatientStreak(bp, [], formattedReminders),
-          cognitiveStage: bp.cognitiveStage || `Tier ${bp.tier || 1} Cognitive Care`,
-          primaryCaregiver: bp.primaryCaregiver || fallbackPatient.primaryCaregiver,
-          emergencyContact: bp.emergencyContact || (bp.phoneNumber ? `+${bp.phoneNumber}` : fallbackPatient.emergencyContact),
-          notes: bp.notes || `Registered WhatsApp patient. Connected to phone +${bp.phoneNumber}.`,
-          medicalNotes: bp.medicalNotes || (isDemo ? fallbackPatient.medicalNotes : 'No medical evaluation recorded yet.'),
-          todayReminders: formattedReminders,
-          reminderHistory: isDemo ? fallbackPatient.reminderHistory : [],
-          weeklyPerformance: isDemo ? fallbackPatient.weeklyPerformance : [],
-          notificationPreference: bp.notificationPreference || 'whatsapp',
-          isDemoSeed: isDemo
-        };
-      })
-    );
-
-    setPatients(enrichedPatients);
-
-    // If active patient ID is not in the loaded patient list, set to the first one
-    if (!enrichedPatients.some(p => p.id === activePatientId)) {
-      setActivePatientId(enrichedPatients[0]?.id || '');
-    }
-
-    // Fetch direct database-synchronized active alerts
-    const realDbAlerts = await fetchActiveAlertsApi();
-    if (realDbAlerts && Array.isArray(realDbAlerts)) {
-      setRedFlags(realDbAlerts);
+      // 4. Fetch direct database-synchronized active alerts
+      const realDbAlerts = await fetchActiveAlertsApi();
+      if (realDbAlerts && Array.isArray(realDbAlerts)) {
+        setRedFlags(realDbAlerts);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
+      const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+      const cached = await getCachedPatientData(targetId);
+      if (cached) {
+        setPatients(prev => prev.length > 0 ? prev : [cached]);
+        setActivePatientId(cached.id);
+      }
     }
   }, [activePatientId]);
 
