@@ -61,7 +61,7 @@ export const initialPatients = [
     lastActive: "2 hours ago",
     streakDays: 14,
     cognitiveStage: "Moderate Support",
-    primaryCaregiver: "David Sangma",
+    primaryCaregiver: "Dr. Ananya Sharma",
     emergencyContact: "+91 94361 98765",
     notes: "Responsive to photo recognition of family visits in Cherrapunji. Score dip observed in Pattern Finder this week.",
     todayReminders: standard10Reminders,
@@ -82,41 +82,6 @@ export const initialPatients = [
       { day: "Wed", memoryScore: 62, routineScore: 70, overallScore: 66 },
       { day: "Thu", memoryScore: 58, routineScore: 68, overallScore: 63 },
       { day: "Fri (Today)", memoryScore: 55, routineScore: 65, overallScore: 60 }
-    ]
-  },
-  {
-    id: "pat-3",
-    name: "Biren Das",
-    age: 81,
-    gender: "Male",
-    phone: "+91 97060 11223",
-    location: "Jorhat, Assam",
-    nativeLanguage: "Assamese",
-    avatar: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=400&auto=format&fit=crop&q=80",
-    lastActive: "45 minutes ago",
-    streakDays: 14,
-    cognitiveStage: "Early Memory Support",
-    primaryCaregiver: "Dr. Ananya Sharma",
-    emergencyContact: "+91 98590 33445",
-    notes: "Consistently completes daily memory match game with tea garden motifs.",
-    todayReminders: standard10Reminders,
-    reminderHistory: [
-      { date: "Aug 28", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 27", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 26", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 25", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 24", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 23", medicine: true, hydration: true, activity: true, appointment: true },
-      { date: "Aug 22", medicine: true, hydration: true, activity: true, appointment: true },
-    ],
-    weeklyPerformance: [
-      { day: "Sat", memoryScore: 84, routineScore: 88, overallScore: 86 },
-      { day: "Sun", memoryScore: 86, routineScore: 90, overallScore: 88 },
-      { day: "Mon", memoryScore: 88, routineScore: 91, overallScore: 89 },
-      { day: "Tue", memoryScore: 89, routineScore: 92, overallScore: 90 },
-      { day: "Wed", memoryScore: 90, routineScore: 94, overallScore: 92 },
-      { day: "Thu", memoryScore: 92, routineScore: 95, overallScore: 93 },
-      { day: "Fri (Today)", memoryScore: 94, routineScore: 96, overallScore: 95 }
     ]
   }
 ];

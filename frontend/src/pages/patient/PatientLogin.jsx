@@ -578,7 +578,7 @@ export default function PatientLogin({ defaultRole }) {
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-3">
                   Demo Profiles
                 </p>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className={`grid ${patients.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-2.5`}>
                   {patients.slice(0, 3).map((p) => (
                     <button
                       key={p.id}
@@ -591,8 +591,8 @@ export default function PatientLogin({ defaultRole }) {
                         alt={p.name}
                         className="w-11 h-11 rounded-full mx-auto object-cover mb-1.5 border border-stone-300 group-hover:scale-105 transition-transform"
                       />
-                      <p className="text-xs font-bold text-stone-900 truncate">{p.name.split(' ')[0]}</p>
-                      <p className="text-[11px] text-stone-500 font-medium">{p.age} yrs</p>
+                      <p className="text-xs font-bold text-stone-900 truncate">{p.name}</p>
+                      <p className="text-[11px] text-stone-500 font-medium">{p.age} yrs • PIN: 1234</p>
                     </button>
                   ))}
                 </div>
