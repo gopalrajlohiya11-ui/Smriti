@@ -121,7 +121,7 @@ export default function PatientProfile() {
             className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-stone-50 text-[#6B6B6B] hover:text-[#C0392B] font-bold text-xs sm:text-sm border border-[#E5E0D8] transition-colors cursor-pointer min-h-[48px]"
           >
             <LogOut className="w-4 h-4" />
-            <span>{t('profilePage.switchUser')}</span>
+            <span>{t('profilePage.logout', isHindi ? 'लॉग आउट' : 'Log Out')}</span>
           </button>
         </div>
 

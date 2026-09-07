@@ -184,7 +184,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-[#6B6B6B] hover:text-[#C0392B] hover:bg-rose-50 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-rose-200"
           >
             <LogOut className="w-4 h-4" />
-            <span>Switch Patient / Exit</span>
+            <span>{isHindi ? "लॉग आउट" : "Log Out"}</span>
           </button>
         </div>
 
@@ -528,7 +528,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 className="w-full min-h-[50px] px-4 py-2.5 rounded-2xl bg-rose-50 text-[#C0392B] border border-rose-200 font-bold text-sm flex items-center justify-center gap-2 active:bg-rose-100 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                <span>{isHindi ? "रोगी बदलें / लॉग आउट" : "Switch Patient / Log Out"}</span>
+                <span>{isHindi ? "लॉग आउट" : "Log Out"}</span>
               </button>
             </div>
 

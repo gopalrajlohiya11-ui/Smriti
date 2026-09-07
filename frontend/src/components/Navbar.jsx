@@ -203,11 +203,11 @@ export default function Navbar() {
                     logoutPatient();
                     navigate('/');
                   }}
-                  title="Switch User"
+                  title="Log Out"
                   className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-white hover:bg-stone-100 text-[#2B2B2B] text-xs sm:text-sm font-semibold border border-[#E5E0D8] transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Exit</span>
+                  <span className="hidden sm:inline">Log Out</span>
                 </button>
               </div>
             ) : (
