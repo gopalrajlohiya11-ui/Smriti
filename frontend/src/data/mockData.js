@@ -325,3 +325,281 @@ export const regionalLanguages = [
   { code: 'mizo', name: 'Mizo (Mizoram)', greeting: 'Chibai (Welcome)', dir: 'ltr', status: 'coming_soon' },
   { code: 'bn', name: 'বাংলা (Bengali)', greeting: 'সুপ্রভাত (Suprobhat)', dir: 'ltr', status: 'coming_soon' }
 ];
+
+export const defaultGameSessionsByPatient = {
+  'pat-1': [
+    {
+      _id: 'sess-1',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'market-day-basket',
+      title: 'Market Day Basket',
+      category: 'Pattern & Math Recall',
+      score: 100,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 3 },
+        { level: 2, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 2 },
+        { level: 3, itemCount: 4, mode: 'categorization', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 4 },
+        { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 3 },
+        { level: 5, itemCount: 5, mode: 'categorization', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 5 }
+      ]
+    },
+    {
+      _id: 'sess-2',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'faces-family-recall',
+      title: 'Faces & Family Recall',
+      category: 'Family & People Recall',
+      score: 96,
+      difficultyLevel: 'hard',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 3, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 3 },
+        { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 }
+      ]
+    },
+    {
+      _id: 'sess-3',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'market-day-basket',
+      title: 'Market Day Basket',
+      category: 'Pattern & Math Recall',
+      score: 94,
+      difficultyLevel: 'hard',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'categorization', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 3, itemCount: 5, mode: 'categorization', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 6 },
+        { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 5, itemCount: 5, mode: 'categorization', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 7 }
+      ]
+    },
+    {
+      _id: 'sess-4',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'odd-one-out',
+      title: 'Odd One Out Pattern Match',
+      category: 'Visual & Category Discrimination',
+      score: 90,
+      difficultyLevel: 'medium',
+      duration: '1 Min',
+      timestamp: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, cardCount: 3, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 3 },
+        { level: 2, cardCount: 4, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 3, cardCount: 4, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 3 },
+        { level: 4, cardCount: 4, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 5, cardCount: 5, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 }
+      ]
+    },
+    {
+      _id: 'sess-5',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'sound-rhythm-match',
+      title: 'Sound & Rhythm Match',
+      category: 'Auditory & Rhythm Recall',
+      score: 88,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 4 },
+        { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 5 },
+        { level: 3, itemCount: 4, mode: 'rhythm_pattern', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 6 },
+        { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 8 },
+        { level: 5, itemCount: 5, mode: 'rhythm_pattern', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 7 }
+      ]
+    },
+    {
+      _id: 'sess-6',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'daily-routine-sequencer',
+      title: 'Daily Routine Sequencer',
+      category: 'Sequence & Routine Recall',
+      score: 85,
+      difficultyLevel: 'medium',
+      duration: '3 Mins',
+      timestamp: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 6 },
+        { level: 2, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 7 },
+        { level: 3, itemCount: 4, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 10 },
+        { level: 4, itemCount: 5, mode: 'routine_ordering', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 8 },
+        { level: 5, itemCount: 5, mode: 'routine_ordering', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 9 }
+      ]
+    },
+    {
+      _id: 'sess-7',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'faces-family-recall',
+      title: 'Faces & Family Recall',
+      category: 'Family & People Recall',
+      score: 82,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 96 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 80, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 }
+      ]
+    },
+    {
+      _id: 'sess-8',
+      patientId: '6a9e533f65c0817eb2016cc8',
+      gameType: 'market-day-basket',
+      title: 'Market Day Basket',
+      category: 'Pattern & Math Recall',
+      score: 78,
+      difficultyLevel: 'easy',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 120 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 4 },
+        { level: 2, itemCount: 4, mode: 'math', accuracy: 80, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 5 },
+        { level: 3, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 6 },
+        { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 5, itemCount: 4, mode: 'categorization', accuracy: 75, correctCount: 3, totalAttempts: 4, timeTakenSeconds: 7 }
+      ]
+    }
+  ],
+  'pat-2': [
+    {
+      _id: 'sess-m1',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'market-day-basket',
+      title: 'Market Day Basket',
+      category: 'Pattern & Math Recall',
+      score: 79,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 4, mode: 'math', accuracy: 75, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 4, mode: 'categorization', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 7 },
+        { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 5, itemCount: 5, mode: 'categorization', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 8 }
+      ]
+    },
+    {
+      _id: 'sess-m2',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'faces-family-recall',
+      title: 'Faces & Family Recall',
+      category: 'Family & People Recall',
+      score: 80,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 4, mode: 'family_name', accuracy: 75, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 7 },
+        { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 }
+      ]
+    },
+    {
+      _id: 'sess-m3',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'odd-one-out',
+      title: 'Odd One Out Pattern Match',
+      category: 'Visual Discrimination',
+      score: 76,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, cardCount: 3, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 4 },
+        { level: 2, cardCount: 3, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 3, cardCount: 4, accuracy: 80, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 6 },
+        { level: 4, cardCount: 4, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 5, cardCount: 4, accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 }
+      ]
+    },
+    {
+      _id: 'sess-m4',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'sound-rhythm-match',
+      title: 'Sound & Rhythm Match',
+      category: 'Auditory & Rhythm Recall',
+      score: 78,
+      difficultyLevel: 'medium',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 48 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 75, correctCount: 3, totalAttempts: 4, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 7 },
+        { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 8 },
+        { level: 5, itemCount: 5, mode: 'rhythm_pattern', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 7 }
+      ]
+    },
+    {
+      _id: 'sess-m5',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'daily-routine-sequencer',
+      title: 'Daily Routine Sequencer',
+      category: 'Sequence & Routine Recall',
+      score: 75,
+      difficultyLevel: 'medium',
+      duration: '3 Mins',
+      timestamp: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 8 },
+        { level: 2, itemCount: 4, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 9 },
+        { level: 3, itemCount: 4, mode: 'routine_ordering', accuracy: 75, correctCount: 3, totalAttempts: 4, timeTakenSeconds: 11 },
+        { level: 4, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 8 },
+        { level: 5, itemCount: 5, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 10 }
+      ]
+    },
+    {
+      _id: 'sess-m6',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'faces-family-recall',
+      title: 'Faces & Family Recall',
+      category: 'Family & People Recall',
+      score: 77,
+      difficultyLevel: 'easy',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 96 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 3, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 4, mode: 'family_name', accuracy: 80, correctCount: 1, totalAttempts: 2, timeTakenSeconds: 7 },
+        { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+        { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 }
+      ]
+    },
+    {
+      _id: 'sess-m7',
+      patientId: '6a9e533f65c0817eb2016cc9',
+      gameType: 'sound-rhythm-match',
+      title: 'Sound & Rhythm Match',
+      category: 'Auditory & Rhythm Recall',
+      score: 74,
+      difficultyLevel: 'easy',
+      duration: '2 Mins',
+      timestamp: new Date(Date.now() - 120 * 3600 * 1000).toISOString(),
+      roundDetails: [
+        { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 5 },
+        { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 75, correctCount: 3, totalAttempts: 4, timeTakenSeconds: 6 },
+        { level: 3, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 5 },
+        { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 75, correctCount: 3, totalAttempts: 4, timeTakenSeconds: 7 },
+        { level: 5, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 6 }
+      ]
+    }
+  ]
+};
+
