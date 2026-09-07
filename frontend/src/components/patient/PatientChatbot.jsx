@@ -513,17 +513,9 @@ export default function PatientChatbot() {
 
   const path = location.pathname;
 
-  // Never show floating widgets on login or signup pages
-  const isAuthOrLandingPage = path === '/' || path === '/patient/login' || path === '/caregiver/login';
-  if (isAuthOrLandingPage) {
-    return null;
-  }
-
-  const isCaregiverRoute = path.startsWith('/caregiver');
-  const isPatientRoute = path.startsWith('/patient');
-
-  // Only render on patient views (disabled for caregiver for now per user request)
-  if (isCaregiverRoute || !isPatientRoute) {
+  // Render floating WhatsApp and AI Chatbot widgets STRICTLY on the Patient Dashboard only
+  const isPatientDashboard = path === '/patient' || path === '/patient/';
+  if (!isPatientDashboard) {
     return null;
   }
 
