@@ -39,22 +39,35 @@ export default function PatientProfile() {
     toggleVoiceAutoPlay
   } = useApp();
   const [patientSessions, setPatientSessions] = useState([]);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioMessage, setAudioMessage] = useState('');
+
   const isHindi = (currentLanguage?.code || '').startsWith('hi');
+
+  const completedCount = activePatient?.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
+  const totalCount = activePatient?.todayReminders?.length || 10;
+  const isDemo = activePatient?.isDemoSeed === true || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?.id) || 
+    ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(activePatient?.name);
+
+  const streakDays = isDemo 
+    ? (activePatient?.streakDays || 14) 
+    : calculatePatientStreak(activePatient, patientSessions, activePatient?.todayReminders || []);
 
   useEffect(() => {
     let isMounted = true;
-    if (activePatient?.id || activePatient?._id) {
-      loadGameSessions(activePatient.id || activePatient._id).then(sessions => {
+    const pId = activePatient?.id || activePatient?._id;
+    if (pId && typeof loadGameSessions === 'function') {
+      loadGameSessions(pId).then(sessions => {
         if (isMounted && Array.isArray(sessions)) {
           setPatientSessions(sessions);
         }
+      }).catch(err => {
+        console.warn('Could not load game sessions for patient profile:', err);
       });
     }
     return () => { isMounted = false; };
-  }, [activePatient, loadGameSessions]);
-
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioMessage, setAudioMessage] = useState('');
+  }, [activePatient?.id, activePatient?._id, loadGameSessions]);
 
   // Voice narration helper
   const speakText = (text) => {
@@ -72,11 +85,11 @@ export default function PatientProfile() {
   };
 
   const handleReadProfileAudio = () => {
-    const isHindi = (currentLanguage?.code || '').startsWith('hi');
+    const isHindiLang = (currentLanguage?.code || '').startsWith('hi');
     const isAssamese = (currentLanguage?.code || '').startsWith('as');
 
     let speech = '';
-    if (isHindi) {
+    if (isHindiLang) {
       speech = `नमस्ते ${activePatient?.name || 'जी'}। आप प्राथमिक देखभालकर्ता ${activePatient?.primaryCaregiver || 'डॉ. अनन्या शर्मा'} के तहत पंजीकृत हैं। आपका आपातकालीन संपर्क ${activePatient?.emergencyContact || 'सेट'} है। आपने लगातार ${streakDays} दिनों का स्मृति क्रम पूरा किया है।`;
     } else if (isAssamese) {
       speech = `নমস্কাৰ ${activePatient?.name || 'ডাঙৰীয়া'}। আপুনি প্ৰধান তত্ত্বাৱধায়ক ${activePatient?.primaryCaregiver || 'ডাঃ অনন্যা শৰ্মা'}-ৰ তত্ত্বাৱধানত আছে।`;
@@ -85,16 +98,6 @@ export default function PatientProfile() {
     }
     speakText(speech);
   };
-
-  const completedCount = activePatient?.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
-  const totalCount = activePatient?.todayReminders?.length || 10;
-  const isDemo = activePatient?.isDemoSeed === true || 
-    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?.id) || 
-    ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(activePatient?.name);
-
-  const streakDays = isDemo 
-    ? (activePatient?.streakDays || 14) 
-    : calculatePatientStreak(activePatient, patientSessions, activePatient?.todayReminders || []);
 
   return (
     <PatientNavShell pageTitle="My Profile & Care Details">
