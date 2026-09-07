@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # 🌸 Smriti (স্মৃতি / स्मृति)
 ### *Multilingual AI-Powered Cognitive Care & Memory Companion Ecosystem*
@@ -9,6 +9,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248.svg)](https://www.mongodb.com/)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-AI%20Assistant-8E75B2.svg)](https://deepmind.google/technologies/gemini/)
+[![ML Engine](https://img.shields.io/badge/ML%20Engine-Live%20on%20Render-FF6B6B.svg)](https://dementia-ai-engine.onrender.com)
 [![Meta WhatsApp](https://img.shields.io/badge/WhatsApp-Cloud%20API-25D366.svg)](https://developers.facebook.com/docs/whatsapp)
 [![DPDP Act 2023](https://img.shields.io/badge/DPDP%20Act%202023-Compliant-success.svg)](/privacy-policy)
 [![Vercel](https://img.shields.io/badge/Frontend-Vercel-black.svg)](https://vercel.com/)
@@ -104,6 +105,12 @@ A suite of 5 clinically informed cognitive stimulation games featuring authentic
 - **Accessible PIN Keypad**: 4-digit high-contrast tactile PIN pad with demo one-click shortcuts.
 - **365-Day Resilient Sessions**: Zero unexpected session dropouts for seniors.
 
+### 9. Real-Time Machine Learning Cognitive Engine (Render Microservice)
+- **Live ML Engine**: Hosted on Render (`https://dementia-ai-engine.onrender.com`), seamlessly integrated into the Node.js backend with an automatic heuristic fallback.
+- **Adaptive Difficulty (`POST /get_next_difficulty`)**: Continuously analyzes per-game reaction times and mistake counts to recommend optimal next-round difficulty levels in real time.
+- **Cognitive Health Scoring (`POST /calculate_health_score`)**: Computes longitudinal cognitive health scores and clinical status classifications (*Stable*, *Mild Decline*, *Moderate Decline*) based on weekly gameplay telemetry.
+- **Race-Condition-Proof Audio Engine (`speechUtils.js`)**: Atomic request ID tracking prevents overlapping audio feedback during rapid taps and ensures clean speech synthesis across languages.
+
 ---
 
 ## 🏛️ System Architecture
@@ -122,16 +129,17 @@ A suite of 5 clinically informed cognitive stimulation games featuring authentic
                         │           - JWT & WebAuthn FIDO2 Auth          │
                         │           - Dynamic Routine & Alert Engine     │
                         │           - Cognitive Telemetry Logging        │
+                        │           - ML Service Fallback Wrapper        │
                         │           - Automated Node-Cron Engine         │
-                        └───────┬────────────────────────┬───────────────┘
-                                │                        │
-                                ▼                        ▼
-                        ┌───────────────┐        ┌────────────────┐
-                        │ MongoDB Atlas │        │  Google Gemini │
-                        │  - Patients   │        │  - Generative  │
-                        │  - Reminders  │        │    Conversational│
-                        │  - GameLogs   │        │    Companion   │
-                        │  - Caregivers │        └────────────────┘
+                        └───────┬───────────────┬────────────────┬───────┘
+                                │               │                │
+                                ▼               ▼                ▼
+                        ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+                        │ MongoDB Atlas │ │  Google Gemini│ │ ML Engine(AI)│
+                        │  - Patients   │ │ - Generative  │ │ - Difficulty  │
+                        │  - Reminders  │ │   Companion   │ │ - Health Score│
+                        │  - GameLogs   │ │ - Voice Audio │ │ (Render Cloud)│
+                        │  - Caregivers │ └───────────────┘ └───────────────┘
                         └───────────────┘
 ```
 
@@ -143,14 +151,15 @@ A suite of 5 clinically informed cognitive stimulation games featuring authentic
 |---|---|
 | **Frontend Framework** | React 19, Vite 8, React Router v7 |
 | **Styling & Design** | Tailwind CSS v4, Lucide React, Canvas Confetti |
-| **Localization & Audio** | `i18next`, `react-i18next`, Web Speech API (hi-IN, as-IN, en-IN) |
+| **Localization & Audio** | `i18next`, `react-i18next`, Web Speech API (hi-IN, as-IN, en-IN) with atomic cancel queue |
 | **Offline & PWA** | `vite-plugin-pwa`, Workbox, IndexedDB (`idb`) |
-| **Backend & API** | Node.js, Express.js, Mongoose ODM |
+| **Backend & API** | Node.js, Express.js, Mongoose ODM, Axios |
+| **Machine Learning** | Live Dementia AI Microservice on Render (Scikit-Learn/FastAPI) |
 | **Database** | MongoDB Atlas / Local MongoDB |
 | **Generative AI** | Google Gemini Generative AI SDK (`@google/genai`) |
 | **Messaging & Bot** | Meta WhatsApp Business Cloud API (`wa.me`) |
 | **Authentication** | JWT, Google OAuth 2.0, WebAuthn FIDO2 Biometrics |
-| **Cloud Hosting** | **Vercel** (Frontend SPA) & **Render** (Backend API) |
+| **Cloud Hosting** | **Vercel** (Frontend SPA), **Render** (Backend API & ML Microservice) |
 
 ---
 
@@ -281,11 +290,13 @@ The repository includes `render.yaml` defining the web service:
 | `PATCH` | `/api/reminders/:id` | Toggle reminder completion state |
 | `PATCH` | `/api/reminders/:id/dismiss` | Dismiss clinical alert |
 
-### 🎮 Cognitive Game Telemetry (`/api/game-sessions`)
+### 🎮 Cognitive Game Telemetry & ML Engine (`/api/game-sessions`)
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/game-sessions` | Record game scores & cognitive telemetry |
-| `GET` | `/api/game-sessions/patient/:patientId` | Fetch cognitive trend history |
+| `GET` | `/api/game-sessions/patient/:patientId` | Fetch cognitive trend history for patient |
+| `POST` | `/api/game-sessions/adaptive-difficulty` | Predict next game level via ML microservice (reaction time & mistakes) |
+| `GET` | `/api/game-sessions/patient/:patientId/health-score` | Calculate longitudinal health score & clinical status via ML |
 
 ### 💬 Conversational AI & Webhook (`/api/chatbot` & `/api/whatsapp`)
 | Method | Endpoint | Description |
