@@ -754,7 +754,7 @@ export default function CaregiverPatientDetail() {
                     </span>
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Real gameplay telemetry, adaptive precision curves, and level-by-level recall history from MongoDB.
+                    Gameplay telemetry and round-by-round recall history.
                   </p>
                 </div>
               </div>

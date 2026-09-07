@@ -42,11 +42,8 @@ export default function LandingPage() {
         <div className="mt-8 sm:mt-12">
           <div className="text-center mb-8">
             <h2 className="text-xl sm:text-2xl font-bold text-stone-900">
-              Please choose how you would like to enter:
+              Choose Your Portal
             </h2>
-            <p className="text-sm sm:text-base text-stone-500 mt-1">
-              Select your role below for a tailored experience
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">

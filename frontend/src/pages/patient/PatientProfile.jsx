@@ -291,20 +291,20 @@ export default function PatientProfile() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
-                    {isHindi ? "आवाज का स्वतः प्ले (Auto-Play)" : "Auto-Play Voice Greetings"}
+                    {isHindi ? "आवाज का स्वतः प्ले" : "Auto-Play Voice Greetings"}
                   </h3>
                   <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
                     voiceAutoPlay
                       ? 'bg-[#EDF7F2] text-[#1F6B4A] border-[#A3D9C1]'
                       : 'bg-stone-100 text-[#6B6B6B] border-stone-200'
                   }`}>
-                    {voiceAutoPlay ? (isHindi ? "सक्रिय (ON)" : "Enabled (ON)") : (isHindi ? "बंद (OFF)" : "Muted (OFF)")}
+                    {voiceAutoPlay ? (isHindi ? "सक्रिय" : "ON") : (isHindi ? "बंद" : "OFF")}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                   {isHindi 
-                    ? "पेज खोलने या कार्य समाप्त होने पर स्मृति स्वतः आवाज में बोलेगी।" 
-                    : "Smriti will speak automatically when you open a page or finish an activity."}
+                    ? "पेज खोलने पर स्मृति स्वतः आवाज में बोलेगी। '🔊 सुनें' बटन हमेशा काम करेंगे।" 
+                    : "Smriti will speak greetings automatically on page open. Manual 🔊 Listen buttons always work."}
                 </p>
               </div>
             </div>
@@ -332,15 +332,6 @@ export default function PatientProfile() {
             </div>
 
           </div>
-
-          <div className="pt-3 border-t border-stone-100 text-xs text-[#6B6B6B] flex items-center gap-2">
-            <span className="text-base">💡</span>
-            <span>
-              {isHindi 
-                ? "नोट: स्वतः प्ले बंद होने पर भी आप जब चाहें किसी भी '🔊 सुनें' बटन को दबाकर आवाज सुन सकते हैं।" 
-                : "Note: When turned OFF, manual '🔊 Listen' buttons will always work when explicitly tapped."}
-            </span>
-          </div>
         </div>
 
         {/* ======================================================== */}
@@ -354,18 +345,13 @@ export default function PatientProfile() {
                 <Smartphone className="w-7 h-7" />
               </div>
               <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
-                    {isHindi ? "फोन पर ऐप इंस्टॉल करें" : "Install App on Phone / Desktop"}
-                  </h3>
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                    PWA 📲
-                  </span>
-                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
+                  {isHindi ? "फोन पर ऐप इंस्टॉल करें" : "Install App on Your Device"}
+                </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                   {isHindi 
-                    ? "तेज़ 1-टैप उपयोग और बिना इंटरनेट के ऑफ़लाइन कार्य करने के लिए स्मृति ऐप को होम स्क्रीन पर जोड़ें।" 
-                    : "Add Smriti to your home screen for full-screen view, 1-tap instant launch, and offline memory tools."}
+                    ? "तेज़ 1-टैप उपयोग और बिना इंटरनेट के ऑफ़लाइन कार्य करने के लिए स्मृति को होम स्क्रीन पर जोड़ें।" 
+                    : "Add Smriti to your home screen for fast 1-tap access and offline tools."}
                 </p>
               </div>
             </div>
@@ -388,18 +374,6 @@ export default function PatientProfile() {
 
         {/* NOTIFICATION PREFERENCES */}
         <NotificationPreferences />
-
-        {/* BOTTOM RETURN BUTTON */}
-        <div className="text-center pt-4">
-          <button
-            type="button"
-            onClick={() => navigate('/patient')}
-            className="w-full sm:w-auto min-h-[56px] px-8 py-3.5 rounded-2xl bg-white hover:bg-stone-100 text-[#2B2B2B] font-bold text-sm sm:text-base border border-[#E5E0D8] cursor-pointer shadow-2xs transition-colors inline-flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>{t('profilePage.returnDashboard', 'Return to Daily Dashboard')}</span>
-          </button>
-        </div>
 
       </div>
     </PatientNavShell>

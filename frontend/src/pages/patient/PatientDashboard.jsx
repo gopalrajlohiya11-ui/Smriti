@@ -368,12 +368,12 @@ export default function PatientDashboard() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#1F6B4A] text-xs font-black uppercase tracking-wider border border-[#A3D9C1] shadow-2xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#1F6B4A]" />
-                  <span>{isHindi ? "✓ आज का खेल पूरा हुआ" : "✓ Today's Game Completed"}</span>
+                  <span>{isHindi ? "✓ आज का खेल पूरा हुआ" : "✓ Today's Game Done"}</span>
                 </span>
 
                 <span className="text-xs font-bold text-[#1F6B4A] flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 fill-[#1F6B4A]" />
-                  <span>{dynamicStreakDays} {isHindi ? "दिन लगातार जारी" : `${dynamicStreakDays} Day Streak Maintained`}</span>
+                  <span>{dynamicStreakDays} {isHindi ? "दिन लगातार" : `${dynamicStreakDays} Day Streak`}</span>
                 </span>
               </div>
 
@@ -383,18 +383,13 @@ export default function PatientDashboard() {
                     <Check className="w-9 h-9 stroke-[3]" />
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                      <h3 className="text-xl sm:text-3xl font-black text-[#1F6B4A]">
-                        {isHindi ? "शाबाश! आज का खेल पूरा हुआ" : "Great Job! Today's Game Done"}
-                      </h3>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white text-[#1F6B4A] border border-[#A3D9C1]">
-                        {isHindi ? "पूरा हुआ" : "Done"}
-                      </span>
-                    </div>
+                    <h3 className="text-xl sm:text-3xl font-black text-[#1F6B4A]">
+                      {isHindi ? "शाबाश! आज का खेल पूरा हुआ" : "Great Job! Today's Brain Game is Done"}
+                    </h3>
                     <p className="text-xs sm:text-sm text-stone-600 font-medium">
                       {isHindi 
                         ? `आपने आज की मस्तिष्क चुनौती (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरी कर ली है!` 
-                        : `You've completed today's brain workout (${dailyFeaturedGame.title})! Keep your mind energized with more exercises.`}
+                        : `You've completed today's workout (${dailyFeaturedGame.title}). Feel free to explore more games anytime.`}
                     </p>
                   </div>
                 </div>
@@ -588,7 +583,7 @@ export default function PatientDashboard() {
         {/* ======================================================== */}
         <div>
           <h2 className="text-lg font-black text-[#2B2B2B] mb-3.5">
-            {isHindi ? "त्वरित नेविगेशन शॉर्टकट" : "Quick Navigation Shortcuts"}
+            {isHindi ? "दैनिक सुविधाएं" : "Explore"}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-6">
@@ -612,12 +607,12 @@ export default function PatientDashboard() {
                   {isHindi ? "दैनिक अनुस्मारक" : "Daily Reminders"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "दवा, पानी, भोजन और डॉक्टर संवाद" : "Medicine, hydration, meals, and doctor check-ins"}
+                  {isHindi ? "दवा, पानी, भोजन और दिनचर्या" : "Medicine, hydration, meals, and check-ins"}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#2C5AA0]">
-                <span>{isHindi ? "पूरा शेड्यूल देखें" : "View Full Schedule"}</span>
+                <span>{isHindi ? "शेड्यूल खोलें" : "Open Schedule"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -633,7 +628,7 @@ export default function PatientDashboard() {
                 </div>
                 <span className="text-xs font-black px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5" />
-                  <span>{dynamicStreakDays} {isHindi ? "दिन लगातार" : (dynamicStreakDays === 1 ? "Day Streak" : "Day Streak")}</span>
+                  <span>{dynamicStreakDays} {isHindi ? "दिन लगातार" : "Day Streak"}</span>
                 </span>
               </div>
 
@@ -642,12 +637,12 @@ export default function PatientDashboard() {
                   {isHindi ? "दिमागी खेल" : "Brain Games"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "आज की विशेष चुनौती और 5 सरल दिमागी अभ्यास" : "Game of the Day challenge & 5 gentle memory exercises"}
+                  {isHindi ? "दैनिक चुनौती और सरल दिमागी अभ्यास" : "Daily challenge & gentle memory exercises"}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#B5502E]">
-                <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
+                <span>{isHindi ? "खेलें" : "Play Games"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -671,12 +666,12 @@ export default function PatientDashboard() {
                   {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "प्यारी पारिवारिक तस्वीरें और आवाज के साथ सुनाई जाने वाली यादें" : "Cherished family photos with voice narration stories"}
+                  {isHindi ? "प्यारी पारिवारिक तस्वीरें और आवाज के साथ सुनाई जाने वाली यादें" : "Cherished family photos with voice narrations"}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-rose-600">
-                <span>{isHindi ? "पारिवारिक एल्बम देखें" : "View Family Album"}</span>
+                <span>{isHindi ? "एल्बम देखें" : "View Album"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -700,12 +695,12 @@ export default function PatientDashboard() {
                   {isHindi ? "मेरी प्रोफाइल और संपर्क" : "Profile & Care Contacts"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "डॉक्टर संपर्क, आपातकालीन नंबर और सेटिंग्स" : "Doctor contact, emergency number, and account settings"}
+                  {isHindi ? "डॉक्टर संपर्क, आपातकालीन नंबर और सेटिंग्स" : "Doctor contacts, emergency numbers, and settings"}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs sm:text-sm font-black text-[#1F6B4A]">
-                <span>{isHindi ? "मेरी प्रोफाइल देखें" : "View My Profile"}</span>
+                <span>{isHindi ? "प्रोफाइल देखें" : "View Profile"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>

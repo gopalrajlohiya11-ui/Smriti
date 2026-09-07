@@ -413,8 +413,8 @@ export default function PatientLogin({ defaultRole }) {
 
           <p className="text-sm sm:text-base text-[#6B6B6B] font-medium">
             {activeRole === 'patient' 
-              ? 'Your warm, caring memory companion' 
-              : 'Clinical Caregiver & Family Supervision Portal'}
+              ? 'Your warm memory companion' 
+              : 'Clinical & Family Supervision Portal'}
           </p>
 
         </div>
@@ -468,15 +468,10 @@ export default function PatientLogin({ defaultRole }) {
 
                 {/* 4-Digit PIN Display */}
                 <div className="space-y-3 pt-1">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-base sm:text-lg font-extrabold text-[#2B2B2B] flex items-center gap-2">
-                      <KeyRound className="w-5 h-5 text-[#B5502E]" />
-                      <span>Enter 4-Digit PIN</span>
-                    </label>
-                    <span className="text-xs sm:text-sm font-semibold text-[#6B6B6B]">
-                      (Demo PIN: 1234)
-                    </span>
-                  </div>
+                  <label className="block text-base sm:text-lg font-extrabold text-[#2B2B2B] flex items-center gap-2">
+                    <KeyRound className="w-5 h-5 text-[#B5502E]" />
+                    <span>Enter 4-Digit PIN</span>
+                  </label>
 
                   {/* PIN Bubbles */}
                   <div className="flex justify-center gap-3.5 sm:gap-4 py-2">
@@ -564,17 +559,9 @@ export default function PatientLogin({ defaultRole }) {
 
               </form>
 
-              {/* ALTERNATIVE LOGIN METHODS (Biometric) */}
-              <div className="space-y-3 pt-2">
-                <div className="relative flex items-center justify-center">
-                  <div className="border-t border-stone-200 w-full" />
-                  <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider">
-                    Or Sign In Faster
-                  </span>
-                </div>
-
-                {/* Biometric Button */}
-                {isBiometricAvailable && (
+              {/* Biometric Button */}
+              {isBiometricAvailable && (
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={handleBiometricAuth}
@@ -583,13 +570,13 @@ export default function PatientLogin({ defaultRole }) {
                     <Fingerprint className="w-6 h-6 text-amber-800" />
                     <span>Use Fingerprint / Face Unlock</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Quick Select Profile Shortcuts */}
               <div className="pt-3 border-t border-stone-200">
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-3">
-                  Or tap your profile to log in:
+                  Demo Profiles
                 </p>
                 <div className="grid grid-cols-3 gap-2.5">
                   {patients.slice(0, 3).map((p) => (
@@ -620,16 +607,6 @@ export default function PatientLogin({ defaultRole }) {
           {activeRole === 'admin' && (
             <div className="space-y-5">
               
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold uppercase tracking-wider">
-                  <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
-                  <span>Caregiver & Clinician Portal</span>
-                </div>
-                <p className="text-xs sm:text-sm text-stone-500">
-                  {isCaregiverSignup ? 'Register a new clinician or caregiver profile' : 'Access patient vitals, adherence rates & WhatsApp routines'}
-                </p>
-              </div>
-
               <form onSubmit={isCaregiverSignup ? handleCaregiverSignup : handleAdminSubmit} className="space-y-4">
                 
                 {/* Full Name (Sign Up only) */}
@@ -808,14 +785,7 @@ export default function PatientLogin({ defaultRole }) {
 
               {/* Biometric Unlock Option */}
               {isBiometricAvailable && (
-                <div className="space-y-3 pt-2">
-                  <div className="relative flex items-center justify-center">
-                    <div className="border-t border-stone-200 w-full" />
-                    <span className="bg-white px-3 text-xs font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">
-                      Or Quick Access
-                    </span>
-                  </div>
-
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={handleBiometricAuth}
@@ -833,7 +803,7 @@ export default function PatientLogin({ defaultRole }) {
               {/* Quick Demo Logins for Admin */}
               <div className="pt-3 border-t border-stone-200">
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-2.5">
-                  ⚡ 1-Tap Demo Logins:
+                  Demo Shortcuts
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
                   <button

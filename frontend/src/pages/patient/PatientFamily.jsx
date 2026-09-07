@@ -99,8 +99,8 @@ export default function PatientFamily() {
     {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
   </h2>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
-    {isHindi ? "प्यारी पारिवारिक यादें सुनने के लिए किसी भी तस्वीर को स्पर्श करें" : "Tap any cherished photo to hear warm stories and remember loved ones"}
-  </p>
+                  {isHindi ? "पारिवारिक यादें सुनने के लिए किसी भी तस्वीर को स्पर्श करें" : "Tap any photo to listen to family stories"}
+                </p>
               </div>
             </div>
 

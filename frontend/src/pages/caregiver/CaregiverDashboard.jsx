@@ -539,11 +539,7 @@ export default function CaregiverDashboard() {
                         />
                       </div>
 
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] sm:text-xs text-slate-400 font-medium flex items-center gap-1">
-                          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                          <span>10 daily slots</span>
-                        </span>
+                      <div className="flex items-center justify-end pt-1">
                         <span className="text-xs sm:text-sm font-bold text-teal-800 group-hover:text-teal-900 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                           <span>View Records</span>
                           <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

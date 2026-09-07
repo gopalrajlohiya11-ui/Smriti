@@ -183,7 +183,7 @@ export default function PatientReminders() {
                 </span>
               </h1>
               <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })} • {activePatient.name}
+                {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
               </p>
             </div>
 
