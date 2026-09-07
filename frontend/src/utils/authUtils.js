@@ -125,3 +125,28 @@ export function clearPatientSession() {
   localStorage.removeItem('smriti_patient_token');
   localStorage.removeItem('smriti_patient_id');
 }
+
+/**
+ * Helper: Match patient by ID, MongoDB _id, name, or demo aliases
+ */
+export function matchPatientHelper(patient, target) {
+  if (!patient || !target) return false;
+  const targetStr = String(target).trim().toLowerCase();
+  const pId = String(patient.id || '').trim().toLowerCase();
+  const p_Id = String(patient._id || '').trim().toLowerCase();
+  const pName = String(patient.name || '').trim().toLowerCase();
+
+  if (pId === targetStr || p_Id === targetStr) return true;
+  if (pName === targetStr || (targetStr.length > 3 && pName.includes(targetStr))) return true;
+
+  if (targetStr === 'pat-1' || targetStr === '6a9e533f65c0817eb2016cc8' || targetStr.includes('ramesh')) {
+    return pName.includes('ramesh') || pId === 'pat-1' || p_Id === '6a9e533f65c0817eb2016cc8';
+  }
+  if (targetStr === 'pat-2' || targetStr === '6a9e533f65c0817eb2016cc9' || targetStr.includes('meera')) {
+    return pName.includes('meera') || pId === 'pat-2' || p_Id === '6a9e533f65c0817eb2016cc9';
+  }
+  if (targetStr === 'pat-3' || targetStr.includes('biren')) {
+    return pName.includes('biren') || pId === 'pat-3';
+  }
+  return false;
+}

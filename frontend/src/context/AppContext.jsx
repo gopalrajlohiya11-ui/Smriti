@@ -1,12 +1,13 @@
 import { calculatePatientStreak } from '../utils/streakUtils';
 import { getVoiceAutoPlaySetting, setVoiceAutoPlaySetting } from '../utils/speechUtils';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { initialPatients, initialRedFlags, regionalLanguages } from '../data/mockData';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { initialPatients, initialRedFlags, regionalLanguages, standard10Reminders, meeraStandardReminders } from '../data/mockData';
 import { 
   getStoredCaregiverSession, 
   getStoredPatientSession, 
   clearCaregiverSession, 
-  clearPatientSession 
+  clearPatientSession,
+  matchPatientHelper
 } from '../utils/authUtils';
 import { 
   fetchRealPatients, 
@@ -43,29 +44,6 @@ import {
   getQueuedOfflineActions, 
   removeQueuedOfflineAction 
 } from '../utils/offlineDb';
-
-// Helper: Match patient by ID, MongoDB _id, name, or demo aliases
-export function matchPatientHelper(patient, target) {
-  if (!patient || !target) return false;
-  const targetStr = String(target).trim().toLowerCase();
-  const pId = String(patient.id || '').trim().toLowerCase();
-  const p_Id = String(patient._id || '').trim().toLowerCase();
-  const pName = String(patient.name || '').trim().toLowerCase();
-
-  if (pId === targetStr || p_Id === targetStr) return true;
-  if (pName === targetStr || (targetStr.length > 3 && pName.includes(targetStr))) return true;
-
-  if (targetStr === 'pat-1' || targetStr === '6a9e533f65c0817eb2016cc8' || targetStr.includes('ramesh')) {
-    return pName.includes('ramesh') || pId === 'pat-1' || p_Id === '6a9e533f65c0817eb2016cc8';
-  }
-  if (targetStr === 'pat-2' || targetStr === '6a9e533f65c0817eb2016cc9' || targetStr.includes('meera')) {
-    return pName.includes('meera') || pId === 'pat-2' || p_Id === '6a9e533f65c0817eb2016cc9';
-  }
-  if (targetStr === 'pat-3' || targetStr.includes('biren')) {
-    return pName.includes('biren') || pId === 'pat-3';
-  }
-  return false;
-}
 
 const AppContext = createContext();
 
@@ -264,11 +242,13 @@ export function AppProvider({ children }) {
                 else if (r.type === 'rest') title = 'Calm Rest & Wind Down';
               }
 
-              const std = standard10Reminders.find(s => 
+              const isMeera = matchPatientHelper(bp, 'pat-2');
+              const targetStdList = isMeera ? meeraStandardReminders : standard10Reminders;
+              const std = (targetStdList && targetStdList.find(s => 
                 s.id === r._id || 
                 (s.type === r.type && (s.title === r.title || r.title?.includes(s.title?.split(' ')[0]))) ||
-                standard10Reminders[rIdx]?.type === r.type
-              ) || standard10Reminders[rIdx];
+                targetStdList[rIdx]?.type === r.type
+              )) || targetStdList?.[rIdx];
 
               return {
                 id: r._id,

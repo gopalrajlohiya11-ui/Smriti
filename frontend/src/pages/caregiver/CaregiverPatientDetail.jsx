@@ -55,7 +55,7 @@ import {
   Music
 } from 'lucide-react';
 
-import { matchPatientHelper } from '../../context/AppContext';
+import { matchPatientHelper } from '../../utils/authUtils';
 import { initialPatients } from '../../data/mockData';
 
 export default function CaregiverPatientDetail() {
