@@ -736,7 +736,7 @@ export default function MarketDayBasket() {
         {/* ======================================================== */}
         {/* PERSISTENT HEADER: LEVEL PROGRESSION & LIVE SCORE        */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-3xl p-4 sm:p-6 border-2 border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-4 z-20 backdrop-blur-md bg-white/95">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border-2 border-stone-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
           {/* Left: Back Navigation & Level Indicator */}
           <div className="flex items-center gap-3.5">
