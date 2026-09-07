@@ -34,9 +34,10 @@ export default function Navbar() {
 
   const isCaregiverRoute = location.pathname.startsWith('/caregiver');
   const isPatientRoute = location.pathname.startsWith('/patient') || location.pathname === '/';
+  const isPrivacyRoute = location.pathname === '/privacy-policy';
 
-  // Prevent duplicate headers - PatientNavShell and CaregiverShell manage their own dedicated headers
-  if (isCaregiverRoute || isPatientRoute) {
+  // Prevent duplicate headers - PatientNavShell, CaregiverShell and PrivacyPolicy manage their own dedicated headers
+  if (isCaregiverRoute || isPatientRoute || isPrivacyRoute) {
     return null;
   }
 

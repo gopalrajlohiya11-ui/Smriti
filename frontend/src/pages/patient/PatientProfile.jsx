@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
-import NotificationPreferences from '../../components/NotificationPreferences';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 import { calculatePatientStreak } from '../../utils/streakUtils';
 import PatientNavShell from '../../components/patient/PatientNavShell';
@@ -406,9 +405,6 @@ export default function PatientProfile() {
             </div>
           </div>
         </div>
-
-        {/* NOTIFICATION PREFERENCES */}
-        <NotificationPreferences />
 
       </div>
     </PatientNavShell>
