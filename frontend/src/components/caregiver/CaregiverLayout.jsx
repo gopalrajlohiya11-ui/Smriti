@@ -282,6 +282,13 @@ export default function CaregiverLayout({
           >
             Active Alerts ({redFlags.length})
           </Link>
+          <Link
+            to="/caregiver/profile"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-lg bg-teal-900/60 text-teal-300 font-bold text-xs border border-teal-700/50"
+          >
+            Clinician Profile & Biometrics
+          </Link>
           {onOpenAddPatient && (
             <button
               onClick={() => {

@@ -511,8 +511,8 @@ export default function PatientChatbot() {
   const isCaregiverRoute = path.startsWith('/caregiver');
   const isPatientRoute = path.startsWith('/patient');
 
-  // Only render on patient or caregiver views
-  if (!isCaregiverRoute && !isPatientRoute) {
+  // Only render on patient views (disabled for caregiver for now per user request)
+  if (isCaregiverRoute || !isPatientRoute) {
     return null;
   }
 

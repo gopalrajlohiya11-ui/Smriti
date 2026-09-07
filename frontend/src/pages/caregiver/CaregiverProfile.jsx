@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import CaregiverLayout from '../../components/caregiver/CaregiverLayout';
@@ -11,18 +11,110 @@ import {
   LogOut, 
   Users,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Fingerprint,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import NotificationPreferences from '../../components/NotificationPreferences';
 import { updateCaregiverProfileApi } from '../../services/api';
 
 export default function CaregiverProfile() {
   const navigate = useNavigate();
-  const { caregiverUser, setCaregiverPassword, logoutCaregiver, patients } = useApp();
+  const { caregiverUser, setCaregiverPassword, registerCaregiverBiometric, logoutCaregiver, patients } = useApp();
 
   const [backupPassword, setBackupPassword] = useState('');
   const [settingsStatus, setSettingsStatus] = useState(''); // 'saving' | 'saved' | 'error' | ''
   const [settingsMsg, setSettingsMsg] = useState('');
+
+  // Biometric enrollment state
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [isBiometricEnrolled, setIsBiometricEnrolled] = useState(() => {
+    const caregiverId = caregiverUser?.id || caregiverUser?._id || caregiverUser?.email || 'default';
+    const prompted = localStorage.getItem(`smriti_caregiver_bio_prompted_${caregiverId}`);
+    return caregiverUser?.hasBiometric === true || prompted === 'enrolled' || !!localStorage.getItem('smriti_caregiver_bio_credId');
+  });
+  const [bioStatus, setBioStatus] = useState(''); // '' | 'enrolling' | 'success' | 'error'
+  const [bioMsg, setBioMsg] = useState('');
+
+  // Check WebAuthn platform authenticator support on component mount
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      if (window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+        try {
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          setIsBiometricAvailable(!!available);
+        } catch {
+          setIsBiometricAvailable(false);
+        }
+      } else {
+        setIsBiometricAvailable(false);
+      }
+    };
+    checkBiometrics();
+  }, []);
+
+  const handleEnrollBiometric = async () => {
+    try {
+      setBioStatus('enrolling');
+      setBioMsg('Please scan your fingerprint sensor or verify with Face ID / Windows Hello on your device...');
+
+      if (!window.PublicKeyCredential) {
+        throw new Error('WebAuthn / Biometric authentication is not supported in this browser environment.');
+      }
+
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+      const userIdStr = caregiverUser?._id || caregiverUser?.id || 'care-1';
+      const userId = new TextEncoder().encode(userIdStr.padEnd(16, '0').slice(0, 32));
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { name: 'Smriti Clinical Companion', id: window.location.hostname },
+          user: {
+            id: userId,
+            name: caregiverUser?.email || 'dr.ananya@smriti.in',
+            displayName: caregiverUser?.name || 'Dr. Ananya Sharma'
+          },
+          pubKeyCredParams: [
+            { alg: -7, type: 'public-key' },
+            { alg: -257, type: 'public-key' }
+          ],
+          authenticatorSelection: {
+            userVerification: 'preferred',
+            residentKey: 'preferred'
+          },
+          timeout: 60000
+        }
+      });
+
+      if (credential && credential.id) {
+        if (registerCaregiverBiometric) {
+          await registerCaregiverBiometric(credential.id);
+        }
+        const caregiverId = caregiverUser?.id || caregiverUser?._id || caregiverUser?.email || 'default';
+        localStorage.setItem(`smriti_caregiver_bio_prompted_${caregiverId}`, 'enrolled');
+        localStorage.setItem('smriti_caregiver_bio_email', caregiverUser?.email || '');
+        localStorage.setItem('smriti_caregiver_bio_credId', credential.id);
+        setIsBiometricEnrolled(true);
+        setBioStatus('success');
+        setBioMsg('✓ Biometric credential (Fingerprint / Face ID) successfully saved! You can now log into the clinician portal in 1 touch.');
+        setTimeout(() => {
+          setBioStatus('');
+        }, 5000);
+      }
+    } catch (err) {
+      console.warn('Caregiver biometric setup error:', err.message);
+      setBioStatus('error');
+      setBioMsg(err.message || 'Biometric authentication was cancelled or could not be completed on this device.');
+      setTimeout(() => {
+        setBioStatus('');
+      }, 5000);
+    }
+  };
 
   const handleSaveBackupPassword = async (e) => {
     e.preventDefault();
@@ -184,6 +276,102 @@ export default function CaregiverProfile() {
               </div>
             )}
           </form>
+
+        </div>
+
+        {/* ======================================================== */}
+        {/* 2b. BIOMETRIC CREDENTIALS & FAST LOGIN                   */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-6">
+          
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-teal-50 text-teal-800 border border-teal-100">
+                <Fingerprint className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">
+                  Caregiver Biometric Authentication
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Configure hardware fingerprint sensor, Touch ID, Face ID, or Windows Hello for 1-touch sign-in
+                </p>
+              </div>
+            </div>
+
+            <span className={`text-[11px] font-extrabold px-3 py-1 rounded-full border flex items-center gap-1.5 ${
+              isBiometricEnrolled
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : 'bg-amber-50 text-amber-800 border-amber-300'
+            }`}>
+              {isBiometricEnrolled ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Enrolled & Active</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Not Configured</span>
+                </>
+              )}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-4 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="font-bold text-slate-800 text-sm">
+                  {isBiometricEnrolled ? 'Biometric Passkey Configured' : 'Enable 1-Touch Fingerprint / Face ID'}
+                </p>
+                <p className="text-slate-500 text-xs leading-relaxed max-w-xl">
+                  {isBiometricEnrolled
+                    ? 'Your biometric passkey is linked. You can click "Fingerprint / Face Unlock" on the login screen to sign in instantly without typing passwords.'
+                    : 'Register your device’s fingerprint scanner, Touch ID, or Face ID to access the clinician portal with a single touch.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleEnrollBiometric}
+                disabled={bioStatus === 'enrolling'}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer shrink-0 ${
+                  bioStatus === 'enrolling'
+                    ? 'bg-teal-700 text-white opacity-80 cursor-wait'
+                    : isBiometricEnrolled
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300'
+                    : 'bg-teal-800 hover:bg-teal-900 text-white ring-2 ring-teal-700/20'
+                }`}
+              >
+                {bioStatus === 'enrolling' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying Sensor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Fingerprint className="w-4 h-4" />
+                    <span>{isBiometricEnrolled ? 'Re-enroll / Update Sensor' : 'Set Up Biometric'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {bioMsg && (
+              <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                bioStatus === 'success'
+                  ? 'bg-emerald-50 text-emerald-900 border border-emerald-300'
+                  : bioStatus === 'enrolling'
+                  ? 'bg-cyan-50 text-cyan-900 border border-cyan-300 animate-pulse'
+                  : 'bg-rose-50 text-rose-900 border border-rose-300'
+              }`}>
+                {bioStatus === 'enrolling' && <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />}
+                {bioStatus === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                {bioStatus === 'error' && <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
+                <span>{bioMsg}</span>
+              </div>
+            )}
+          </div>
 
         </div>
 
