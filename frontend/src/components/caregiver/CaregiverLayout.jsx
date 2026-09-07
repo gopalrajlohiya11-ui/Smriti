@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { getStoredCaregiverSession } from '../../utils/authUtils';
 import { 
   Users, 
   Bell, 
@@ -34,6 +35,13 @@ export default function CaregiverLayout({
   const location = useLocation();
   const { caregiverUser, redFlags, logoutCaregiver, patients } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const session = getStoredCaregiverSession();
+    if (!session.isValid) {
+      navigate('/caregiver/login', { replace: true });
+    }
+  }, [navigate]);
 
   const isPatientsRoute = location.pathname === '/caregiver' || location.pathname.startsWith('/caregiver/patient');
   const isNotificationsRoute = location.pathname === '/caregiver/notifications';

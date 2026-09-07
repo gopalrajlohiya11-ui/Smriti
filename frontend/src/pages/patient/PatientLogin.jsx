@@ -23,6 +23,7 @@ import FoxtailOrchidIcon from '../../components/FoxtailOrchidIcon';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 import { requestCaregiverPasswordResetApi } from '../../services/api';
 import { initialPatients } from '../../data/mockData';
+import { getStoredCaregiverSession, getStoredPatientSession } from '../../utils/authUtils';
 
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
@@ -32,6 +33,29 @@ export default function PatientLogin({ defaultRole }) {
   // Fallback demo patients for login shortcut buttons if unauthenticated context is empty
   const displayPatients = (patients && patients.length > 0) ? patients : initialPatients;
 
+  // Auto-redirect if already authenticated with a valid stored session
+  useEffect(() => {
+    const caregiverSession = getStoredCaregiverSession();
+    const patientSession = getStoredPatientSession();
+
+    if (location.pathname === '/caregiver/login' || location.search.includes('role=admin')) {
+      if (caregiverSession.isValid) {
+        navigate('/caregiver', { replace: true });
+        return;
+      }
+    } else if (location.pathname === '/patient/login') {
+      if (patientSession.isValid) {
+        navigate('/patient', { replace: true });
+        return;
+      }
+    } else if (location.pathname === '/' || location.pathname === '') {
+      if (patientSession.isValid) {
+        navigate('/patient', { replace: true });
+      } else if (caregiverSession.isValid) {
+        navigate('/caregiver', { replace: true });
+      }
+    }
+  }, [location.pathname, location.search, navigate]);
 
   // Role toggle: 'patient' | 'admin'
   const [activeRole, setActiveRole] = useState(() => {
@@ -45,13 +69,11 @@ export default function PatientLogin({ defaultRole }) {
   const [patientName, setPatientName] = useState('Ramesh Sharma');
   const [patientAge, setPatientAge] = useState('74');
   const [pin, setPin] = useState('');
-  const [rememberPatient, setRememberPatient] = useState(true);
 
   // Admin Form States (Login & Signup)
   const [isCaregiverSignup, setIsCaregiverSignup] = useState(false);
   const [adminEmail, setAdminEmail] = useState('dr.ananya@smriti.in');
   const [adminPassword, setAdminPassword] = useState('caregiver123');
-  const [rememberAdmin, setRememberAdmin] = useState(true);
   const [signupName, setSignupName] = useState('');
   const [signupRole, setSignupRole] = useState('clinician');
   const [signupContact, setSignupContact] = useState('');
@@ -175,7 +197,7 @@ export default function PatientLogin({ defaultRole }) {
     }
 
     try {
-      await loginPatient(patientName, patientAge, pin, rememberPatient);
+      await loginPatient(patientName, patientAge, pin);
       navigate('/patient');
     } catch (err) {
       setErrorMsg(err.message || 'Login failed. Please check your credentials.');
@@ -539,19 +561,6 @@ export default function PatientLogin({ defaultRole }) {
                   </button>
                 </div>
 
-                {/* Remember Me Checkbox */}
-                <div className="flex items-center justify-center gap-3 pt-1">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-sm sm:text-base font-semibold text-[#6B6B6B]">
-                    <input
-                      type="checkbox"
-                      checked={rememberPatient}
-                      onChange={(e) => setRememberPatient(e.target.checked)}
-                      className="w-5 h-5 text-[#B5502E] rounded border-[#E5E0D8] focus:ring-[#B5502E]"
-                    />
-                    <span>Remember me on this device</span>
-                  </label>
-                </div>
-
                 {/* Big Submit Button (Min 56px) */}
                 <button
                   type="submit"
@@ -728,20 +737,7 @@ export default function PatientLogin({ defaultRole }) {
                   </div>
                 </div>
 
-                {/* Remember Session Checkbox (Sign In view) */}
-                {!isCaregiverSignup && (
-                  <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer text-stone-700 font-semibold">
-                      <input
-                        type="checkbox"
-                        checked={rememberAdmin}
-                        onChange={(e) => setRememberAdmin(e.target.checked)}
-                        className="w-4 h-4 text-teal-800 rounded border-stone-300 focus:ring-teal-800"
-                      />
-                      <span>Remember this session</span>
-                    </label>
-                  </div>
-                )}
+
 
                 {/* Primary Action Button */}
                 <button

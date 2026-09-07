@@ -3,6 +3,12 @@ import { getVoiceAutoPlaySetting, setVoiceAutoPlaySetting } from '../utils/speec
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { initialPatients, initialRedFlags, regionalLanguages } from '../data/mockData';
 import { 
+  getStoredCaregiverSession, 
+  getStoredPatientSession, 
+  clearCaregiverSession, 
+  clearPatientSession 
+} from '../utils/authUtils';
+import { 
   fetchRealPatients, 
   fetchCurrentPatientApi,
   fetchDefaultPatientApi,
@@ -73,21 +79,22 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  // Caregiver Authentication
+  // Caregiver Authentication (Validated Persistent Session)
   const [isCaregiverLoggedIn, setIsCaregiverLoggedIn] = useState(() => {
-    return localStorage.getItem('smriti_caregiver_auth') === 'true';
+    return getStoredCaregiverSession().isValid;
   });
   const [caregiverUser, setCaregiverUser] = useState(() => {
-    const saved = localStorage.getItem('smriti_caregiver_user');
-    return saved ? JSON.parse(saved) : { name: "Dr. Ananya Sharma", role: "clinician", email: "dr.ananya@smriti.in" };
+    const session = getStoredCaregiverSession();
+    return (session.isValid && session.user) ? session.user : { name: "Dr. Ananya Sharma", role: "clinician", email: "dr.ananya@smriti.in" };
   });
 
-  // Patient Authentication
+  // Patient Authentication (Validated Persistent Session)
   const [activePatientId, setActivePatientId] = useState(() => {
-    return localStorage.getItem('smriti_patient_id') || '';
+    const session = getStoredPatientSession();
+    return session.isValid ? session.patientId : '';
   });
   const [isPatientLoggedIn, setIsPatientLoggedIn] = useState(() => {
-    return localStorage.getItem('smriti_patient_auth') === 'true';
+    return getStoredPatientSession().isValid;
   });
 
   // Voice Auto-Play setting (Defaults to true - ON)
@@ -518,29 +525,23 @@ export function AppProvider({ children }) {
   const logoutCaregiver = () => {
     setIsCaregiverLoggedIn(false);
     setCaregiverUser(null);
-    localStorage.removeItem('smriti_caregiver_auth');
-    localStorage.removeItem('smriti_caregiver_token');
-    localStorage.removeItem('smriti_caregiver_user');
+    clearCaregiverSession();
     localStorage.removeItem('smriti_patients');
     localStorage.removeItem('smriti_red_flags');
-    localStorage.removeItem('smriti_patient_id');
     setPatients([]);
     setRedFlags([]);
-    setActivePatientId('');
   };
 
   // 3. Patient Real Login (PIN keypad + Name)
-  const loginPatient = async (name, age, pin, remember = true) => {
+  const loginPatient = async (name, age, pin) => {
     try {
       const data = await loginPatientApi(name, age, pin);
       const matchedPatient = data.patient;
       setActivePatientId(matchedPatient._id);
       setIsPatientLoggedIn(true);
       localStorage.setItem('smriti_patient_token', data.token);
-      if (remember) {
-        localStorage.setItem('smriti_patient_auth', 'true');
-        localStorage.setItem('smriti_patient_id', matchedPatient._id);
-      }
+      localStorage.setItem('smriti_patient_auth', 'true');
+      localStorage.setItem('smriti_patient_id', matchedPatient._id);
       await loadRealData();
       return { success: true, patient: matchedPatient };
     } catch (err) {
@@ -582,9 +583,7 @@ export function AppProvider({ children }) {
   const logoutPatient = () => {
     setIsPatientLoggedIn(false);
     setActivePatientId('');
-    localStorage.removeItem('smriti_patient_auth');
-    localStorage.removeItem('smriti_patient_token');
-    localStorage.removeItem('smriti_patient_id');
+    clearPatientSession();
   };
 
   // 4. Create Real Patient in MongoDB

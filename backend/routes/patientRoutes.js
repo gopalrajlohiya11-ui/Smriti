@@ -63,7 +63,7 @@ router.post('/login', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: patient._id, patientId: patient._id, name: patient.name, type: 'patient' },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '365d' }
     );
 
     res.json({
@@ -103,7 +103,7 @@ router.post('/biometric-login', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: patient._id, patientId: patient._id, name: patient.name, type: 'patient' },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '365d' }
     );
 
     res.json({

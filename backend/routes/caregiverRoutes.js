@@ -52,7 +52,7 @@ router.post('/signup', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '365d' }
     );
 
     res.status(201).json({
@@ -105,7 +105,7 @@ router.post('/login', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '365d' }
     );
 
     res.json({
@@ -204,7 +204,7 @@ router.post('/google-login', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '365d' }
     );
 
     res.json({
@@ -421,7 +421,7 @@ router.post('/biometric-login', rateLimitLogin, async (req, res) => {
     const token = jwt.sign(
       { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '365d' }
     );
 
     res.json({

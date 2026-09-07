@@ -24,6 +24,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
+import { getStoredPatientSession } from '../../utils/authUtils';
 
 export default function PatientNavShell({ children, showBack = false, pageTitle = '' }) {
   const { t } = useTranslation();
@@ -38,6 +39,13 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     voiceAutoPlay,
     toggleVoiceAutoPlay
   } = useApp();
+
+  useEffect(() => {
+    const session = getStoredPatientSession();
+    if (!session.isValid) {
+      navigate('/patient/login', { replace: true });
+    }
+  }, [navigate]);
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
