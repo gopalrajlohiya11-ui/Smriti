@@ -42,10 +42,10 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
 
   useEffect(() => {
     const session = getStoredPatientSession();
-    if (!session.isValid) {
+    if (!session.isValid && !activePatient) {
       navigate('/patient/login', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, activePatient]);
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);

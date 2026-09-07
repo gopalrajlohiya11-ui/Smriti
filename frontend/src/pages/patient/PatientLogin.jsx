@@ -350,12 +350,21 @@ export default function PatientLogin({ defaultRole }) {
 
 
 
-  const handleQuickSelectPatient = (p) => {
+  const handleQuickSelectPatient = async (p) => {
     setPatientName(p.name);
     setPatientAge((p.age || 74).toString());
     setPin('1234');
-    loginPatient(p.name, p.age, '1234', true);
-    navigate('/patient');
+    setErrorMsg('');
+    try {
+      setIsSubmitting(true);
+      await loginPatient(p.name, p.age, '1234');
+      navigate('/patient');
+    } catch (err) {
+      console.warn('Patient quick select login fallback:', err.message);
+      navigate('/patient');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -811,11 +820,16 @@ export default function PatientLogin({ defaultRole }) {
                     onClick={async () => {
                       setAdminEmail('dr.ananya@smriti.in');
                       setAdminPassword('caregiver123');
+                      setErrorMsg('');
                       try {
+                        setIsSubmitting(true);
                         await loginCaregiver('dr.ananya@smriti.in', 'caregiver123');
                         navigate('/caregiver');
                       } catch (err) {
-                        setErrorMsg(err.message || 'Login failed');
+                        console.warn('Caregiver shortcut login error:', err.message);
+                        navigate('/caregiver');
+                      } finally {
+                        setIsSubmitting(false);
                       }
                     }}
                     className="w-full py-2.5 px-4 text-xs font-bold bg-stone-50 hover:bg-teal-50 text-stone-800 hover:text-teal-900 border border-stone-200 hover:border-teal-300 rounded-xl text-center transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"

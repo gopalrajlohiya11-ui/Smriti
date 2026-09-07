@@ -38,10 +38,10 @@ export default function CaregiverLayout({
 
   useEffect(() => {
     const session = getStoredCaregiverSession();
-    if (!session.isValid) {
+    if (!session.isValid && !caregiverUser) {
       navigate('/caregiver/login', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, caregiverUser]);
 
   const isPatientsRoute = location.pathname === '/caregiver' || location.pathname.startsWith('/caregiver/patient');
   const isNotificationsRoute = location.pathname === '/caregiver/notifications';
