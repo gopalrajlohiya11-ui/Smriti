@@ -22,11 +22,15 @@ import {
 import FoxtailOrchidIcon from '../../components/FoxtailOrchidIcon';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 import { requestCaregiverPasswordResetApi } from '../../services/api';
+import { initialPatients } from '../../data/mockData';
 
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverBiometric, signupCaregiver, patients, currentLanguage } = useApp();
+
+  // Fallback demo patients for login shortcut buttons if unauthenticated context is empty
+  const displayPatients = (patients && patients.length > 0) ? patients : initialPatients;
 
 
   // Role toggle: 'patient' | 'admin'
@@ -578,10 +582,10 @@ export default function PatientLogin({ defaultRole }) {
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-3">
                   Demo Profiles
                 </p>
-                <div className={`grid ${patients.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-2.5`}>
-                  {patients.slice(0, 3).map((p) => (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {displayPatients.slice(0, 2).map((p) => (
                     <button
-                      key={p.id}
+                      key={p.id || p._id || p.name}
                       type="button"
                       onClick={() => handleQuickSelectPatient(p)}
                       className="p-3 rounded-2xl bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-center transition-all cursor-pointer group shadow-2xs"
@@ -803,30 +807,25 @@ export default function PatientLogin({ defaultRole }) {
               {/* Quick Demo Logins for Admin */}
               <div className="pt-3 border-t border-stone-200">
                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wider text-center mb-2.5">
-                  Demo Shortcuts
+                  Demo Shortcut
                 </p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="flex justify-center">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setAdminEmail('dr.ananya@smriti.in');
-                      loginCaregiver('dr.ananya@smriti.in', 'demo1234');
-                      navigate('/caregiver');
+                      setAdminPassword('caregiver123');
+                      try {
+                        await loginCaregiver('dr.ananya@smriti.in', 'caregiver123');
+                        navigate('/caregiver');
+                      } catch (err) {
+                        setErrorMsg(err.message || 'Login failed');
+                      }
                     }}
-                    className="px-3 py-2.5 text-xs font-bold bg-stone-50 hover:bg-teal-50 text-stone-800 hover:text-teal-900 border border-stone-200 rounded-xl text-center transition-colors cursor-pointer shadow-2xs"
+                    className="w-full py-2.5 px-4 text-xs font-bold bg-stone-50 hover:bg-teal-50 text-stone-800 hover:text-teal-900 border border-stone-200 hover:border-teal-300 rounded-xl text-center transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"
                   >
-                    Dr. Ananya (Doctor)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAdminEmail('nurse.david@smriti.in');
-                      loginCaregiver('nurse.david@smriti.in', 'demo1234');
-                      navigate('/caregiver');
-                    }}
-                    className="px-3 py-2.5 text-xs font-bold bg-stone-50 hover:bg-teal-50 text-stone-800 hover:text-teal-900 border border-stone-200 rounded-xl text-center transition-colors cursor-pointer shadow-2xs"
-                  >
-                    David (Caregiver)
+                    <span>👩‍⚕️</span>
+                    <span>Dr. Ananya Sharma (Clinician)</span>
                   </button>
                 </div>
               </div>
