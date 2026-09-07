@@ -15,10 +15,8 @@ import {
   Fingerprint,
   CheckCircle2,
   AlertCircle,
-  Loader2,
   Sparkles
 } from 'lucide-react';
-import NotificationPreferences from '../../components/NotificationPreferences';
 import { updateCaregiverProfileApi } from '../../services/api';
 
 export default function CaregiverProfile() {
@@ -376,17 +374,7 @@ export default function CaregiverProfile() {
         </div>
 
         {/* ======================================================== */}
-        {/* 3. NOTIFICATION PREFERENCES                              */}
-        {/* ======================================================== */}
-        <NotificationPreferences 
-          currentPreference={caregiverUser?.notificationPreference || 'whatsapp'}
-          onSave={async (channel) => {
-            await updateCaregiverProfileApi({ notificationPreference: channel });
-          }}
-        />
-
-        {/* ======================================================== */}
-        {/* 4. ASSIGNED PATIENTS ROSTER SUMMARY                      */}
+        {/* 3. ASSIGNED PATIENTS ROSTER SUMMARY                      */}
         {/* ======================================================== */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-5">
           

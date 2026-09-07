@@ -54,7 +54,6 @@ import {
   Radio,
   Music
 } from 'lucide-react';
-import NotificationPreferences from '../../components/NotificationPreferences';
 
 export default function CaregiverPatientDetail() {
   const { id } = useParams();
@@ -1158,17 +1157,7 @@ export default function CaregiverPatientDetail() {
         </div>
 
         {/* ======================================================== */}
-        {/* 5. NOTIFICATION PREFERENCES                              */}
-        {/* ======================================================== */}
-        <NotificationPreferences 
-          currentPreference={selectedPatient.notificationPreference || 'whatsapp'}
-          onSave={async (channel) => {
-            await updatePatient(selectedPatient.id, { notificationPreference: channel });
-          }}
-        />
-
-        {/* ======================================================== */}
-        {/* 6. FAMILY MEMORY BANK & PHOTOS (REAL MONGODB VAULT)      */}
+        {/* 5. FAMILY MEMORY BANK & PHOTOS (REAL MONGODB VAULT)      */}
         {/* ======================================================== */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4">
           <div className="flex items-center justify-between">
