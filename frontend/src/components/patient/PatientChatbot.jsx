@@ -38,7 +38,26 @@ const LANGUAGE_CODE_MAP = {
 
 export default function PatientChatbot() {
   const location = useLocation();
-  const { activePatient, activePatientId, isPatientLoggedIn, currentLanguage } = useApp();
+  const { activePatient, activePatientId, isPatientLoggedIn, currentLanguage, patients } = useApp();
+
+  const getResolvedPatientId = () => {
+    // 1. Prefer authenticated patient ID or real MongoDB _id
+    if (activePatient?._id && String(activePatient._id).length === 24) return activePatient._id;
+    if (activePatient?.id && String(activePatient.id).length === 24) return activePatient.id;
+    if (activePatientId && String(activePatientId).length === 24) return activePatientId;
+
+    // 2. Check if activePatient is known by name in loaded patients list
+    if (activePatient?.name) {
+      const match = patients?.find(p => p.name === activePatient.name && (p._id || String(p.id).length === 24));
+      if (match) return match._id || match.id;
+    }
+
+    // 3. Fallback to first patient in patients list with real ObjectId
+    const firstReal = patients?.find(p => p._id || (p.id && String(p.id).length === 24));
+    if (firstReal) return firstReal._id || firstReal.id;
+
+    return activePatient?._id || activePatient?.id || activePatientId || 'default';
+  };
 
   const getPatientLangCode = () => {
     if (currentLanguage?.code) {
@@ -337,7 +356,7 @@ export default function PatientChatbot() {
         content: m.text
       }));
 
-      const resolvedPatientId = activePatient?._id || activePatient?.id || activePatientId || 'pat-1';
+      const resolvedPatientId = getResolvedPatientId();
 
       const res = await sendPatientChatMessage(
         resolvedPatientId,
@@ -415,7 +434,7 @@ export default function PatientChatbot() {
         content: m.text
       }));
 
-      const resolvedPatientId = activePatient?._id || activePatient?.id || activePatientId || 'pat-1';
+      const resolvedPatientId = getResolvedPatientId();
 
       const res = await sendPatientChatMessage(
         resolvedPatientId,

@@ -486,24 +486,46 @@ const { generatePatientChatReply } = require('../services/patientChatService');
 router.post('/:id/chat', optionalAuth, async (req, res) => {
   try {
     const { message, history, audioData, mimeType } = req.body;
-    const patientId = req.params.id;
+    const rawPatientId = req.params.id;
 
     if ((!message || !message.trim()) && !audioData) {
       return res.status(400).json({ error: 'A message text or audio recording is required.' });
     }
 
-    const patient = await Patient.findById(patientId);
-    if (patient) {
-      if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
-        return res.status(403).json({ error: 'Forbidden: You do not have access to chat for this patient.' });
-      }
-      if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
-        return res.status(403).json({ error: 'Forbidden: You cannot chat on behalf of another patient.' });
+    let patient = null;
+    if (rawPatientId && mongoose.Types.ObjectId.isValid(rawPatientId)) {
+      patient = await Patient.findById(rawPatientId);
+    }
+    
+    // Resolve fallback patient references (demo shortcuts, names, phone numbers)
+    if (!patient) {
+      if (rawPatientId === 'pat-2') {
+        patient = await Patient.findOne({ name: /Meera/i });
+      } else if (rawPatientId === 'pat-1' || rawPatientId === 'default' || !rawPatientId) {
+        patient = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+      } else {
+        patient = await Patient.findOne({
+          $or: [
+            { name: new RegExp(rawPatientId.trim(), 'i') },
+            { phoneNumber: rawPatientId }
+          ]
+        }) || await Patient.findOne();
       }
     }
 
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient profile not found. Please log in with a valid patient account.' });
+    }
+
+    if (req.caregiver && !caregiverHasAccessToPatient(req.caregiver, patient)) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to chat for this patient.' });
+    }
+    if (req.patient && req.patient._id.toString() !== patient._id.toString()) {
+      return res.status(403).json({ error: 'Forbidden: You cannot chat on behalf of another patient.' });
+    }
+
     const result = await generatePatientChatReply(
-      patientId, 
+      patient._id.toString(), 
       message ? message.trim() : '', 
       history || [],
       audioData || null,
