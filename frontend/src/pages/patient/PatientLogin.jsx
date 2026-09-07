@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { 
   UserRound, 
@@ -843,6 +843,21 @@ export default function PatientLogin({ defaultRole }) {
             </div>
           )}
 
+        </div>
+
+        {/* Footer Privacy & DPDP Compliance Links */}
+        <div className="mt-8 text-center text-xs text-stone-600 flex flex-wrap items-center justify-center gap-3 sm:gap-4 pb-6">
+          <Link 
+            to="/privacy-policy" 
+            className="font-bold text-teal-900 hover:text-teal-950 transition-colors underline underline-offset-2 flex items-center gap-1.5"
+          >
+            <ShieldCheck className="w-4 h-4 text-teal-700" />
+            <span>Privacy Policy & DPDP Act (2023) Compliance</span>
+          </Link>
+          <span className="text-stone-300 hidden sm:inline">•</span>
+          <span className="text-stone-500 font-medium">MongoDB Atlas Encrypted</span>
+          <span className="text-stone-300 hidden sm:inline">•</span>
+          <span className="text-stone-500 font-medium">Role-Based Patient Privacy</span>
         </div>
 
       </div>

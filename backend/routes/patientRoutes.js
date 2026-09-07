@@ -639,10 +639,25 @@ router.get('/:id/photos', optionalAuth, async (req, res) => {
 router.post('/:id/photos', authenticateAny, async (req, res) => {
   try {
     const patientId = req.params.id;
-    const { photoUrl, title, taggedName, relation, year, location, description, audioPrompt } = req.body;
+    const { 
+      photoUrl, 
+      title, 
+      taggedName, 
+      relation, 
+      year, 
+      location, 
+      description, 
+      audioPrompt,
+      dpdpConsentGiven,
+      dpdpConsentText
+    } = req.body;
 
     if (!photoUrl) {
       return res.status(400).json({ error: 'photoUrl is required.' });
+    }
+
+    if (dpdpConsentGiven === false) {
+      return res.status(400).json({ error: 'DPDP explicit consent is required to upload patient memory bank photos.' });
     }
 
     const photo = new MemoryBankPhoto({
@@ -654,7 +669,10 @@ router.post('/:id/photos', authenticateAny, async (req, res) => {
       year: year || new Date().getFullYear().toString(),
       location: location || 'Assam',
       description: description || '',
-      audioPrompt: audioPrompt || ''
+      audioPrompt: audioPrompt || '',
+      dpdpConsentGiven: true,
+      dpdpConsentTimestamp: new Date(),
+      dpdpConsentText: dpdpConsentText || 'I confirm I have consent to upload this photo and understand it will be used within Smriti to support cognitive care, per the Privacy Policy.'
     });
 
     await photo.save();

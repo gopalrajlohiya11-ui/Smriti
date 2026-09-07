@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import NotificationPreferences from '../../components/NotificationPreferences';
@@ -369,6 +369,41 @@ export default function PatientProfile() {
               </button>
             </div>
 
+          </div>
+        </div>
+
+        {/* PRIVACY & DPDP ACT COMPLIANCE CARD */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5E0D8] shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
+                    {isHindi ? "गोपनीयता और डेटा सुरक्षा" : "Privacy & Data Protection"}
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200">
+                    DPDP 2023
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
+                  {isHindi 
+                    ? "आपका स्वास्थ्य डेटा, दवा का समय और पारिवारिक तस्वीरें केवल आपके और आपके डॉक्टर के लिए सुरक्षित हैं।" 
+                    : "Your health records, routines, and family portraits are encrypted and strictly protected under Indian Law."}
+                </p>
+              </div>
+            </div>
+
+            <div className="self-end sm:self-center">
+              <Link
+                to="/privacy-policy"
+                className="min-h-[50px] px-6 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-teal-900 border border-stone-300 font-black text-sm flex items-center justify-center gap-2 shadow-2xs cursor-pointer transition-all active:scale-98"
+              >
+                <span>{isHindi ? "📜 गोपनीयता नीति पढ़ें" : "📜 View Privacy Policy"}</span>
+              </Link>
+            </div>
           </div>
         </div>
 

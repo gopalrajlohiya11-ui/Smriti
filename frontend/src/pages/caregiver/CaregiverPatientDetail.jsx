@@ -85,7 +85,8 @@ export default function CaregiverPatientDetail() {
     year: '2024',
     location: 'Assam',
     description: '',
-    audioPrompt: ''
+    audioPrompt: '',
+    dpdpConsentGiven: false
   });
   const [photoSaveStatus, setPhotoSaveStatus] = useState('');
 
@@ -106,11 +107,16 @@ export default function CaregiverPatientDetail() {
 
   const handleAddPhotoSubmit = async (e) => {
     e.preventDefault();
-    if (!newPhotoForm.photoUrl || !newPhotoForm.title) return;
+    if (!newPhotoForm.photoUrl || !newPhotoForm.title || !newPhotoForm.dpdpConsentGiven) return;
     const pId = selectedPatient.id || selectedPatient._id;
     try {
       setPhotoSaveStatus('saving');
-      const created = await addPatientPhoto(pId, newPhotoForm);
+      const created = await addPatientPhoto(pId, {
+        ...newPhotoForm,
+        dpdpConsentGiven: true,
+        dpdpConsentTimestamp: new Date().toISOString(),
+        dpdpConsentText: `I confirm I have consent to upload this photo and understand it will be used within Smriti to support ${selectedPatient.name}'s cognitive care, per the Privacy Policy.`
+      });
       setPatientPhotosList(prev => [created, ...prev]);
       setPhotoSaveStatus('saved');
       setShowAddPhotoModal(false);
@@ -122,7 +128,8 @@ export default function CaregiverPatientDetail() {
         year: '2024',
         location: 'Assam',
         description: '',
-        audioPrompt: ''
+        audioPrompt: '',
+        dpdpConsentGiven: false
       });
       setTimeout(() => setPhotoSaveStatus(''), 2500);
     } catch (err) {
@@ -1587,6 +1594,29 @@ export default function CaregiverPatientDetail() {
                 />
               </div>
 
+              {/* DPDP Act 2023 Explicit Consent Checkbox */}
+              <div className="p-3.5 bg-amber-50/80 rounded-xl border border-amber-200/90 flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="dpdpPhotoConsent"
+                  required
+                  checked={newPhotoForm.dpdpConsentGiven || false}
+                  onChange={(e) => setNewPhotoForm({ ...newPhotoForm, dpdpConsentGiven: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 rounded text-teal-800 focus:ring-teal-700 cursor-pointer accent-teal-800 shrink-0"
+                />
+                <label htmlFor="dpdpPhotoConsent" className="text-[11px] text-slate-700 leading-relaxed cursor-pointer select-none">
+                  I confirm I have consent to upload this photo and understand it will be used within Smriti to support <strong>{selectedPatient?.name || 'this patient'}</strong>'s cognitive care, per our{' '}
+                  <Link 
+                    to="/privacy-policy" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-teal-800 font-bold underline hover:text-teal-950 inline-flex items-center gap-0.5"
+                  >
+                    Privacy Policy
+                  </Link>.
+                </label>
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
@@ -1597,8 +1627,8 @@ export default function CaregiverPatientDetail() {
                 </button>
                 <button
                   type="submit"
-                  disabled={photoSaveStatus === 'saving' || !newPhotoForm.photoUrl || !newPhotoForm.title}
-                  className="px-5 py-2 rounded-xl bg-teal-800 text-white font-bold hover:bg-teal-900 cursor-pointer shadow-xs disabled:opacity-50"
+                  disabled={photoSaveStatus === 'saving' || !newPhotoForm.photoUrl || !newPhotoForm.title || !newPhotoForm.dpdpConsentGiven}
+                  className="px-5 py-2 rounded-xl bg-teal-800 text-white font-bold hover:bg-teal-900 cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {photoSaveStatus === 'saving' ? 'Saving to Database...' : 'Save to Memory Bank'}
                 </button>

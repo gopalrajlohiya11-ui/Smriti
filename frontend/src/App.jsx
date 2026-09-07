@@ -19,6 +19,7 @@ import FacesFamilyRecall from './pages/patient/games/FacesFamilyRecall';
 import SoundRhythmMatch from './pages/patient/games/SoundRhythmMatch';
 import OddOneOut from './pages/patient/games/OddOneOut';
 import PatientAllGames from './pages/patient/PatientAllGames';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import PatientChatbot from './components/patient/PatientChatbot';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -55,6 +56,9 @@ function App() {
               <Route path="/caregiver/patient/:id/games" element={<CaregiverCognitiveGames />} />
               <Route path="/caregiver/notifications" element={<CaregiverNotifications />} />
               <Route path="/caregiver/profile" element={<CaregiverProfile />} />
+
+              {/* Legal & Compliance */}
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />

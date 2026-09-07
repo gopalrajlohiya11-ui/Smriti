@@ -10,6 +10,12 @@ const memoryBankPhotoSchema = new mongoose.Schema({
   location: { type: String, default: 'Assam' },
   description: { type: String },
   audioPrompt: { type: String },
+  dpdpConsentGiven: { type: Boolean, default: true, required: true },
+  dpdpConsentTimestamp: { type: Date, default: Date.now },
+  dpdpConsentText: { 
+    type: String, 
+    default: "I confirm I have consent to upload this photo and understand it will be used within Smriti to support cognitive care, per the Privacy Policy." 
+  },
   createdAt: { type: Date, default: Date.now }
 });
 
