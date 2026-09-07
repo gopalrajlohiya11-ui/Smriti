@@ -253,45 +253,56 @@ export default function PatientDashboard() {
 
   const totalCount = chronologicalReminders.length || 10;
 
-  // Single primary focus routine on the dashboard spotlight (Rule 1 & Rule 2)
+  // Single primary focus routine on the dashboard spotlight (Strict Forward Progression)
   const primaryFocusRoutine = useMemo(() => {
     // 1. Filter pending routines, excluding the one currently in completion transition animation
     const pending = chronologicalReminders.filter(
       r => !r.isCompleted && r.id !== completingReminderId && r._id !== completingReminderId
     );
 
+    console.log('⏰ [Smriti Reminder Spotlight Calculation]', {
+      nowTime: nowTime.toLocaleTimeString(),
+      totalReminders: chronologicalReminders.length,
+      pendingCount: pending.length,
+      completingReminderId,
+      allReminders: chronologicalReminders.map(r => ({
+        id: r.id || r._id,
+        title: r.title,
+        time: r.formattedTime,
+        acknowledged: r.isCompleted,
+        timeState: r.timeState
+      }))
+    });
+
     if (pending.length === 0) {
+      console.log('>>> [Spotlight Result]: All routines completed');
       return { routine: null, priority: 'all_completed' };
     }
 
-    // 2. Rule 1: Filter out stale/escalated overdue (3+ hours past) so they don't block the spotlight
-    const activeCandidates = pending.filter(r => r.timeState !== 'escalated_overdue');
-
-    if (activeCandidates.length > 0) {
-      // Priority 1: Routine due right now (0 to 60 mins past scheduled time)
-      const dueNow = activeCandidates.find(r => r.timeState === 'due_now');
-      if (dueNow) {
-        return { routine: dueNow, priority: 'due_now' };
-      }
-
-      // Priority 2: Recent overdue routine (1 to 3 hours past scheduled time)
-      const recentOverdue = activeCandidates.find(r => r.timeState === 'overdue');
-      if (recentOverdue) {
-        return { routine: recentOverdue, priority: 'overdue' };
-      }
-
-      // Priority 3 (Rule 2 Forward Progression): Nearest upcoming reminder in chronological order
-      const upcoming = activeCandidates.filter(r => r.timeState === 'upcoming');
-      if (upcoming.length > 0) {
-        return { routine: upcoming[0], priority: 'upcoming' };
-      }
-
-      return { routine: activeCandidates[0], priority: activeCandidates[0].timeState };
+    // Priority 1: Routine due right now (in current 0 to 60 min window)
+    const dueNow = pending.find(r => r.timeState === 'due_now');
+    if (dueNow) {
+      console.log('>>> [Spotlight Result]: Selected Due Now ->', `[${dueNow.formattedTime}] ${dueNow.title} (Reason: Priority 1 - due_now active window)`);
+      return { routine: dueNow, priority: 'due_now' };
     }
 
-    // If ALL remaining uncompleted routines are 3+ hours overdue (escalated to alerts)
-    return { routine: null, priority: 'all_escalated', escalatedCount: pending.length };
-  }, [chronologicalReminders, completingReminderId]);
+    // Priority 2 (FORWARD PROGRESSION): Nearest upcoming reminder in chronological order
+    const upcoming = pending.filter(r => r.timeState === 'upcoming');
+    if (upcoming.length > 0) {
+      console.log('>>> [Spotlight Result]: Selected Forward Upcoming ->', `[${upcoming[0].formattedTime}] ${upcoming[0].title} (Reason: Priority 2 - forward progression to nearest upcoming)`);
+      return { routine: upcoming[0], priority: 'upcoming' };
+    }
+
+    // Priority 3: If no upcoming routines remain today, show the most recent overdue routine
+    const overdue = pending.filter(r => r.timeState === 'overdue' || r.timeState === 'escalated_overdue');
+    if (overdue.length > 0) {
+      const selectedOverdue = overdue[overdue.length - 1];
+      console.log('>>> [Spotlight Result]: Selected Overdue ->', `[${selectedOverdue.formattedTime}] ${selectedOverdue.title} (Reason: Priority 3 - no upcoming left, showing most recent overdue)`);
+      return { routine: selectedOverdue, priority: 'overdue' };
+    }
+
+    return { routine: null, priority: 'all_completed' };
+  }, [chronologicalReminders, completingReminderId, nowTime]);
 
   const handleReminderDone = (remId, title) => {
     setCompletingReminderId(remId);
