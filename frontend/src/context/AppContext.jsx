@@ -288,6 +288,12 @@ export function AppProvider({ children }) {
           setActivePatientId(enrichedPatient.id);
           localStorage.setItem('smriti_patient_id', enrichedPatient.id);
           await cachePatientData(enrichedPatient.id, enrichedPatient);
+
+          // Sync real DB alerts in patient mode too
+          const realDbAlerts = await fetchActiveAlertsApi();
+          if (realDbAlerts && Array.isArray(realDbAlerts)) {
+            setRedFlags(realDbAlerts);
+          }
           return;
         }
       } catch (err) {
@@ -808,6 +814,15 @@ export function AppProvider({ children }) {
       return updated;
     });
 
+    // Optimistically remove alert from redFlags state if completed
+    if (targetAcknowledged) {
+      setRedFlags(prev => prev.filter(f => 
+        f.reminderId !== reminderId && 
+        f.id !== `flag-${patientId}-${reminderId}` &&
+        !f.id?.includes(reminderId)
+      ));
+    }
+
     if (targetPatient) {
       await cachePatientData(targetPatient.id || patientId, targetPatient);
     }
@@ -832,6 +847,12 @@ export function AppProvider({ children }) {
         targetPatient?.id || patientId,
         targetReminder ? { type: targetReminder.type, title: targetReminder.title, scheduledTime: targetReminder.scheduledTime } : {}
       );
+
+      // Re-fetch backend alerts to ensure full database consistency
+      const realDbAlerts = await fetchActiveAlertsApi();
+      if (realDbAlerts && Array.isArray(realDbAlerts)) {
+        setRedFlags(realDbAlerts);
+      }
     } catch (err) {
       console.warn('Network request failed during toggleReminder, queuing offline action:', err.message);
       await queueOfflineAction({

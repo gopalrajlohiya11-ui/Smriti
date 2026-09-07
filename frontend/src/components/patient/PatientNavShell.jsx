@@ -85,6 +85,39 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     }
   };
 
+  // Overdue reminders count for real-time notification badge
+  const overdueCount = React.useMemo(() => {
+    if (!activePatient?.todayReminders) return 0;
+    const now = new Date();
+    return activePatient.todayReminders.filter(rem => {
+      const isDone = rem.status === 'completed' || rem.acknowledged === true;
+      if (isDone) return false;
+      
+      let hours = 9;
+      let minutes = 0;
+      if (rem.scheduledTime) {
+        const d = new Date(rem.scheduledTime);
+        if (!isNaN(d.getTime())) {
+          hours = d.getHours();
+          minutes = d.getMinutes();
+        }
+      } else if (rem.time) {
+        const match = rem.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (match) {
+          hours = parseInt(match[1], 10);
+          minutes = parseInt(match[2], 10);
+          const period = match[3]?.toUpperCase();
+          if (period === 'PM' && hours < 12) hours += 12;
+          if (period === 'AM' && hours === 12) hours = 0;
+        }
+      }
+      const sched = new Date(now);
+      sched.setHours(hours, minutes, 0, 0);
+      const diffMins = (now.getTime() - sched.getTime()) / (1000 * 60);
+      return diffMins > 60;
+    }).length;
+  }, [activePatient?.todayReminders]);
+
   // 5 Core Persistent Destinations
   const navItems = [
     { label: t('nav.home', 'Home'), path: '/patient', icon: Home, exact: true },
@@ -135,6 +168,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             {navItems.map((item) => {
               const active = isNavActive(item);
               const Icon = item.icon;
+              const isReminders = item.path === '/patient/reminders';
 
               return (
                 <Link
@@ -146,12 +180,17 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                       : 'text-[#2B2B2B] hover:text-[#B5502E] hover:bg-stone-50 border-2 border-transparent'
                   }`}
                 >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center relative ${
                     active ? 'bg-[#B5502E] text-white' : 'bg-stone-100 text-[#6B6B6B]'
                   }`}>
                     <Icon className="w-5 h-5 stroke-[2.5]" />
                   </div>
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {isReminders && overdueCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-[#C0392B] text-white text-xs font-black shrink-0 animate-in fade-in">
+                      {overdueCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -344,18 +383,26 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         {navItems.map((item) => {
           const active = isNavActive(item);
           const Icon = item.icon;
+          const isReminders = item.path === '/patient/reminders';
 
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex-1 min-h-[52px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+              className={`flex-1 min-h-[52px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${
                 active
                   ? 'bg-[#FDF6F0] text-[#B5502E] font-black shadow-2xs border border-[#B5502E]/25'
                   : 'text-[#6B6B6B] hover:text-[#2B2B2B] active:bg-stone-50 font-bold'
               }`}
             >
-              <Icon className={`w-5 h-5 ${active ? 'text-[#B5502E] stroke-[2.6]' : 'text-[#6B6B6B] stroke-[2]'}`} />
+              <div className="relative">
+                <Icon className={`w-5 h-5 ${active ? 'text-[#B5502E] stroke-[2.6]' : 'text-[#6B6B6B] stroke-[2]'}`} />
+                {isReminders && overdueCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#C0392B] text-white text-[10px] font-black flex items-center justify-center animate-in fade-in">
+                    {overdueCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[11px] leading-tight tracking-tight truncate max-w-full text-center">
                 {item.label}
               </span>

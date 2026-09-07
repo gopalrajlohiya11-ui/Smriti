@@ -42,26 +42,38 @@ export default function PatientReminders() {
     };
   }, []);
 
-  // Helper to parse reminder scheduled time into today's Date object
-  const parseReminderTime = (rem) => {
+  // Helper to parse reminder scheduled time into today's Date object (anchored to current day)
+  const parseReminderTime = (rem, baseDate = nowTime) => {
+    const today = new Date(baseDate);
+    let hours = 9;
+    let minutes = 0;
+
     if (rem.scheduledTime) {
       const d = new Date(rem.scheduledTime);
-      if (!isNaN(d.getTime())) return d;
+      if (!isNaN(d.getTime())) {
+        hours = d.getHours();
+        minutes = d.getMinutes();
+        const res = new Date(today);
+        res.setHours(hours, minutes, 0, 0);
+        return res;
+      }
     }
     if (rem.time) {
       const parts = rem.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
       if (parts) {
-        let hours = parseInt(parts[1], 10);
-        const minutes = parseInt(parts[2], 10);
+        hours = parseInt(parts[1], 10);
+        minutes = parseInt(parts[2], 10);
         const ampm = parts[3]?.toUpperCase();
         if (ampm === 'PM' && hours < 12) hours += 12;
         if (ampm === 'AM' && hours === 12) hours = 0;
-        const d = new Date(nowTime);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
+        const res = new Date(today);
+        res.setHours(hours, minutes, 0, 0);
+        return res;
       }
     }
-    return new Date(nowTime);
+    const res = new Date(today);
+    res.setHours(hours, minutes, 0, 0);
+    return res;
   };
 
   const speakText = (text, isAutoPlay = false) => {

@@ -134,26 +134,40 @@ export default function PatientDashboard() {
     });
   };
 
-  // Helper to parse reminder scheduled time into today's Date object
-  const parseReminderTime = (rem) => {
+  const [completingReminderId, setCompletingReminderId] = useState(null);
+
+  // Helper to parse reminder scheduled time into today's Date object (anchored to current day)
+  const parseReminderTime = (rem, baseDate = nowTime) => {
+    const today = new Date(baseDate);
+    let hours = 9;
+    let minutes = 0;
+
     if (rem.scheduledTime) {
       const d = new Date(rem.scheduledTime);
-      if (!isNaN(d.getTime())) return d;
-    }
-    if (rem.time) {
-      const match = rem.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (match) {
-        let [_, hours, minutes, period] = match;
-        hours = parseInt(hours, 10);
-        minutes = parseInt(minutes, 10);
-        if (period.toUpperCase() === 'PM' && hours < 12) hours += 12;
-        if (period.toUpperCase() === 'AM' && hours === 12) hours = 0;
-        const d = new Date(nowTime);
-        d.setHours(hours, minutes, 0, 0);
-        return d;
+      if (!isNaN(d.getTime())) {
+        hours = d.getHours();
+        minutes = d.getMinutes();
+        const res = new Date(today);
+        res.setHours(hours, minutes, 0, 0);
+        return res;
       }
     }
-    return new Date(nowTime);
+    if (rem.time) {
+      const match = rem.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (match) {
+        hours = parseInt(match[1], 10);
+        minutes = parseInt(match[2], 10);
+        const period = match[3]?.toUpperCase();
+        if (period === 'PM' && hours < 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        const res = new Date(today);
+        res.setHours(hours, minutes, 0, 0);
+        return res;
+      }
+    }
+    const res = new Date(today);
+    res.setHours(hours, minutes, 0, 0);
+    return res;
   };
 
   const getReminderIcon = (type, className = "w-8 h-8") => {
@@ -175,7 +189,7 @@ export default function PatientDashboard() {
     
     return reminders.map(rem => {
       const isCompleted = rem.status === 'completed' || rem.acknowledged === true;
-      const scheduledDate = parseReminderTime(rem);
+      const scheduledDate = parseReminderTime(rem, nowTime);
       const diffMinutes = (nowTime.getTime() - scheduledDate.getTime()) / (1000 * 60);
 
       let timeState = 'upcoming';
@@ -215,23 +229,47 @@ export default function PatientDashboard() {
     return chronologicalReminders.filter(r => r.isCompleted).length;
   }, [chronologicalReminders]);
 
-  const totalCount = chronologicalReminders.length || 10;
-
-  // Single primary focus right now
-  const primaryFocusRoutine = useMemo(() => {
-    const overdue = chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'overdue');
-    if (overdue.length > 0) return { routine: overdue[0], priority: 'overdue' };
-
-    const dueNow = chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'due_now');
-    if (dueNow.length > 0) return { routine: dueNow[0], priority: 'due_now' };
-
-    const upcoming = chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'upcoming');
-    if (upcoming.length > 0) return { routine: upcoming[0], priority: 'upcoming' };
-
-    return { routine: null, priority: 'all_completed' };
+  const overdueCount = useMemo(() => {
+    return chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'overdue').length;
   }, [chronologicalReminders]);
 
+  const totalCount = chronologicalReminders.length || 10;
+
+  // Single primary focus routine right now
+  const primaryFocusRoutine = useMemo(() => {
+    // Filter pending routines, excluding the one currently in completion transition animation
+    const pending = chronologicalReminders.filter(
+      r => !r.isCompleted && r.id !== completingReminderId && r._id !== completingReminderId
+    );
+
+    if (pending.length === 0) {
+      return { routine: null, priority: 'all_completed' };
+    }
+
+    // 1. Priority 1: A routine that is due right now (-45m to +60m from current real time)
+    const dueNow = pending.find(r => r.timeState === 'due_now');
+    if (dueNow) {
+      return { routine: dueNow, priority: 'due_now' };
+    }
+
+    // 2. Priority 2: Overdue routines missed earlier today
+    const overdue = pending.filter(r => r.timeState === 'overdue');
+    if (overdue.length > 0) {
+      return { routine: overdue[0], priority: 'overdue' };
+    }
+
+    // 3. Priority 3: Next upcoming routine scheduled for today
+    const upcoming = pending.filter(r => r.timeState === 'upcoming');
+    if (upcoming.length > 0) {
+      return { routine: upcoming[0], priority: 'upcoming' };
+    }
+
+    return { routine: pending[0], priority: 'upcoming' };
+  }, [chronologicalReminders, completingReminderId]);
+
   const handleReminderDone = (remId, title) => {
+    setCompletingReminderId(remId);
+
     confetti({
       particleCount: 50,
       spread: 60,
@@ -241,7 +279,13 @@ export default function PatientDashboard() {
 
     const isHindi = (currentLanguage?.code || '').startsWith('hi');
     speakText(isHindi ? `शानदार! आपने ${title} पूरा कर लिया।` : `Great job! You completed ${title}.`, true);
+    
     toggleReminder(activePatient?.id || activePatient?._id, remId);
+
+    // Smoothly advance card to next recalculated routine
+    setTimeout(() => {
+      setCompletingReminderId(null);
+    }, 650);
   };
 
     const handleStatusAudio = () => {
@@ -463,7 +507,10 @@ export default function PatientDashboard() {
           // Case A: All Routines Completed
           if (priority === 'all_completed' || !routine) {
             return (
-              <div className="bg-[#EDF7F2] rounded-3xl p-5 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in">
+              <div 
+                key="all_routines_completed"
+                className="bg-[#EDF7F2] rounded-3xl p-5 sm:p-8 border-2 border-[#A3D9C1] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in zoom-in-95 duration-300"
+              >
                 <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
                   <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#1F6B4A] text-white flex items-center justify-center shrink-0 shadow-xs">
                     <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
@@ -496,42 +543,57 @@ export default function PatientDashboard() {
 
           const isOverdue = priority === 'overdue';
           const isDueNow = priority === 'due_now';
+          const isCurrentCompleting = completingReminderId === (routine.id || routine._id);
 
           return (
-            <div className={`rounded-3xl p-5 sm:p-8 border-2 shadow-sm transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in ${
-              isOverdue
-                ? 'bg-[#FDF2F2] border-[#F5B7B1]'
-                : isDueNow
-                ? 'bg-[#EFF4FA] border-[#2C5AA0]'
-                : 'bg-white border-[#E5E0D8]'
-            }`}>
+            <div 
+              key={routine.id || routine._id || 'primary_focus'}
+              className={`rounded-3xl p-5 sm:p-8 border-2 shadow-sm transition-all duration-300 ease-out flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in slide-in-from-right-3 ${
+                isCurrentCompleting
+                  ? 'bg-[#EDF7F2] border-[#A3D9C1] scale-[0.99]'
+                  : isOverdue
+                  ? 'bg-[#FDF2F2] border-[#F5B7B1]'
+                  : isDueNow
+                  ? 'bg-[#EFF4FA] border-[#2C5AA0]'
+                  : 'bg-white border-[#E5E0D8]'
+              }`}
+            >
               {/* Left Details */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
-                <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
-                  isOverdue
+                <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex items-center justify-center shrink-0 shadow-xs transition-colors duration-300 ${
+                  isCurrentCompleting
+                    ? 'bg-[#1F6B4A] text-white'
+                    : isOverdue
                     ? 'bg-[#C0392B] text-white'
                     : isDueNow
                     ? 'bg-[#2C5AA0] text-white'
                     : 'bg-stone-100 text-[#2C5AA0]'
                 }`}>
-                  {getReminderIcon(routine.type, "w-9 h-9")}
+                  {isCurrentCompleting ? (
+                    <Check className="w-9 h-9 stroke-[3] animate-in zoom-in-50" />
+                  ) : (
+                    getReminderIcon(routine.type, "w-9 h-9")
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                    {isOverdue && (
+                    {isCurrentCompleting ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1F6B4A] text-white text-xs font-black uppercase tracking-wider animate-in fade-in">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>{isHindi ? "सफलतापूर्वक पूर्ण!" : "Completed!"}</span>
+                      </span>
+                    ) : isOverdue ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C0392B] text-white text-xs font-black uppercase tracking-wider">
                         <AlertTriangle className="w-3.5 h-3.5" />
                         <span>{isHindi ? "समय बीत चुका है" : "Action Overdue"}</span>
                       </span>
-                    )}
-                    {isDueNow && (
+                    ) : isDueNow ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2C5AA0] text-white text-xs font-black uppercase tracking-wider">
                         <Clock className="w-3.5 h-3.5" />
                         <span>{isHindi ? "अभी करने योग्य" : "Due Right Now"}</span>
                       </span>
-                    )}
-                    {!isOverdue && !isDueNow && (
+                    ) : (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-100 text-[#6B6B6B] text-xs font-bold border border-[#E5E0D8]">
                         <Clock className="w-3.5 h-3.5" />
                         <span>{isHindi ? "अगला निर्धारित कार्य" : "Next Scheduled Routine"}</span>
@@ -556,9 +618,12 @@ export default function PatientDashboard() {
               <div className="w-full sm:w-auto shrink-0">
                 <button
                   type="button"
+                  disabled={isCurrentCompleting}
                   onClick={() => handleReminderDone(routine.id || routine._id, routine.title)}
                   className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 ${
-                    isOverdue
+                    isCurrentCompleting
+                      ? 'bg-[#1F6B4A] text-white cursor-default'
+                      : isOverdue
                       ? 'bg-[#C0392B] hover:bg-[#A93226] text-white'
                       : isDueNow
                       ? 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
@@ -566,7 +631,7 @@ export default function PatientDashboard() {
                   }`}
                 >
                   <Check className="w-5 h-5 stroke-[3]" />
-                  <span>{isHindi ? "पूर्ण चिह्नित करें" : "Mark Done"}</span>
+                  <span>{isCurrentCompleting ? (isHindi ? "पूर्ण हुआ! ✓" : "Completed! ✓") : (isHindi ? "पूर्ण चिह्नित करें" : "Mark Done")}</span>
                 </button>
               </div>
 
@@ -593,9 +658,16 @@ export default function PatientDashboard() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#EFF4FA] border border-[#2C5AA0]/20 text-[#2C5AA0] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <Bell className="w-7 h-7 sm:w-8 sm:h-8" />
                 </div>
-                <span className="text-xs font-black px-3 py-1 rounded-full bg-[#EDF7F2] text-[#1F6B4A] border border-[#A3D9C1]">
-                  {completedCount} / {totalCount} {isHindi ? "पूर्ण" : "Done"}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <span className="text-xs font-black px-3 py-1 rounded-full bg-[#EDF7F2] text-[#1F6B4A] border border-[#A3D9C1]">
+                    {completedCount} / {totalCount} {isHindi ? "पूर्ण" : "Done"}
+                  </span>
+                  {overdueCount > 0 && (
+                    <span className="text-xs font-black px-2.5 py-1 rounded-full bg-[#FDF2F2] text-[#C0392B] border border-[#F5B7B1] animate-in fade-in">
+                      {overdueCount} {isHindi ? "बाकी" : "overdue"}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>

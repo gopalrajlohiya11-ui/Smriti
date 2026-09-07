@@ -24,30 +24,40 @@ router.post('/', authenticateCaregiver, async (req, res) => {
   }
 });
 
-// 2. Fetch all active overdue alerts directly from MongoDB (Caregiver scoped)
-router.get('/alerts', authenticateCaregiver, async (req, res) => {
+// 2. Fetch all active overdue alerts directly from MongoDB (Caregiver, Patient, or Query scoped)
+router.get('/alerts', optionalAuth, async (req, res) => {
   try {
     const now = new Date();
-    
-    // Find patient IDs accessible to this caregiver
-    const caregiver = req.caregiver;
-    const accessiblePatients = await Patient.find({
-      $or: [
-        { caregiverId: caregiver._id },
-        { _id: { $in: caregiver.patientIds || [] } }
-      ]
-    }).select('_id');
+    let patientIds = [];
 
-    const patientIds = accessiblePatients.map(p => p._id);
+    if (req.caregiver) {
+      // Scoped to caregiver's patients
+      const accessiblePatients = await Patient.find({
+        $or: [
+          { caregiverId: req.caregiver._id },
+          { _id: { $in: req.caregiver.patientIds || [] } }
+        ]
+      }).select('_id');
+      patientIds = accessiblePatients.map(p => p._id);
+    } else if (req.patient) {
+      patientIds = [req.patient._id];
+    } else if (req.query.patientId) {
+      const pId = await resolvePatientId(req.query.patientId);
+      if (pId) patientIds = [pId];
+    }
 
-    const overdueReminders = await Reminder.find({
-      patientId: { $in: patientIds },
+    const query = {
       acknowledged: false,
       dismissed: false,
       scheduledTime: { $lte: now }
-    })
-    .populate('patientId', 'name avatar location phoneNumber emergencyContact cognitiveStage')
-    .sort({ scheduledTime: -1 });
+    };
+    if (patientIds.length > 0) {
+      query.patientId = { $in: patientIds };
+    }
+
+    const overdueReminders = await Reminder.find(query)
+      .populate('patientId', 'name avatar location phoneNumber emergencyContact cognitiveStage')
+      .sort({ scheduledTime: -1 });
 
     const alerts = overdueReminders.map(rem => {
       const p = rem.patientId || {};
