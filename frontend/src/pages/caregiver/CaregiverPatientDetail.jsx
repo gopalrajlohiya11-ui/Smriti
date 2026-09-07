@@ -173,18 +173,26 @@ export default function CaregiverPatientDetail() {
   // Real MongoDB Game Sessions State
   const [gameSessions, setGameSessions] = useState([]);
   const [isGamesLoading, setIsGamesLoading] = useState(false);
+  const [gamesLoadError, setGamesLoadError] = useState(null);
   const [expandedSessionIds, setExpandedSessionIds] = useState(new Set());
 
-  const patientIdParam = selectedPatient?.id || selectedPatient?._id;
+  const patientIdParam = selectedPatient?._id || selectedPatient?.id || id;
 
   const loadPatientGames = useCallback(async () => {
     if (!patientIdParam) return;
     setIsGamesLoading(true);
+    setGamesLoadError(null);
     try {
       const data = await fetchPatientGameSessions(patientIdParam);
-      setGameSessions(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        setGameSessions(data);
+        setGamesLoadError(null);
+      } else {
+        setGameSessions([]);
+      }
     } catch (err) {
       console.warn('Could not load game sessions:', err);
+      setGamesLoadError('Unable to load game sessions from database. Please check connection and retry.');
     } finally {
       setIsGamesLoading(false);
     }
@@ -919,11 +927,29 @@ export default function CaregiverPatientDetail() {
             )}
           </div>
 
-          {/* Sessions List or Loading or Empty State */}
+          {/* Sessions List or Loading or Error or Empty State */}
           {isGamesLoading ? (
             <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
               <Gamepad2 className="w-6 h-6 text-teal-700 mx-auto animate-pulse" />
               <p className="text-xs font-bold text-slate-600">Loading patient game sessions from database...</p>
+            </div>
+          ) : gamesLoadError ? (
+            <div className="p-6 text-center bg-rose-50/80 rounded-2xl border border-rose-200 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto text-lg">
+                ⚠️
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-rose-900">Failed to load game telemetry</p>
+                <p className="text-xs text-rose-700 max-w-md mx-auto">{gamesLoadError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={loadPatientGames}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Retry Connection</span>
+              </button>
             </div>
           ) : gameSessions.length === 0 ? (
             <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">

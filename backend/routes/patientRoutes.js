@@ -177,6 +177,44 @@ router.get('/public/:id', async (req, res) => {
   }
 });
 
+// 1e-2. Get Patient Game Sessions Alias: GET /api/patients/:id/games
+router.get('/:id/games', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let targetPatientId = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      targetPatientId = id;
+    } else {
+      let patient = null;
+      if (id === 'pat-2' || (typeof id === 'string' && id.toLowerCase().includes('meera'))) {
+        patient = await Patient.findOne({ name: /Meera/i });
+      } else if (id === 'pat-3' || (typeof id === 'string' && id.toLowerCase().includes('biren'))) {
+        patient = await Patient.findOne({ name: /Biren/i });
+      } else if (id === 'pat-1' || id === 'default' || (typeof id === 'string' && id.toLowerCase().includes('ramesh'))) {
+        patient = await Patient.findOne({ name: /Ramesh/i });
+      } else {
+        patient = await Patient.findOne({
+          $or: [
+            { id },
+            { name: new RegExp(String(id).replace(/[-_]/g, ' ').trim(), 'i') }
+          ]
+        });
+      }
+      if (patient) {
+        targetPatientId = patient._id;
+      } else {
+        targetPatientId = id;
+      }
+    }
+
+    const sessions = await GameSession.find({ patientId: targetPatientId }).sort({ timestamp: -1 }).limit(50);
+    res.json(sessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 1f. Get All Public / Demo Patients: GET /api/patients/public
 router.get('/public', async (req, res) => {
   try {

@@ -397,22 +397,37 @@ export async function deletePatientPhotoApi(patientId, photoId) {
 
 // 8e. Fetch Game Sessions from MongoDB (GET /api/game-sessions/:patientId)
 export async function fetchPatientGameSessions(patientId) {
+  if (!patientId) return [];
+  const cleanId = patientId?._id || patientId?.id || patientId;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s safety timeout
+
   try {
-    const response = await fetch(`${API_BASE_URL}/game-sessions/${patientId}`, {
+    const response = await fetch(`${API_BASE_URL}/game-sessions/${cleanId}`, {
+      headers: getAuthHeaders(),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    }
+
+    // Fallback to /api/patients/:id/games
+    const fallbackRes = await fetch(`${API_BASE_URL}/patients/${cleanId}/games`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) {
-      // Fallback to /api/patients/:id/games
-      const fallbackRes = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
-        headers: getAuthHeaders()
-      });
-      if (fallbackRes.ok) return await fallbackRes.json();
-      throw new Error(`HTTP error ${response.status}`);
+    if (fallbackRes.ok) {
+      const fallbackData = await fallbackRes.json();
+      return Array.isArray(fallbackData) ? fallbackData : [];
     }
-    return await response.json();
+
+    throw new Error(`HTTP error ${response.status}`);
   } catch (err) {
-    console.warn(`⚠️ Could not fetch game sessions for patient ${patientId}:`, err.message);
-    return null;
+    clearTimeout(timeoutId);
+    console.warn(`⚠️ Could not fetch game sessions for patient ${cleanId}:`, err.message);
+    throw err;
   }
 }
 
@@ -534,19 +549,26 @@ export async function submitGameSessionApi(sessionData) {
 
 // 11. Fetch Real ML Cognitive Health Score & Clinical Status (GET /api/game-sessions/ml-health-score/:patientId)
 export async function fetchPatientMLHealthScore(patientId) {
+  const cleanId = patientId?._id || patientId?.id || patientId;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s safety timeout
+
   try {
     const token = localStorage.getItem('smriti_caregiver_token') || localStorage.getItem('smriti_patient_token');
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE_URL}/game-sessions/ml-health-score/${patientId}`, {
-      headers
+    const response = await fetch(`${API_BASE_URL}/game-sessions/ml-health-score/${cleanId}`, {
+      headers,
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
     return await response.json();
   } catch (err) {
+    clearTimeout(timeoutId);
     console.warn('ML health score API warning (fallback active):', err.message);
     return {
       cognitiveHealthScore: 88,

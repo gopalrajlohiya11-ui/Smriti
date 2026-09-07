@@ -47,11 +47,12 @@ export default function CaregiverCognitiveGames() {
     streakDays: 14
   };
 
-  const patientIdParam = patient.id || patient._id || id;
+  const patientIdParam = patient._id || patient.id || id;
 
   // Real MongoDB Game Sessions State
   const [gameSessions, setGameSessions] = useState([]);
   const [isGamesLoading, setIsGamesLoading] = useState(true);
+  const [gamesLoadError, setGamesLoadError] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all'); // 'all' | 'market-day-basket' | 'daily-routine-sequencer' | 'faces-family-recall' | 'sound-rhythm-match'
   const [sortBy, setSortBy] = useState('recent'); // 'recent' | 'score' | 'accuracy'
 
@@ -59,11 +60,18 @@ export default function CaregiverCognitiveGames() {
   const loadPatientGames = useCallback(async () => {
     if (!patientIdParam) return;
     setIsGamesLoading(true);
+    setGamesLoadError(null);
     try {
       const data = await fetchPatientGameSessions(patientIdParam);
-      setGameSessions(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        setGameSessions(data);
+        setGamesLoadError(null);
+      } else {
+        setGameSessions([]);
+      }
     } catch (err) {
       console.warn('Could not load game sessions:', err);
+      setGamesLoadError('Unable to load game sessions from database. Please check connection and retry.');
     } finally {
       setIsGamesLoading(false);
     }
@@ -374,6 +382,24 @@ export default function CaregiverCognitiveGames() {
             <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
               <Gamepad2 className="w-8 h-8 text-teal-700 mx-auto animate-pulse" />
               <p className="text-sm font-bold text-slate-700">Loading complete clinical game telemetry from MongoDB...</p>
+            </div>
+          ) : gamesLoadError ? (
+            <div className="p-8 text-center bg-rose-50/80 rounded-3xl border border-rose-200 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto text-xl">
+                ⚠️
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-bold text-rose-900">Failed to load game sessions</p>
+                <p className="text-xs text-rose-700 max-w-sm mx-auto">{gamesLoadError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={loadPatientGames}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Retry Connection</span>
+              </button>
             </div>
           ) : filteredSessions.length === 0 ? (
             <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">

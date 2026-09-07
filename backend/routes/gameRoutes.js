@@ -286,10 +286,93 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 3. GET /api/game-sessions/:patientId (Fetch game sessions for specific patient)
+// 3. GET /api/game-sessions/ml-health-score/:patientId (Compute real-time ML Cognitive Health Score & Clinical Status)
+router.get('/ml-health-score/:patientId', async (req, res) => {
+  try {
+    const rawId = req.params.patientId;
+    let targetPatient = null;
+
+    if (mongoose.Types.ObjectId.isValid(rawId)) {
+      targetPatient = await Patient.findById(rawId);
+    }
+    if (!targetPatient && (rawId === 'pat-1' || rawId === 'default' || (typeof rawId === 'string' && rawId.toLowerCase().includes('ramesh')))) {
+      targetPatient = await Patient.findOne({ name: /Ramesh/i });
+    }
+    if (!targetPatient && (rawId === 'pat-2' || (typeof rawId === 'string' && rawId.toLowerCase().includes('meera')))) {
+      targetPatient = await Patient.findOne({ name: /Meera/i });
+    }
+    if (!targetPatient && (rawId === 'pat-3' || (typeof rawId === 'string' && rawId.toLowerCase().includes('biren')))) {
+      targetPatient = await Patient.findOne({ name: /Biren/i });
+    }
+    if (!targetPatient) {
+      targetPatient = await Patient.findOne({
+        $or: [
+          { id: rawId },
+          { name: new RegExp(String(rawId).replace(/[-_]/g, ' ').trim(), 'i') }
+        ]
+      }) || await Patient.findOne();
+    }
+
+    const patientId = targetPatient ? targetPatient._id : (mongoose.Types.ObjectId.isValid(rawId) ? rawId : null);
+    
+    if (!patientId) {
+      return res.status(404).json({ error: 'Patient not found for ML cognitive evaluation' });
+    }
+
+    const mlResult = await calculatePatientMLHealth(patientId);
+
+    // Persist to Patient record if found
+    if (targetPatient) {
+      targetPatient.cognitiveHealthScore = mlResult.score;
+      targetPatient.clinicalStatus = mlResult.status;
+      targetPatient.lastMLEvaluationDate = new Date();
+      await targetPatient.save();
+    }
+
+    res.json({
+      status: 'ok',
+      patientId: patientId.toString(),
+      patientName: targetPatient?.name || 'Patient',
+      cognitiveHealthScore: mlResult.score,
+      clinicalStatus: mlResult.status,
+      source: mlResult.source,
+      weeklyAggregates: mlResult.weeklyAggregates,
+      recommendedDifficulty: targetPatient?.recommendedDifficulty || 2,
+      aiReasoning: targetPatient?.aiReasoning || 'AI model evaluated active weekly cognitive performance.'
+    });
+  } catch (err) {
+    console.error('Error in /ml-health-score endpoint:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. POST /api/game-sessions/adaptive-difficulty (Direct adaptive difficulty evaluation)
+router.post('/adaptive-difficulty', async (req, res) => {
+  try {
+    const { reaction_time, reactionTime, mistakes, current_level, currentLevel } = req.body;
+    const rTime = reaction_time !== undefined ? reaction_time : reactionTime;
+    const cLevel = current_level !== undefined ? current_level : currentLevel;
+
+    const result = await getMLDifficulty({
+      reactionTime: rTime,
+      mistakes,
+      currentLevel: cLevel
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. GET /api/game-sessions/:patientId (Fetch game sessions for specific patient)
 router.get('/:patientId', async (req, res) => {
   try {
     const rawId = req.params.patientId;
+    if (rawId === 'ml-health-score' || rawId === 'adaptive-difficulty') {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
     let filter = {};
     
     if (mongoose.Types.ObjectId.isValid(rawId)) {
@@ -407,85 +490,6 @@ router.get('/:patientId', async (req, res) => {
     res.json(sessions);
   } catch (err) {
     console.error('Error fetching game sessions by patientId:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 4. GET /api/game-sessions/ml-health-score/:patientId (Compute real-time ML Cognitive Health Score & Clinical Status)
-router.get('/ml-health-score/:patientId', async (req, res) => {
-  try {
-    const rawId = req.params.patientId;
-    let targetPatient = null;
-
-    if (mongoose.Types.ObjectId.isValid(rawId)) {
-      targetPatient = await Patient.findById(rawId);
-    }
-    if (!targetPatient && (rawId === 'pat-1' || rawId === 'default' || (typeof rawId === 'string' && rawId.toLowerCase().includes('ramesh')))) {
-      targetPatient = await Patient.findOne({ name: /Ramesh/i });
-    }
-    if (!targetPatient && (rawId === 'pat-2' || (typeof rawId === 'string' && rawId.toLowerCase().includes('meera')))) {
-      targetPatient = await Patient.findOne({ name: /Meera/i });
-    }
-    if (!targetPatient && (rawId === 'pat-3' || (typeof rawId === 'string' && rawId.toLowerCase().includes('biren')))) {
-      targetPatient = await Patient.findOne({ name: /Biren/i });
-    }
-    if (!targetPatient) {
-      targetPatient = await Patient.findOne({
-        $or: [
-          { id: rawId },
-          { name: new RegExp(String(rawId).replace(/[-_]/g, ' ').trim(), 'i') }
-        ]
-      }) || await Patient.findOne();
-    }
-
-    const patientId = targetPatient ? targetPatient._id : (mongoose.Types.ObjectId.isValid(rawId) ? rawId : null);
-    
-    if (!patientId) {
-      return res.status(404).json({ error: 'Patient not found for ML cognitive evaluation' });
-    }
-
-    const mlResult = await calculatePatientMLHealth(patientId);
-
-    // Persist to Patient record if found
-    if (targetPatient) {
-      targetPatient.cognitiveHealthScore = mlResult.score;
-      targetPatient.clinicalStatus = mlResult.status;
-      targetPatient.lastMLEvaluationDate = new Date();
-      await targetPatient.save();
-    }
-
-    res.json({
-      status: 'ok',
-      patientId: patientId.toString(),
-      patientName: targetPatient?.name || 'Patient',
-      cognitiveHealthScore: mlResult.score,
-      clinicalStatus: mlResult.status,
-      source: mlResult.source,
-      weeklyAggregates: mlResult.weeklyAggregates,
-      recommendedDifficulty: targetPatient?.recommendedDifficulty || 2,
-      aiReasoning: targetPatient?.aiReasoning || 'AI model evaluated active weekly cognitive performance.'
-    });
-  } catch (err) {
-    console.error('Error in /ml-health-score endpoint:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// 5. POST /api/game-sessions/adaptive-difficulty (Direct adaptive difficulty evaluation)
-router.post('/adaptive-difficulty', async (req, res) => {
-  try {
-    const { reaction_time, reactionTime, mistakes, current_level, currentLevel } = req.body;
-    const rTime = reaction_time !== undefined ? reaction_time : reactionTime;
-    const cLevel = current_level !== undefined ? current_level : currentLevel;
-
-    const result = await getMLDifficulty({
-      reactionTime: rTime,
-      mistakes,
-      currentLevel: cLevel
-    });
-
-    res.json(result);
-  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
