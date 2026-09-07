@@ -114,6 +114,41 @@ export async function requestCaregiverPasswordResetApi(email) {
   }
 }
 
+// 2c. Register Biometric for Caregiver
+export async function registerCaregiverBiometricApi(credentialId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/caregivers/register-biometric`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ credentialId })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to register biometric credentials');
+    return data;
+  } catch (err) {
+    console.error('Caregiver biometric registration API error:', err.message);
+    throw err;
+  }
+}
+
+// 2d. Caregiver Biometric Login
+export async function loginCaregiverBiometricApi(credentialId, email) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/caregivers/biometric-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credentialId, email })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Biometric authentication failed');
+    return data;
+  } catch (err) {
+    console.error('Caregiver biometric login API error:', err.message);
+    throw err;
+  }
+}
+
+
 
 // 3. Patient Login (Name/Age/PIN keypad)
 export async function loginPatientApi(name, age, pin, phoneNumber) {

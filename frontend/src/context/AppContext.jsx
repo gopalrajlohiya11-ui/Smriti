@@ -15,6 +15,8 @@ import {
   loginCaregiverGoogleApi,
   setCaregiverPasswordApi,
   signupCaregiverApi,
+  registerCaregiverBiometricApi,
+  loginCaregiverBiometricApi,
   loginPatientApi,
   loginPatientBiometricApi,
   registerPatientBiometricApi,
@@ -482,6 +484,37 @@ export function AppProvider({ children }) {
     }
   };
 
+  // 2b. Register Biometric for Caregiver
+  const registerCaregiverBiometric = async (credentialId) => {
+    try {
+      const data = await registerCaregiverBiometricApi(credentialId);
+      setCaregiverUser(prev => ({ ...prev, hasBiometric: true }));
+      localStorage.setItem('smriti_caregiver_user', JSON.stringify({ ...caregiverUser, hasBiometric: true }));
+      return data;
+    } catch (err) {
+      console.error('Register caregiver biometric error:', err.message);
+      throw err;
+    }
+  };
+
+  // 2c. Caregiver Biometric Login
+  const loginCaregiverBiometric = async (credentialId, email) => {
+    try {
+      const data = await loginCaregiverBiometricApi(credentialId, email);
+      setIsCaregiverLoggedIn(true);
+      setCaregiverUser(data.caregiver);
+      localStorage.setItem('smriti_caregiver_token', data.token);
+      localStorage.setItem('smriti_caregiver_user', JSON.stringify(data.caregiver));
+      localStorage.setItem('smriti_caregiver_auth', 'true');
+      await loadRealData();
+      return { success: true, caregiver: data.caregiver };
+    } catch (err) {
+      console.error('Caregiver biometric login error:', err.message);
+      throw err;
+    }
+  };
+
+
   const logoutCaregiver = () => {
     setIsCaregiverLoggedIn(false);
     setCaregiverUser(null);
@@ -822,6 +855,8 @@ export function AppProvider({ children }) {
         isCaregiverLoggedIn,
         caregiverUser,
         loginCaregiver,
+        loginCaregiverBiometric,
+        registerCaregiverBiometric,
         loginCaregiverWithGoogle,
         setCaregiverPassword,
         signupCaregiver,

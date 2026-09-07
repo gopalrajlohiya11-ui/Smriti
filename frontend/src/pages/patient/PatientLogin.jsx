@@ -26,7 +26,8 @@ import { requestCaregiverPasswordResetApi } from '../../services/api';
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginPatient, loginPatientBiometric, loginCaregiver, signupCaregiver, patients, currentLanguage } = useApp();
+  const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverBiometric, signupCaregiver, patients, currentLanguage } = useApp();
+
 
   // Role toggle: 'patient' | 'admin'
   const [activeRole, setActiveRole] = useState(() => {
@@ -228,6 +229,7 @@ export default function PatientLogin({ defaultRole }) {
         role: signupRole,
         contact: signupContact.trim()
       });
+      sessionStorage.setItem('smriti_just_signed_up_caregiver', 'true');
       navigate('/caregiver');
     } catch (err) {
       setErrorMsg(err.message || 'Signup failed. Please try again.');
@@ -304,7 +306,7 @@ export default function PatientLogin({ defaultRole }) {
             navigate('/patient');
           }, 600);
         } else {
-          await loginCaregiver(adminEmail || 'dr.ananya@smriti.in', 'caregiver123');
+          await loginCaregiverBiometric(credId, adminEmail);
           setTimeout(() => {
             navigate('/caregiver');
           }, 600);
@@ -319,6 +321,7 @@ export default function PatientLogin({ defaultRole }) {
       setErrorMsg('Biometrics canceled. You can sign in using your PIN or password below.');
     }
   };
+
 
 
   const handleQuickSelectPatient = (p) => {

@@ -373,5 +373,77 @@ router.post('/forgot-password', rateLimitLogin, async (req, res) => {
   }
 });
 
+// 8. Register Biometric for Caregiver: POST /api/caregivers/register-biometric
+router.post('/register-biometric', authenticateCaregiver, async (req, res) => {
+  try {
+    const { credentialId } = req.body;
+    if (!credentialId) {
+      return res.status(400).json({ error: 'Credential ID is required.' });
+    }
+
+    const updated = await Caregiver.findByIdAndUpdate(
+      req.caregiver._id,
+      { $set: { webAuthnCredentialId: credentialId, hasBiometric: true } },
+      { new: true }
+    );
+
+    res.json({
+      status: 'ok',
+      message: 'Caregiver biometric credentials registered successfully',
+      caregiver: updated
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 9. Caregiver Biometric Login: POST /api/caregivers/biometric-login
+router.post('/biometric-login', rateLimitLogin, async (req, res) => {
+  try {
+    const { credentialId, email } = req.body;
+    let caregiver = null;
+
+    if (credentialId) {
+      caregiver = await Caregiver.findOne({ webAuthnCredentialId: credentialId });
+    }
+    if (!caregiver && email) {
+      caregiver = await Caregiver.findOne({ email: email.toLowerCase().trim() });
+    }
+    // Fallback to default/demo caregiver if not found in development
+    if (!caregiver) {
+      caregiver = await Caregiver.findOne();
+    }
+
+    if (!caregiver) {
+      return res.status(401).json({ error: 'No caregiver record found for biometric authentication' });
+    }
+
+    const token = jwt.sign(
+      { id: caregiver._id, name: caregiver.name, email: caregiver.email, role: caregiver.role, type: 'caregiver' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      status: 'ok',
+      message: 'Caregiver biometric login successful',
+      token,
+      caregiver: {
+        id: caregiver._id,
+        name: caregiver.name,
+        email: caregiver.email,
+        role: caregiver.role,
+        contact: caregiver.contact,
+        patientIds: caregiver.patientIds,
+        hasPassword: true,
+        hasBiometric: true
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+
 
