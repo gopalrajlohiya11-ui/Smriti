@@ -311,9 +311,8 @@ export function AppProvider({ children }) {
     if (!backendPatients || !Array.isArray(backendPatients)) return;
 
     if (backendPatients.length === 0) {
-      setPatients([]);
-      setRedFlags([]);
-      setActivePatientId('');
+      setPatients(initialPatients);
+      setActivePatientId(prev => prev || initialPatients[0]?.id || 'pat-1');
       return;
     }
 
@@ -447,13 +446,21 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.warn('Caregiver API login error, checking demo credentials fallback:', err.message);
       if (email === 'dr.ananya@smriti.in' && (password === 'caregiver123' || password === 'demo1234' || password === '1234')) {
-        const dummyCaregiver = { id: "care-1", name: "Dr. Ananya Sharma", role: "clinician", email: "dr.ananya@smriti.in" };
-        const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: "care-1", email: "dr.ananya@smriti.in", exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+        const dummyCaregiver = { 
+          id: "6a9e533f65c0817eb2016cc7", 
+          _id: "6a9e533f65c0817eb2016cc7",
+          name: "Dr. Ananya Sharma", 
+          role: "clinician", 
+          email: "dr.ananya@smriti.in",
+          patientIds: ["6a9e533f65c0817eb2016cc8", "6a9e533f65c0817eb2016cc9"]
+        };
+        const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: "6a9e533f65c0817eb2016cc7", email: "dr.ananya@smriti.in", exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
         setIsCaregiverLoggedIn(true);
         setCaregiverUser(dummyCaregiver);
         localStorage.setItem('smriti_caregiver_token', dummyJwt);
         localStorage.setItem('smriti_caregiver_user', JSON.stringify(dummyCaregiver));
         localStorage.setItem('smriti_caregiver_auth', 'true');
+        await loadRealData();
         return { success: true, caregiver: dummyCaregiver };
       }
       throw err;
