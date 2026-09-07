@@ -55,6 +55,9 @@ import {
   Music
 } from 'lucide-react';
 
+import { matchPatientHelper } from '../../context/AppContext';
+import { initialPatients } from '../../data/mockData';
+
 export default function CaregiverPatientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -71,7 +74,10 @@ export default function CaregiverPatientDetail() {
     deletePatientPhoto
   } = useApp();
 
-  const selectedPatient = patients.find(p => p.id === id || p._id === id);
+  const selectedPatient = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, id)) : null) || 
+    initialPatients.find(p => matchPatientHelper(p, id)) || 
+    patients[0] || 
+    initialPatients[0];
 
   // Photos Vault State
   const [patientPhotosList, setPatientPhotosList] = useState([]);

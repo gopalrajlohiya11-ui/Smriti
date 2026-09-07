@@ -13,9 +13,23 @@ export const standard10Reminders = [
   { id: "rem-10", type: "medicine", title: "Night Medicine & Wind Down", hindiTitle: "रात की दवा और शांतिपूर्ण विश्राम", detail: "Bedtime prescription & calm rest", hindiDetail: "सोने से पहले की दवा और शांत नींद", time: "8:30 PM", status: "pending", icon: "Pill" }
 ];
 
+export const meeraStandardReminders = [
+  { id: "rem-m1", type: "meal", title: "Morning Breakfast & Meghalaya Tea", hindiTitle: "सुबह का नाश्ता और मेघालय चाय", detail: "Warm porridge & traditional herbal Meghalaya tea", hindiDetail: "गर्म दलिया और पारंपरिक मेघालय हर्बल चाय", time: "8:00 AM", status: "completed", icon: "meal" },
+  { id: "rem-m2", type: "medicine", title: "Morning Memantine 10mg", hindiTitle: "सुबह की मेमेंटाइन 10mg दवा", detail: "Prescribed memory support with water", hindiDetail: "पानी के साथ निर्धारित स्मृति वर्धक दवा", time: "9:00 AM", status: "pending", icon: "Pill" },
+  { id: "rem-m3", type: "hydration", title: "Mid-Morning Hydration", hindiTitle: "सुबह पानी पीने का समय", detail: "Drink 1 full glass of warm water", hindiDetail: "1 पूरा गिलास ताज़ा गुनगुना पानी पिएं", time: "10:30 AM", status: "completed", icon: "Droplets" },
+  { id: "rem-m4", type: "game", title: "Pine Needle Pattern Match", hindiTitle: "पाइन पैटर्न मिलान खेल", detail: "Photo recall activity on Smriti", hindiDetail: "स्मृति पर सरल फोटो व पैटर्न खेल", time: "11:30 AM", status: "completed", icon: "BrainCircuit" },
+  { id: "rem-m5", type: "meal", title: "Wholesome Meghalaya Lunch", hindiTitle: "पौष्टिक दोपहर का भोजन", detail: "Fresh stew & steamed rice with vegetables", hindiDetail: "ताज़ा सब्ज़ियों और उबले चावल के साथ दोपहर का भोजन", time: "1:00 PM", status: "pending", icon: "meal" },
+  { id: "rem-m6", type: "hydration", title: "Afternoon Hydration", hindiTitle: "दोपहर पानी पीने का समय", detail: "Glass of warm citrus water", hindiDetail: "एक गिलास ताज़ा पानी", time: "2:30 PM", status: "pending", icon: "Droplets" },
+  { id: "rem-m7", type: "activity", title: "Pine Forest Garden Walk", hindiTitle: "शाम की पाइन वन सैर", detail: "20 mins gentle stroll in Shillong pine air", hindiDetail: "शिलांग की ताज़ा खुली हवा में 20 मिनट टहलना", time: "4:30 PM", status: "pending", icon: "Footprints" },
+  { id: "rem-m8", type: "appointment", title: "Caregiver Daily Check-in", hindiTitle: "केयरगिवर संवाद", detail: "Routine review with Dr. Ananya", hindiDetail: "दैनिक स्वास्थ्य और दिनचर्या की समीक्षा", time: "6:30 PM", status: "pending", icon: "Calendar" },
+  { id: "rem-m9", type: "meal", title: "Light Traditional Dinner", hindiTitle: "हल्का रात का भोजन", detail: "Easily digestible soup & vegetables", hindiDetail: "सुपाच्य सूप और हल्का रात का भोजन", time: "7:45 PM", status: "pending", icon: "meal" },
+  { id: "rem-m10", type: "medicine", title: "Night Routine & Rest", hindiTitle: "रात का विश्राम", detail: "Bedtime breathing & peaceful rest", hindiDetail: "सोने से पहले शांत विश्राम और गहरी नींद", time: "8:30 PM", status: "pending", icon: "Pill" }
+];
+
 export const initialPatients = [
   {
     id: "pat-1",
+    _id: "6a9e533f65c0817eb2016cc8",
     name: "Ramesh Sharma",
     age: 74,
     gender: "Male",
@@ -51,6 +65,7 @@ export const initialPatients = [
   },
   {
     id: "pat-2",
+    _id: "6a9e533f65c0817eb2016cc9",
     name: "Meera Baruah",
     age: 68,
     gender: "Female",
@@ -63,8 +78,8 @@ export const initialPatients = [
     cognitiveStage: "Moderate Support",
     primaryCaregiver: "Dr. Ananya Sharma",
     emergencyContact: "+91 94361 98765",
-    notes: "Responsive to photo recognition of family visits in Cherrapunji. Score dip observed in Pattern Finder this week.",
-    todayReminders: standard10Reminders,
+    notes: "Responsive to photo recognition of family visits in Cherrapunji. Enjoys Shillong pine walks and church choir music.",
+    todayReminders: meeraStandardReminders,
     reminderHistory: [
       { date: "Aug 28", medicine: true, hydration: true, activity: true, appointment: true },
       { date: "Aug 27", medicine: true, hydration: true, activity: true, appointment: true },
@@ -75,14 +90,56 @@ export const initialPatients = [
       { date: "Aug 22", medicine: true, hydration: true, activity: true, appointment: true },
     ],
     weeklyPerformance: [
-      { day: "Sat", memoryScore: 82, routineScore: 85, overallScore: 83 },
-      { day: "Sun", memoryScore: 80, routineScore: 82, overallScore: 81 },
-      { day: "Mon", memoryScore: 74, routineScore: 78, overallScore: 76 },
-      { day: "Tue", memoryScore: 68, routineScore: 72, overallScore: 70 },
-      { day: "Wed", memoryScore: 62, routineScore: 70, overallScore: 66 },
-      { day: "Thu", memoryScore: 58, routineScore: 68, overallScore: 63 },
-      { day: "Fri (Today)", memoryScore: 55, routineScore: 65, overallScore: 60 }
+      { day: "Sat", memoryScore: 74, routineScore: 78, overallScore: 76 },
+      { day: "Sun", memoryScore: 75, routineScore: 80, overallScore: 77 },
+      { day: "Mon", memoryScore: 76, routineScore: 80, overallScore: 78 },
+      { day: "Tue", memoryScore: 77, routineScore: 82, overallScore: 79 },
+      { day: "Wed", memoryScore: 78, routineScore: 84, overallScore: 81 },
+      { day: "Thu", memoryScore: 78, routineScore: 85, overallScore: 82 },
+      { day: "Fri (Today)", memoryScore: 79, routineScore: 86, overallScore: 83 }
     ]
+  }
+];
+
+export const meeraFamilyPhotos = [
+  {
+    id: "fam-m1",
+    title: "Shillong Peak Viewpoint with Preeti",
+    relation: "Daughter",
+    location: "Shillong Peak, Meghalaya",
+    year: "2022",
+    description: "A beautiful misty morning enjoying hot tea looking over Shillong valley with your daughter Preeti.",
+    photoUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80",
+    audioPrompt: "This is you and your daughter Preeti at Shillong Peak enjoying the cool breeze and view.",
+    audioNote: "This is you and your daughter Preeti at Shillong Peak enjoying the cool breeze and view."
+  },
+  {
+    id: "fam-m2",
+    title: "Cherrapunji Waterfalls Family Picnic",
+    relation: "Children & Family",
+    location: "Nohkalikai Falls, Cherrapunji",
+    year: "2021",
+    description: "Lively family picnic lunch near the waterfalls with fresh orange blossom honey and laughter.",
+    photoUrl: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80",
+    audioPrompt: "Here is your family having a wonderful picnic near the Nohkalikai Falls in Cherrapunji.",
+    audioNote: "Here is your family having a wonderful picnic near the Nohkalikai Falls in Cherrapunji."
+  },
+  {
+    id: "fam-m3",
+    title: "Traditional Khasi Weaving Workshop",
+    relation: "Community Handloom",
+    location: "Mawlynnong, Meghalaya",
+    year: "2023",
+    description: "Displaying beautiful handcrafted Eri silk shawls and bamboo crafts with friends in Mawlynnong.",
+    photoUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80",
+    audioPrompt: "This is your handcrafted silk weaving exhibition in Mawlynnong.",
+    audioNote: "This is your handcrafted silk weaving exhibition in Mawlynnong."
   }
 ];
 

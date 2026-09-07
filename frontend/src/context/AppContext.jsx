@@ -44,6 +44,29 @@ import {
   removeQueuedOfflineAction 
 } from '../utils/offlineDb';
 
+// Helper: Match patient by ID, MongoDB _id, name, or demo aliases
+export function matchPatientHelper(patient, target) {
+  if (!patient || !target) return false;
+  const targetStr = String(target).trim().toLowerCase();
+  const pId = String(patient.id || '').trim().toLowerCase();
+  const p_Id = String(patient._id || '').trim().toLowerCase();
+  const pName = String(patient.name || '').trim().toLowerCase();
+
+  if (pId === targetStr || p_Id === targetStr) return true;
+  if (pName === targetStr || (targetStr.length > 3 && pName.includes(targetStr))) return true;
+
+  if (targetStr === 'pat-1' || targetStr === '6a9e533f65c0817eb2016cc8' || targetStr.includes('ramesh')) {
+    return pName.includes('ramesh') || pId === 'pat-1' || p_Id === '6a9e533f65c0817eb2016cc8';
+  }
+  if (targetStr === 'pat-2' || targetStr === '6a9e533f65c0817eb2016cc9' || targetStr.includes('meera')) {
+    return pName.includes('meera') || pId === 'pat-2' || p_Id === '6a9e533f65c0817eb2016cc9';
+  }
+  if (targetStr === 'pat-3' || targetStr.includes('biren')) {
+    return pName.includes('biren') || pId === 'pat-3';
+  }
+  return false;
+}
+
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
@@ -300,15 +323,24 @@ export function AppProvider({ children }) {
       } catch (e) {}
 
       // 3. Resolve Active Patient
+      const storedPatientId = localStorage.getItem('smriti_patient_id');
+      const currentTargetId = activePatientId || storedPatientId;
+
       if (hasPatientToken) {
         const currentPatient = await fetchCurrentPatientApi();
-        if (currentPatient && currentPatient._id) {
-          setActivePatientId(currentPatient._id);
-          localStorage.setItem('smriti_patient_id', currentPatient._id);
+        if (currentPatient && (currentPatient._id || currentPatient.id)) {
+          const resId = currentPatient._id || currentPatient.id;
+          setActivePatientId(resId);
+          localStorage.setItem('smriti_patient_id', resId);
+        } else if (currentTargetId) {
+          const found = enrichedPatients.find(p => matchPatientHelper(p, currentTargetId));
+          if (found) {
+            setActivePatientId(found.id);
+            localStorage.setItem('smriti_patient_id', found.id);
+          }
         }
-      } else {
-        const storedPatientId = localStorage.getItem('smriti_patient_id');
-        const exists = enrichedPatients.find(p => p.id === activePatientId || p.id === storedPatientId);
+      } else if (currentTargetId) {
+        const exists = enrichedPatients.find(p => matchPatientHelper(p, currentTargetId));
         if (exists) {
           setActivePatientId(exists.id);
           localStorage.setItem('smriti_patient_id', exists.id);
@@ -318,6 +350,9 @@ export function AppProvider({ children }) {
           localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
           await cachePatientData(enrichedPatients[0].id, enrichedPatients[0]);
         }
+      } else if (enrichedPatients.length > 0) {
+        setActivePatientId(enrichedPatients[0].id);
+        localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
       }
 
       // 4. Fetch direct database-synchronized active alerts
@@ -366,8 +401,14 @@ export function AppProvider({ children }) {
     }
   }, [isPatientLoggedIn, activePatientId]);
 
-  // Current active patient object
-  const activePatient = patients.find(p => p.id === activePatientId) || patients[0] || initialPatients[0];
+  // Current active patient object (Robust multi-identifier resolution)
+  const activePatient = useMemo(() => {
+    const target = activePatientId || localStorage.getItem('smriti_patient_id');
+    if (!target) return patients[0] || initialPatients[0];
+    const found = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, target)) : null) || 
+                  initialPatients.find(p => matchPatientHelper(p, target));
+    return found || patients[0] || initialPatients[0];
+  }, [patients, activePatientId]);
 
   // 1. Caregiver Real Login
   const loginCaregiver = async (email, password) => {
@@ -502,17 +543,28 @@ export function AppProvider({ children }) {
       localStorage.setItem('smriti_patient_token', data.token);
       localStorage.setItem('smriti_patient_auth', 'true');
       localStorage.setItem('smriti_patient_id', targetId);
+
+      setPatients(prev => {
+        const idx = prev.findIndex(p => matchPatientHelper(p, targetId) || matchPatientHelper(p, matchedPatient.name));
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], ...matchedPatient, id: targetId };
+          return updated;
+        }
+        return [matchedPatient, ...prev];
+      });
+
       await loadRealData();
       return { success: true, patient: matchedPatient };
     } catch (err) {
       console.warn('Patient login API error, checking local/demo matching:', err.message);
       const normalizedName = (name || '').toLowerCase().trim();
-      const localMatched = patients.find(p => (p.name || '').toLowerCase().includes(normalizedName)) ||
-        initialPatients.find(p => (p.name || '').toLowerCase().includes(normalizedName)) ||
+      const localMatched = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, normalizedName)) : null) ||
+        initialPatients.find(p => matchPatientHelper(p, normalizedName)) ||
         initialPatients[0];
 
-      const targetId = localMatched.id || localMatched._id || 'pat-1';
-      const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+      const targetId = localMatched.id || localMatched._id || (normalizedName.includes('meera') ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8');
+      const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: localMatched.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
       setActivePatientId(targetId);
       setIsPatientLoggedIn(true);
       localStorage.setItem('smriti_patient_token', dummyJwt);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
-import { familyPhotos } from '../../data/mockData';
+import { familyPhotos, meeraFamilyPhotos } from '../../data/mockData';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 import PatientNavShell from '../../components/patient/PatientNavShell';
 import { 
@@ -19,14 +19,20 @@ const HINDI_PHOTO_AUDIO = {
   'fam-1': 'यह आपके पोते अर्जुन हैं, जो गुवाहाटी नदी तट पर बीहू नृत्य के बाद मुस्कुरा रहे हैं।',
   'fam-2': 'यह आपकी बेटी डॉ. अनन्या हैं, जो गौहाटी मेडिकल कॉलेज से गोल्ड मेडल प्राप्त कर रही हैं।',
   'fam-3': 'यह जोरहाट का पैतृक घर है जहाँ आप सुबह की असम चाय और अखबार का आनंद लेते थे।',
-  'fam-4': 'यह आपके पूरे परिवार की शिलांग के एलिफेंट फॉल्स की यादगार छुट्टी है।'
+  'fam-4': 'यह आपके पूरे परिवार की शिलांग के एलिफेंट फॉल्स की यादगार छुट्टी है।',
+  'fam-m1': 'यह आप और आपकी बेटी प्रीति हैं जो शिलांग पीक के खूबसूरत नज़ारे का आनंद ले रही हैं।',
+  'fam-m2': 'यह चेरापूंजी के झरनों के पास आपके पूरे परिवार का आनंदमय पिकनिक है।',
+  'fam-m3': 'यह मावलिननॉन्ग में आपकी रेशम हथकरघा बुनाई की सुंदर प्रदर्शनी है।'
 };
 
 export default function PatientFamily() {
   const { t } = useTranslation();
   const { activePatient, loadPatientPhotos, currentLanguage } = useApp();
+
+  const isMeera = (activePatient?.name || '').toLowerCase().includes('meera');
+  const defaultPhotos = isMeera ? meeraFamilyPhotos : familyPhotos;
   
-  const [vaultPhotos, setVaultPhotos] = useState(familyPhotos);
+  const [vaultPhotos, setVaultPhotos] = useState(defaultPhotos);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +40,7 @@ export default function PatientFamily() {
 
   useEffect(() => {
     let isMounted = true;
+    setVaultPhotos(isMeera ? meeraFamilyPhotos : familyPhotos);
     if (activePatient?.id || activePatient?._id) {
       loadPatientPhotos(activePatient.id || activePatient._id).then(dbPhotos => {
         if (isMounted && dbPhotos && Array.isArray(dbPhotos) && dbPhotos.length > 0) {
@@ -45,7 +52,7 @@ export default function PatientFamily() {
       isMounted = false; 
       stopSpeech();
     };
-  }, [activePatient, loadPatientPhotos]);
+  }, [activePatient, isMeera, loadPatientPhotos]);
 
   const speakText = (text) => {
     speakLocalized({

@@ -410,30 +410,32 @@ router.get('/:id', authenticateAny, async (req, res) => {
   }
 });
 
+// Helper: Resolve any raw patient ID/alias to a MongoDB ObjectId
+async function resolveMongoPatientId(input) {
+  if (!input) return null;
+  if (mongoose.Types.ObjectId.isValid(input)) return input;
+  const str = String(input).trim().toLowerCase();
+  if (str === 'pat-2' || str.includes('meera')) {
+    const p = await Patient.findOne({ name: /Meera/i });
+    if (p) return p._id;
+  }
+  if (str === 'pat-3' || str.includes('biren')) {
+    const p = await Patient.findOne({ name: /Biren/i });
+    if (p) return p._id;
+  }
+  if (str === 'pat-1' || str === 'default' || str.includes('ramesh')) {
+    const p = await Patient.findOne({ name: /Ramesh/i });
+    if (p) return p._id;
+  }
+  const byName = await Patient.findOne({ name: new RegExp(input.trim(), 'i') });
+  if (byName) return byName._id;
+  return input;
+}
+
 // 6. Get a patient's reminders: GET /api/patients/:id/reminders
 router.get('/:id/reminders', optionalAuth, async (req, res) => {
   try {
-    let patientId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(patientId)) {
-      if (patientId === 'pat-2') {
-        const p = await Patient.findOne({ name: /Meera/i });
-        if (p) patientId = p._id;
-      } else if (patientId === 'pat-3') {
-        const p = await Patient.findOne({ name: /Biren/i });
-        if (p) patientId = p._id;
-      } else if (patientId === 'pat-1' || patientId === 'default') {
-        const p = await Patient.findOne({ name: /Ramesh/i });
-        if (p) patientId = p._id;
-      } else {
-        const byName = await Patient.findOne({ name: new RegExp(patientId.trim(), 'i') });
-        if (byName) {
-          patientId = byName._id;
-        } else {
-          const demoPat = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
-          if (demoPat) patientId = demoPat._id;
-        }
-      }
-    }
+    let patientId = await resolveMongoPatientId(req.params.id);
     const reminders = await Reminder.find({ patientId }).sort({ scheduledTime: 1 });
     res.json(reminders);
   } catch (err) {
@@ -585,12 +587,36 @@ router.post('/:id/chat', optionalAuth, async (req, res) => {
 // 10. Memory Bank Photos: GET /api/patients/:id/photos
 router.get('/:id/photos', optionalAuth, async (req, res) => {
   try {
-    const patientId = req.params.id;
+    const patientId = await resolveMongoPatientId(req.params.id);
     let photos = await MemoryBankPhoto.find({ patientId }).sort({ createdAt: -1 });
     
     // If no custom photos uploaded yet, seed default elderly-friendly family photos
     if (photos.length === 0) {
-      const defaultPhotos = [
+      const isMeera = (req.params.id === 'pat-2' || (typeof req.params.id === 'string' && req.params.id.toLowerCase().includes('meera')));
+      const defaultPhotos = isMeera ? [
+        {
+          patientId,
+          photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+          title: 'Shillong Peak Viewpoint with Preeti',
+          taggedName: 'Preeti Baruah',
+          relation: 'Daughter',
+          year: '2022',
+          location: 'Shillong, Meghalaya',
+          description: 'A beautiful misty morning enjoying hot tea looking over Shillong valley.',
+          audioPrompt: 'Remember the misty morning view from Shillong Peak with Preeti.'
+        },
+        {
+          patientId,
+          photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
+          title: 'Cherrapunji Waterfalls Family Picnic',
+          taggedName: 'Family',
+          relation: 'Children & Grandchildren',
+          year: '2021',
+          location: 'Cherrapunji, Meghalaya',
+          description: 'Lively family picnic lunch near the waterfalls with fresh orange blossom honey.',
+          audioPrompt: 'The happy laughter during your Cherrapunji waterfall family picnic.'
+        }
+      ] : [
         {
           patientId,
           photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
@@ -638,7 +664,7 @@ router.get('/:id/photos', optionalAuth, async (req, res) => {
 // 11. Add Memory Bank Photo: POST /api/patients/:id/photos
 router.post('/:id/photos', authenticateAny, async (req, res) => {
   try {
-    const patientId = req.params.id;
+    const patientId = await resolveMongoPatientId(req.params.id);
     const { 
       photoUrl, 
       title, 
@@ -685,7 +711,8 @@ router.post('/:id/photos', authenticateAny, async (req, res) => {
 // 12. Delete Memory Bank Photo: DELETE /api/patients/:id/photos/:photoId
 router.delete('/:id/photos/:photoId', authenticateAny, async (req, res) => {
   try {
-    const { id: patientId, photoId } = req.params;
+    const patientId = await resolveMongoPatientId(req.params.id);
+    const { photoId } = req.params;
     await MemoryBankPhoto.findOneAndDelete({ _id: photoId, patientId });
     res.json({ status: 'ok', message: 'Photo deleted successfully' });
   } catch (err) {
@@ -696,7 +723,7 @@ router.delete('/:id/photos/:photoId', authenticateAny, async (req, res) => {
 // 13. Game Sessions & Cognitive Scores: GET /api/patients/:id/games
 router.get('/:id/games', authenticateAny, async (req, res) => {
   try {
-    const patientId = req.params.id;
+    const patientId = await resolveMongoPatientId(req.params.id);
     const sessions = await GameSession.find({ patientId }).sort({ timestamp: -1 }).limit(30);
     res.json(sessions);
   } catch (err) {
@@ -707,7 +734,7 @@ router.get('/:id/games', authenticateAny, async (req, res) => {
 // 14. Record Completed Game Session: POST /api/patients/:id/games
 router.post('/:id/games', authenticateAny, async (req, res) => {
   try {
-    const patientId = req.params.id;
+    const patientId = await resolveMongoPatientId(req.params.id);
     const { gameType, title, category, score, difficultyLevel, duration } = req.body;
 
     const session = new GameSession({

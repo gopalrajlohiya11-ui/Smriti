@@ -145,13 +145,23 @@ router.get('/:patientId', async (req, res) => {
     if (mongoose.Types.ObjectId.isValid(rawId)) {
       filter = { patientId: rawId };
     } else {
-      // Look up patient by custom id or name
-      const patient = await Patient.findOne({
-        $or: [
-          { id: rawId },
-          { name: /Ramesh/i }
-        ]
-      });
+      // Look up patient by custom id, shortcut, or name
+      let patient = null;
+      if (rawId === 'pat-2' || (typeof rawId === 'string' && rawId.toLowerCase().includes('meera'))) {
+        patient = await Patient.findOne({ name: /Meera/i });
+      } else if (rawId === 'pat-3' || (typeof rawId === 'string' && rawId.toLowerCase().includes('biren'))) {
+        patient = await Patient.findOne({ name: /Biren/i });
+      } else if (rawId === 'pat-1' || rawId === 'default' || (typeof rawId === 'string' && rawId.toLowerCase().includes('ramesh'))) {
+        patient = await Patient.findOne({ name: /Ramesh/i });
+      } else {
+        patient = await Patient.findOne({
+          $or: [
+            { id: rawId },
+            { name: new RegExp(rawId.replace(/[-_]/g, ' ').trim(), 'i') }
+          ]
+        });
+      }
+
       if (patient) {
         filter = { patientId: patient._id };
       } else {
