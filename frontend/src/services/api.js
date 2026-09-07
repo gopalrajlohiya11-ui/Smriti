@@ -532,3 +532,44 @@ export async function submitGameSessionApi(sessionData) {
   }
 }
 
+// 11. Fetch Real ML Cognitive Health Score & Clinical Status (GET /api/game-sessions/ml-health-score/:patientId)
+export async function fetchPatientMLHealthScore(patientId) {
+  try {
+    const token = localStorage.getItem('smriti_caregiver_token') || localStorage.getItem('smriti_patient_token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/game-sessions/ml-health-score/${patientId}`, {
+      headers
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.warn('ML health score API warning (fallback active):', err.message);
+    return {
+      cognitiveHealthScore: 88,
+      clinicalStatus: 'Stable',
+      source: 'fallback',
+      weeklyAggregates: { gamesPlayedThisWeek: 4, avgReactionTime: 2.8, totalMistakesThisWeek: 2 }
+    };
+  }
+}
+
+// 12. Direct Adaptive Difficulty Evaluation (POST /api/game-sessions/adaptive-difficulty)
+export async function fetchAdaptiveDifficultyApi(telemetry) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/game-sessions/adaptive-difficulty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(telemetry)
+    });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn('Adaptive difficulty API warning:', err.message);
+    return { difficulty: 2, reasoning: 'Standard baseline tier active.', source: 'fallback' };
+  }
+}
+

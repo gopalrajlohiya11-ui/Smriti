@@ -5,6 +5,7 @@ const GameSession = require('../models/GameSession');
 const Patient = require('../models/patient');
 const Reminder = require('../models/Reminder');
 const jwt = require('jsonwebtoken');
+const { getMLDifficulty, getMLHealthScore } = require('../services/mlService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'smriti-hackathon-secret-key-2026';
 
@@ -29,10 +30,83 @@ function resolvePatientId(req) {
   return null;
 }
 
-// 1. POST /api/game-sessions (Save game session, update routine & streak)
+// Helper: Calculate 7-day aggregates for a patient and fetch ML health score
+async function calculatePatientMLHealth(patientId) {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recentSessions = await GameSession.find({
+      patientId,
+      timestamp: { $gte: sevenDaysAgo }
+    }).sort({ timestamp: -1 });
+
+    let gamesPlayedThisWeek = recentSessions.length;
+    let totalReactionTime = 0;
+    let reactionCount = 0;
+    let totalMistakesThisWeek = 0;
+
+    for (const s of recentSessions) {
+      if (typeof s.totalMistakes === 'number') {
+        totalMistakesThisWeek += s.totalMistakes;
+      }
+      if (typeof s.averageReactionTime === 'number' && s.averageReactionTime > 0) {
+        totalReactionTime += s.averageReactionTime;
+        reactionCount++;
+      } else if (Array.isArray(s.roundDetails) && s.roundDetails.length > 0) {
+        for (const r of s.roundDetails) {
+          if (r.timeTakenSeconds) {
+            totalReactionTime += r.timeTakenSeconds;
+            reactionCount++;
+          }
+          if (r.totalAttempts && r.correctCount) {
+            totalMistakesThisWeek += Math.max(0, r.totalAttempts - r.correctCount);
+          }
+        }
+      }
+    }
+
+    const avgReactionTime = reactionCount > 0 ? Number((totalReactionTime / reactionCount).toFixed(2)) : 3.0;
+
+    const mlHealthResult = await getMLHealthScore({
+      patientId,
+      gamesPlayedThisWeek,
+      avgReactionTime,
+      totalMistakes: totalMistakesThisWeek
+    });
+
+    return {
+      ...mlHealthResult,
+      weeklyAggregates: {
+        gamesPlayedThisWeek,
+        avgReactionTime,
+        totalMistakesThisWeek
+      }
+    };
+  } catch (err) {
+    console.warn('Error computing weekly ML health score:', err.message);
+    return {
+      score: 85,
+      status: 'Stable',
+      source: 'fallback',
+      weeklyAggregates: { gamesPlayedThisWeek: 1, avgReactionTime: 3.0, totalMistakesThisWeek: 0 }
+    };
+  }
+}
+
+// 1. POST /api/game-sessions (Save game session, ML adaptive difficulty, update routine & streak)
 router.post('/', async (req, res) => {
   try {
-    const { gameType, score, difficultyLevel, title, category, duration, roundDetails } = req.body;
+    const { 
+      gameType, 
+      score, 
+      difficultyLevel, 
+      title, 
+      category, 
+      duration, 
+      roundDetails,
+      reactionTime: customReactionTime,
+      mistakes: customMistakes,
+      currentLevel: customLevel
+    } = req.body;
     let patientId = resolvePatientId(req);
 
     // If still not resolved, try finding the first active patient in db as fallback
@@ -56,7 +130,51 @@ router.post('/', async (req, res) => {
     } else if (gameType === 'sound-rhythm-match') {
       defaultTitle = 'Sound & Rhythm Match';
       defaultCategory = 'Auditory & Rhythm Recall';
+    } else if (gameType === 'odd-one-out') {
+      defaultTitle = 'Odd One Out';
+      defaultCategory = 'Visual & Category Discrimination';
     }
+
+    // --- Compute Session Telemetry for Teammate ML Engine ---
+    let computedReactionTime = customReactionTime;
+    let computedMistakes = customMistakes;
+    let computedCurrentLevel = customLevel;
+
+    if (Array.isArray(roundDetails) && roundDetails.length > 0) {
+      if (computedReactionTime === undefined) {
+        const totalTime = roundDetails.reduce((sum, r) => sum + (r.timeTakenSeconds || 0), 0);
+        computedReactionTime = Number((totalTime / roundDetails.length).toFixed(2));
+      }
+      if (computedMistakes === undefined) {
+        computedMistakes = roundDetails.reduce((sum, r) => {
+          const attempts = r.totalAttempts || 0;
+          const correct = r.correctCount || 0;
+          return sum + Math.max(0, attempts - correct);
+        }, 0);
+      }
+      if (computedCurrentLevel === undefined) {
+        computedCurrentLevel = roundDetails[roundDetails.length - 1]?.level || 2;
+      }
+    }
+
+    // Default telemetry fallbacks if missing
+    if (computedReactionTime === undefined || isNaN(computedReactionTime)) {
+      computedReactionTime = 2.8;
+    }
+    if (computedMistakes === undefined || isNaN(computedMistakes)) {
+      const numericScore = typeof score === 'number' ? score : parseInt(score, 10) || 100;
+      computedMistakes = numericScore < 70 ? 3 : numericScore < 85 ? 1 : 0;
+    }
+    if (computedCurrentLevel === undefined || isNaN(computedCurrentLevel)) {
+      computedCurrentLevel = difficultyLevel === 'hard' ? 3 : difficultyLevel === 'easy' ? 1 : 2;
+    }
+
+    // --- 1. Call Teammate ML Adaptive Difficulty Endpoint ---
+    const mlDiffResult = await getMLDifficulty({
+      reactionTime: computedReactionTime,
+      mistakes: computedMistakes,
+      currentLevel: computedCurrentLevel
+    });
 
     const session = new GameSession({
       patientId,
@@ -66,7 +184,12 @@ router.post('/', async (req, res) => {
       score: typeof score === 'number' ? score : parseInt(score, 10) || 100,
       difficultyLevel: difficultyLevel || 'medium',
       duration: duration || '3 Mins',
-      roundDetails: Array.isArray(roundDetails) ? roundDetails : []
+      roundDetails: Array.isArray(roundDetails) ? roundDetails : [],
+      averageReactionTime: computedReactionTime,
+      totalMistakes: computedMistakes,
+      aiDifficulty: mlDiffResult.difficulty,
+      aiReasoning: mlDiffResult.reasoning,
+      aiSource: mlDiffResult.source
     });
 
     await session.save();
@@ -85,21 +208,42 @@ router.post('/', async (req, res) => {
       routineUpdated = true;
     }
 
-    // Increment or maintain patient streak
+    // --- 2. Call Teammate ML Cognitive Health Score Endpoint ---
+    const mlHealthResult = await calculatePatientMLHealth(patientId);
+
+    // Update patient record with ML insights & increment streak
     const patient = await Patient.findById(patientId);
     let streakDays = 14;
     if (patient) {
       patient.streakDays = (patient.streakDays || 0) + 1;
+      patient.cognitiveHealthScore = mlHealthResult.score;
+      patient.clinicalStatus = mlHealthResult.status;
+      patient.recommendedDifficulty = mlDiffResult.difficulty;
+      patient.aiReasoning = mlDiffResult.reasoning;
+      patient.lastMLEvaluationDate = new Date();
       await patient.save();
       streakDays = patient.streakDays;
     }
 
     return res.status(201).json({
       status: 'ok',
-      message: 'Game session recorded successfully',
+      message: 'Game session recorded successfully with ML engine insights',
       session,
       routineUpdated,
-      streakDays
+      streakDays,
+      mlInsights: {
+        adaptiveDifficulty: {
+          level: mlDiffResult.difficulty,
+          reasoning: mlDiffResult.reasoning,
+          source: mlDiffResult.source
+        },
+        cognitiveHealth: {
+          score: mlHealthResult.score,
+          status: mlHealthResult.status,
+          source: mlHealthResult.source,
+          weeklyAggregates: mlHealthResult.weeklyAggregates
+        }
+      }
     });
   } catch (err) {
     console.error('Error saving game session:', err);
@@ -257,6 +401,85 @@ router.get('/:patientId', async (req, res) => {
     res.json(sessions);
   } catch (err) {
     console.error('Error fetching game sessions by patientId:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. GET /api/game-sessions/ml-health-score/:patientId (Compute real-time ML Cognitive Health Score & Clinical Status)
+router.get('/ml-health-score/:patientId', async (req, res) => {
+  try {
+    const rawId = req.params.patientId;
+    let targetPatient = null;
+
+    if (mongoose.Types.ObjectId.isValid(rawId)) {
+      targetPatient = await Patient.findById(rawId);
+    }
+    if (!targetPatient && (rawId === 'pat-1' || rawId === 'default' || (typeof rawId === 'string' && rawId.toLowerCase().includes('ramesh')))) {
+      targetPatient = await Patient.findOne({ name: /Ramesh/i });
+    }
+    if (!targetPatient && (rawId === 'pat-2' || (typeof rawId === 'string' && rawId.toLowerCase().includes('meera')))) {
+      targetPatient = await Patient.findOne({ name: /Meera/i });
+    }
+    if (!targetPatient && (rawId === 'pat-3' || (typeof rawId === 'string' && rawId.toLowerCase().includes('biren')))) {
+      targetPatient = await Patient.findOne({ name: /Biren/i });
+    }
+    if (!targetPatient) {
+      targetPatient = await Patient.findOne({
+        $or: [
+          { id: rawId },
+          { name: new RegExp(String(rawId).replace(/[-_]/g, ' ').trim(), 'i') }
+        ]
+      }) || await Patient.findOne();
+    }
+
+    const patientId = targetPatient ? targetPatient._id : (mongoose.Types.ObjectId.isValid(rawId) ? rawId : null);
+    
+    if (!patientId) {
+      return res.status(404).json({ error: 'Patient not found for ML cognitive evaluation' });
+    }
+
+    const mlResult = await calculatePatientMLHealth(patientId);
+
+    // Persist to Patient record if found
+    if (targetPatient) {
+      targetPatient.cognitiveHealthScore = mlResult.score;
+      targetPatient.clinicalStatus = mlResult.status;
+      targetPatient.lastMLEvaluationDate = new Date();
+      await targetPatient.save();
+    }
+
+    res.json({
+      status: 'ok',
+      patientId: patientId.toString(),
+      patientName: targetPatient?.name || 'Patient',
+      cognitiveHealthScore: mlResult.score,
+      clinicalStatus: mlResult.status,
+      source: mlResult.source,
+      weeklyAggregates: mlResult.weeklyAggregates,
+      recommendedDifficulty: targetPatient?.recommendedDifficulty || 2,
+      aiReasoning: targetPatient?.aiReasoning || 'AI model evaluated active weekly cognitive performance.'
+    });
+  } catch (err) {
+    console.error('Error in /ml-health-score endpoint:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. POST /api/game-sessions/adaptive-difficulty (Direct adaptive difficulty evaluation)
+router.post('/adaptive-difficulty', async (req, res) => {
+  try {
+    const { reaction_time, reactionTime, mistakes, current_level, currentLevel } = req.body;
+    const rTime = reaction_time !== undefined ? reaction_time : reactionTime;
+    const cLevel = current_level !== undefined ? current_level : currentLevel;
+
+    const result = await getMLDifficulty({
+      reactionTime: rTime,
+      mistakes,
+      currentLevel: cLevel
+    });
+
+    res.json(result);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

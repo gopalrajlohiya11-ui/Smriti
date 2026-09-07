@@ -19,6 +19,11 @@ const gameSessionSchema = new mongoose.Schema({
   difficultyLevel: { type: String, default: 'medium' },
   duration: { type: String },
   roundDetails: [roundDetailSchema],
+  averageReactionTime: { type: Number },
+  totalMistakes: { type: Number },
+  aiDifficulty: { type: Number },
+  aiReasoning: { type: String },
+  aiSource: { type: String, default: 'ml_model' },
   timestamp: { type: Date, default: Date.now }
 });
 

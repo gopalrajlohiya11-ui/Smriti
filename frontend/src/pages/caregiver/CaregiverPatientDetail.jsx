@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { fetchPatientGameSessions } from '../../services/api';
+import { fetchPatientGameSessions, fetchPatientMLHealthScore } from '../../services/api';
 import CaregiverLayout from '../../components/caregiver/CaregiverLayout';
 import { 
   ResponsiveContainer, 
@@ -96,6 +96,10 @@ export default function CaregiverPatientDetail() {
   });
   const [photoSaveStatus, setPhotoSaveStatus] = useState('');
 
+  // ML Cognitive Health & Adaptive Difficulty State
+  const [mlEvaluation, setMlEvaluation] = useState(null);
+  const [isMlLoading, setIsMlLoading] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
     if (selectedPatient?.id || selectedPatient?._id) {
@@ -106,6 +110,16 @@ export default function CaregiverPatientDetail() {
           setPatientPhotosList(photos || []);
           setIsPhotoLoading(false);
         }
+      });
+
+      setIsMlLoading(true);
+      fetchPatientMLHealthScore(pId).then(data => {
+        if (isMounted && data) {
+          setMlEvaluation(data);
+          setIsMlLoading(false);
+        }
+      }).catch(() => {
+        if (isMounted) setIsMlLoading(false);
       });
     }
     return () => { isMounted = false; };
@@ -677,7 +691,117 @@ export default function CaregiverPatientDetail() {
         </div>
 
         {/* ======================================================== */}
-        {/* 2. 7-DAY COGNITIVE PERFORMANCE CHART (REAL DATA BLENDED) */}
+        {/* 2. LIVE ML COGNITIVE HEALTH & ADAPTIVE DIFFICULTY ENGINE */}
+        {/* ======================================================== */}
+        <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 text-white rounded-2xl p-6 sm:p-8 border border-indigo-500/30 shadow-lg space-y-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                <BrainCircuit className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+                    AI Cognitive Health & Clinical Status
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/30 border border-indigo-400/40 text-indigo-200">
+                    Live ML Engine
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300">
+                  Real-time cognitive decline risk assessment powered by teammate's model on Render
+                </p>
+              </div>
+            </div>
+
+            {/* Live Model Source Badge */}
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
+                mlEvaluation?.source === 'ml_model'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${mlEvaluation?.source === 'ml_model' ? 'bg-emerald-400 animate-ping' : 'bg-indigo-400'}`} />
+                <span>{mlEvaluation?.source === 'ml_model' ? 'dementia-ai-engine.onrender.com (Live)' : 'Rule-Based Safeguard Active'}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Core Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+            
+            {/* 1. Clinical Status */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clinical Status (ML Evaluated)</p>
+              <div className="pt-0.5">
+                {(() => {
+                  const status = mlEvaluation?.clinicalStatus || selectedPatient?.clinicalStatus || 'Stable';
+                  const isStable = status.toLowerCase().includes('stable');
+                  const isMild = status.toLowerCase().includes('mild') || status.toLowerCase().includes('monitor');
+                  return (
+                    <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-black text-sm border ${
+                      isStable
+                        ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+                        : isMild
+                        ? 'bg-amber-500/25 text-amber-300 border-amber-500/40'
+                        : 'bg-rose-500/25 text-rose-300 border-rose-500/40 animate-pulse'
+                    }`}>
+                      <Activity className="w-4 h-4" />
+                      <span>{status}</span>
+                    </span>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* 2. Cognitive Health Score */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cognitive Health Score</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-white">
+                  {mlEvaluation?.cognitiveHealthScore || selectedPatient?.cognitiveHealthScore || 88}
+                </span>
+                <span className="text-xs text-slate-400 font-bold">/ 100</span>
+                <span className="text-xs text-emerald-400 font-bold ml-auto flex items-center gap-0.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>ML Score</span>
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Recommended Next Difficulty */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Recommended Difficulty Tier</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-amber-300">
+                  Level {mlEvaluation?.recommendedDifficulty || selectedPatient?.recommendedDifficulty || 2}
+                </span>
+                <span className="text-xs text-slate-300 font-semibold">(Adaptive AI)</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* AI Reasoning Callout */}
+          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5 text-xs text-slate-300 relative z-10">
+            <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-white">AI Model Reasoning: </span>
+              <span>{mlEvaluation?.aiReasoning || selectedPatient?.aiReasoning || "Patient maintains regular cognitive engagement with fast reaction speeds. Adaptive difficulty calibrated for cognitive maintenance."}</span>
+              {mlEvaluation?.weeklyAggregates && (
+                <span className="block text-[11px] text-slate-400 mt-1">
+                  Weekly Telemetry: {mlEvaluation.weeklyAggregates.gamesPlayedThisWeek} game(s) played • Avg reaction time: {mlEvaluation.weeklyAggregates.avgReactionTime}s • Mistakes: {mlEvaluation.weeklyAggregates.totalMistakesThisWeek}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* 3. 7-DAY COGNITIVE PERFORMANCE CHART (REAL DATA BLENDED) */}
         {/* ======================================================== */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

@@ -24,6 +24,12 @@ const patientSchema = new mongoose.Schema({
   webAuthnCredentialId: { type: String },
   webAuthnPublicKey: { type: String },
   hasBiometric: { type: Boolean, default: false },
+  // ML Engine Evaluation Fields
+  cognitiveHealthScore: { type: Number, default: 85 },
+  clinicalStatus: { type: String, default: 'Stable' },
+  recommendedDifficulty: { type: Number, default: 2 },
+  aiReasoning: { type: String },
+  lastMLEvaluationDate: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 
