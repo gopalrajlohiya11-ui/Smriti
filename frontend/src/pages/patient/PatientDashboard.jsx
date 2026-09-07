@@ -183,7 +183,10 @@ export default function PatientDashboard() {
     }
   };
 
-  // Process today's reminders
+  // Configurable auto-escalation threshold for stale unacknowledged reminders (3 hours = 180 mins)
+  const ESCALATION_THRESHOLD_MINUTES = 180;
+
+  // Process today's reminders with real-time time states and actionable flags
   const chronologicalReminders = useMemo(() => {
     const reminders = activePatient?.todayReminders || [];
     
@@ -192,21 +195,32 @@ export default function PatientDashboard() {
       const scheduledDate = parseReminderTime(rem, nowTime);
       const diffMinutes = (nowTime.getTime() - scheduledDate.getTime()) / (1000 * 60);
 
+      // Rule 3: A reminder is actionable ONLY if current real time >= scheduled time (diffMinutes >= 0)
+      const isActionable = diffMinutes >= 0;
+
       let timeState = 'upcoming';
       if (isCompleted) {
         timeState = 'completed';
-      } else if (diffMinutes >= -45 && diffMinutes <= 60) {
+      } else if (diffMinutes < 0) {
+        // Scheduled in future (not actionable until time arrives)
+        timeState = 'upcoming';
+      } else if (diffMinutes >= 0 && diffMinutes <= 60) {
+        // Due right now (within 0 to 60 minutes window)
         timeState = 'due_now';
-      } else if (diffMinutes > 60) {
+      } else if (diffMinutes > 60 && diffMinutes < ESCALATION_THRESHOLD_MINUTES) {
+        // Recent overdue (1 to 3 hours overdue)
         timeState = 'overdue';
       } else {
-        timeState = 'upcoming';
+        // Rule 1: 3+ hours unacknowledged -> auto-escalated to alert center
+        timeState = 'escalated_overdue';
       }
 
       return {
         ...rem,
         isCompleted,
+        isActionable,
         scheduledDate,
+        diffMinutes,
         timeState,
         formattedTime: rem.time || scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -230,14 +244,18 @@ export default function PatientDashboard() {
   }, [chronologicalReminders]);
 
   const overdueCount = useMemo(() => {
-    return chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'overdue').length;
+    return chronologicalReminders.filter(r => !r.isCompleted && (r.timeState === 'overdue' || r.timeState === 'escalated_overdue')).length;
+  }, [chronologicalReminders]);
+
+  const escalatedOverdueCount = useMemo(() => {
+    return chronologicalReminders.filter(r => !r.isCompleted && r.timeState === 'escalated_overdue').length;
   }, [chronologicalReminders]);
 
   const totalCount = chronologicalReminders.length || 10;
 
-  // Single primary focus routine right now
+  // Single primary focus routine on the dashboard spotlight (Rule 1 & Rule 2)
   const primaryFocusRoutine = useMemo(() => {
-    // Filter pending routines, excluding the one currently in completion transition animation
+    // 1. Filter pending routines, excluding the one currently in completion transition animation
     const pending = chronologicalReminders.filter(
       r => !r.isCompleted && r.id !== completingReminderId && r._id !== completingReminderId
     );
@@ -246,25 +264,33 @@ export default function PatientDashboard() {
       return { routine: null, priority: 'all_completed' };
     }
 
-    // 1. Priority 1: A routine that is due right now (-45m to +60m from current real time)
-    const dueNow = pending.find(r => r.timeState === 'due_now');
-    if (dueNow) {
-      return { routine: dueNow, priority: 'due_now' };
+    // 2. Rule 1: Filter out stale/escalated overdue (3+ hours past) so they don't block the spotlight
+    const activeCandidates = pending.filter(r => r.timeState !== 'escalated_overdue');
+
+    if (activeCandidates.length > 0) {
+      // Priority 1: Routine due right now (0 to 60 mins past scheduled time)
+      const dueNow = activeCandidates.find(r => r.timeState === 'due_now');
+      if (dueNow) {
+        return { routine: dueNow, priority: 'due_now' };
+      }
+
+      // Priority 2: Recent overdue routine (1 to 3 hours past scheduled time)
+      const recentOverdue = activeCandidates.find(r => r.timeState === 'overdue');
+      if (recentOverdue) {
+        return { routine: recentOverdue, priority: 'overdue' };
+      }
+
+      // Priority 3 (Rule 2 Forward Progression): Nearest upcoming reminder in chronological order
+      const upcoming = activeCandidates.filter(r => r.timeState === 'upcoming');
+      if (upcoming.length > 0) {
+        return { routine: upcoming[0], priority: 'upcoming' };
+      }
+
+      return { routine: activeCandidates[0], priority: activeCandidates[0].timeState };
     }
 
-    // 2. Priority 2: Overdue routines missed earlier today
-    const overdue = pending.filter(r => r.timeState === 'overdue');
-    if (overdue.length > 0) {
-      return { routine: overdue[0], priority: 'overdue' };
-    }
-
-    // 3. Priority 3: Next upcoming routine scheduled for today
-    const upcoming = pending.filter(r => r.timeState === 'upcoming');
-    if (upcoming.length > 0) {
-      return { routine: upcoming[0], priority: 'upcoming' };
-    }
-
-    return { routine: pending[0], priority: 'upcoming' };
+    // If ALL remaining uncompleted routines are 3+ hours overdue (escalated to alerts)
+    return { routine: null, priority: 'all_escalated', escalatedCount: pending.length };
   }, [chronologicalReminders, completingReminderId]);
 
   const handleReminderDone = (remId, title) => {
@@ -282,7 +308,7 @@ export default function PatientDashboard() {
     
     toggleReminder(activePatient?.id || activePatient?._id, remId);
 
-    // Smoothly advance card to next recalculated routine
+    // Smoothly advance card forward to next recalculated routine
     setTimeout(() => {
       setCompletingReminderId(null);
     }, 650);
@@ -296,22 +322,26 @@ export default function PatientDashboard() {
     if (isHindi) {
       if (priority === 'all_completed') {
         speakText(`नमस्ते ${name} जी! आज के सभी ${totalCount} दैनिक कार्य पूरे हो चुके हैं। आप पूरी तरह से अपडेट हैं!`);
+      } else if (priority === 'all_escalated') {
+        speakText(`नमस्ते ${name} जी! वर्तमान में कोई कार्य बाकी नहीं है। आपके कुछ पिछले कार्य शेड्यूल में उपलब्ध हैं।`);
       } else if (priority === 'overdue') {
-        speakText(`${name} जी, आपका एक कार्य बाकी है: ${routine.title}, जो ${routine.formattedTime} पर निर्धारित था। कृपया इसे अभी पूरा करें।`);
+        speakText(`${name} जी, आपका एक कार्य बाकी है: ${routine?.title}, जो ${routine?.formattedTime} पर निर्धारित था। कृपया इसे अभी पूरा करें।`);
       } else if (priority === 'due_now') {
-        speakText(`${name} जी, अभी आपके ${routine.title} का समय हो गया है, जो ${routine.formattedTime} पर निर्धारित है।`);
+        speakText(`${name} जी, अभी आपके ${routine?.title} का समय हो गया है, जो ${routine?.formattedTime} पर निर्धारित है।`);
       } else {
-        speakText(`नमस्ते ${name} जी! आपका अगला निर्धारित कार्य ${routine.title} है, जो ${routine.formattedTime} पर है। आपने ${totalCount} में से ${completedCount} कार्य पूरे कर लिए हैं।`);
+        speakText(`नमस्ते ${name} जी! आपका अगला निर्धारित कार्य ${routine?.title} है, जो ${routine?.formattedTime} पर है। आपने ${totalCount} में से ${completedCount} कार्य पूरे कर लिए हैं।`);
       }
     } else {
       if (priority === 'all_completed') {
         speakText(`${greetingWord}, ${name}! You are all caught up for today. All ${totalCount} daily routines are complete!`);
+      } else if (priority === 'all_escalated') {
+        speakText(`${greetingWord}, ${name}! You have no active routines due right now. You can review earlier routines in your schedule.`);
       } else if (priority === 'overdue') {
-        speakText(`${name}, you have an overdue routine: ${routine.title}, scheduled for ${routine.formattedTime}. Please take care of this now.`);
+        speakText(`${name}, you have an overdue routine: ${routine?.title}, scheduled for ${routine?.formattedTime}. Please take care of this now.`);
       } else if (priority === 'due_now') {
-        speakText(`${name}, it is time for: ${routine.title} at ${routine.formattedTime}.`);
+        speakText(`${name}, it is time for: ${routine?.title} at ${routine?.formattedTime}.`);
       } else {
-        speakText(`${greetingWord}, ${name}! Your next scheduled routine is ${routine.title} at ${routine.formattedTime}. You have completed ${completedCount} of ${totalCount} tasks.`);
+        speakText(`${greetingWord}, ${name}! Your next scheduled routine is ${routine?.title} at ${routine?.formattedTime}. You have completed ${completedCount} of ${totalCount} tasks.`);
       }
     }
   };
@@ -498,14 +528,44 @@ export default function PatientDashboard() {
           )
         )}
 
+        {/* Auto-escalated Overdue Notification Alert Banner (Rule 1) */}
+        {escalatedOverdueCount > 0 && (
+          <div 
+            onClick={() => navigate('/patient/reminders')}
+            className="p-4 rounded-2xl bg-[#FDF2F2] border border-[#F5B7B1] text-[#2B2B2B] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs cursor-pointer hover:bg-rose-100 transition-colors animate-in fade-in"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#C0392B] text-white flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-[#C0392B]">
+                  {isHindi 
+                    ? `⚠️ ${escalatedOverdueCount} पूर्व निर्धारित कार्य अभी भी बाकी हैं`
+                    : `⚠️ ${escalatedOverdueCount} earlier routine${escalatedOverdueCount > 1 ? 's' : ''} past scheduled time`}
+                </p>
+                <p className="text-[11px] sm:text-xs text-[#6B6B6B] font-medium">
+                  {isHindi 
+                    ? "ये कार्य समय बीत जाने के कारण अलर्ट में भेजे गए हैं। पूरा शेड्यूल देखने के लिए टैप करें।" 
+                    : "Moved to notifications so you can focus on current tasks. Tap to review anytime."}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-[#C0392B] flex items-center gap-1 shrink-0 self-end sm:self-center">
+              <span>{isHindi ? "शेड्यूल देखें" : "View Reminders"}</span>
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </div>
+        )}
+
         {/* ======================================================== */}
         {/* 3. THE CORE STATUS BANNER: "WHAT DO I DO RIGHT NOW?"      */}
         {/* ======================================================== */}
         {(() => {
-          const { routine, priority } = primaryFocusRoutine;
+          const { routine, priority, escalatedCount } = primaryFocusRoutine;
 
           // Case A: All Routines Completed
-          if (priority === 'all_completed' || !routine) {
+          if (priority === 'all_completed') {
             return (
               <div 
                 key="all_routines_completed"
@@ -541,9 +601,48 @@ export default function PatientDashboard() {
             );
           }
 
+          // Case B: All remaining uncompleted routines are 3+ hours overdue (escalated to alerts)
+          if (priority === 'all_escalated' || !routine) {
+            return (
+              <div 
+                key="all_escalated_state"
+                className="bg-white rounded-3xl p-5 sm:p-8 border-2 border-[#E5E0D8] shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 sm:gap-6 animate-in fade-in zoom-in-95 duration-300"
+              >
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#EFF4FA] text-[#2C5AA0] flex items-center justify-center shrink-0 shadow-xs border border-[#2C5AA0]/20">
+                    <Clock className="w-9 h-9 stroke-[2.5]" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF7F2] text-[#6B6B6B] text-xs font-black uppercase tracking-wider border border-[#E5E0D8]">
+                      <span>{isHindi ? "वर्तमान में कोई कार्य बाकी नहीं 🌟" : "No Active Routines Due Right Now 🌟"}</span>
+                    </span>
+                    <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
+                      {isHindi ? "आप अभी के लिए पूरी तरह से अपडेट हैं।" : "You're all set for the current hour."}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
+                      {isHindi 
+                        ? `आपके पास ${escalatedCount || overdueCount} पूर्व निर्धारित कार्य हैं जिन्हें आप अपनी सुविधानुसार शेड्यूल में देख सकते हैं।` 
+                        : `You have ${escalatedCount || overdueCount} past reminder${(escalatedCount || overdueCount) > 1 ? 's' : ''} in your timeline to review whenever you're ready.`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/patient/reminders')}
+                  className="w-full sm:w-auto min-h-[56px] px-6 py-4 rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white text-base sm:text-lg font-black shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shrink-0"
+                >
+                  <span>{isHindi ? "शेड्यूल खोलें" : "Review Reminders"}</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            );
+          }
+
           const isOverdue = priority === 'overdue';
           const isDueNow = priority === 'due_now';
           const isCurrentCompleting = completingReminderId === (routine.id || routine._id);
+          const isActionable = routine.isActionable !== false; // Rule 3
 
           return (
             <div 
@@ -614,25 +713,47 @@ export default function PatientDashboard() {
                 </div>
               </div>
 
-              {/* Right: Large 56px Action Button */}
+              {/* Right: Large 56px Action Button (Rule 3: Disabled before scheduled time) */}
               <div className="w-full sm:w-auto shrink-0">
-                <button
-                  type="button"
-                  disabled={isCurrentCompleting}
-                  onClick={() => handleReminderDone(routine.id || routine._id, routine.title)}
-                  className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 ${
-                    isCurrentCompleting
-                      ? 'bg-[#1F6B4A] text-white cursor-default'
-                      : isOverdue
-                      ? 'bg-[#C0392B] hover:bg-[#A93226] text-white'
-                      : isDueNow
-                      ? 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
-                      : 'bg-[#1F6B4A] hover:bg-[#18553B] text-white'
-                  }`}
-                >
-                  <Check className="w-5 h-5 stroke-[3]" />
-                  <span>{isCurrentCompleting ? (isHindi ? "पूर्ण हुआ! ✓" : "Completed! ✓") : (isHindi ? "पूर्ण चिह्नित करें" : "Mark Done")}</span>
-                </button>
+                {isCurrentCompleting ? (
+                  <button
+                    type="button"
+                    disabled={true}
+                    className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 bg-[#1F6B4A] text-white cursor-default shadow-xs"
+                  >
+                    <Check className="w-5 h-5 stroke-[3]" />
+                    <span>{isHindi ? "पूर्ण हुआ! ✓" : "Completed! ✓"}</span>
+                  </button>
+                ) : !isActionable ? (
+                  <button
+                    type="button"
+                    disabled={true}
+                    title={isHindi ? `${routine.formattedTime} पर सक्रिय होगा` : `Will become available at ${routine.formattedTime}`}
+                    className="w-full sm:w-auto min-h-[56px] px-6 sm:px-8 py-4 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed shadow-none select-none transition-all"
+                  >
+                    <Clock className="w-4.5 h-4.5 text-stone-400" />
+                    <span>
+                      {isHindi 
+                        ? `${routine.formattedTime} पर उपलब्ध होगा` 
+                        : `Available at ${routine.formattedTime}`}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleReminderDone(routine.id || routine._id, routine.title)}
+                    className={`w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all cursor-pointer active:scale-98 ${
+                      isOverdue
+                        ? 'bg-[#C0392B] hover:bg-[#A93226] text-white'
+                        : isDueNow
+                        ? 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
+                        : 'bg-[#1F6B4A] hover:bg-[#18553B] text-white'
+                    }`}
+                  >
+                    <Check className="w-5 h-5 stroke-[3]" />
+                    <span>{isHindi ? "पूर्ण चिह्नित करें" : "Mark Done"}</span>
+                  </button>
+                )}
               </div>
 
             </div>

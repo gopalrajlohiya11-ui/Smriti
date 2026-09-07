@@ -107,34 +107,43 @@ export default function PatientReminders() {
     speakText(msg, true);
   };
 
+  const ESCALATION_THRESHOLD_MINUTES = 180;
+
   const chronologicalReminders = useMemo(() => {
-    const reminders = activePatient.todayReminders || [];
+    const reminders = activePatient?.todayReminders || [];
     
     return reminders.map(rem => {
       const isCompleted = rem.status === 'completed' || rem.acknowledged === true;
-      const scheduledDate = parseReminderTime(rem);
+      const scheduledDate = parseReminderTime(rem, nowTime);
       const diffMinutes = (nowTime.getTime() - scheduledDate.getTime()) / (1000 * 60);
+
+      // Rule 3: A reminder is actionable ONLY if current time >= scheduled time (diffMinutes >= 0)
+      const isActionable = diffMinutes >= 0;
 
       let timeState = 'upcoming';
       if (isCompleted) {
         timeState = 'completed';
-      } else if (diffMinutes >= -45 && diffMinutes <= 60) {
+      } else if (diffMinutes < 0) {
+        timeState = 'upcoming';
+      } else if (diffMinutes >= 0 && diffMinutes <= 60) {
         timeState = 'due_now';
-      } else if (diffMinutes > 60) {
+      } else if (diffMinutes > 60 && diffMinutes < ESCALATION_THRESHOLD_MINUTES) {
         timeState = 'overdue';
       } else {
-        timeState = 'upcoming';
+        timeState = 'escalated_overdue';
       }
 
       return {
         ...rem,
         isCompleted,
+        isActionable,
         scheduledDate,
+        diffMinutes,
         timeState,
         formattedTime: rem.time || scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
     }).sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
-  }, [activePatient.todayReminders, nowTime]);
+  }, [activePatient?.todayReminders, nowTime]);
 
   const completedCount = chronologicalReminders.filter(r => r.isCompleted).length;
   const totalCount = chronologicalReminders.length || 10;
@@ -224,10 +233,13 @@ export default function PatientReminders() {
 
         {/* VERTICAL TIMELINE LIST */}
         <div className="space-y-3.5">
-          {chronologicalReminders.map((rem, index) => {
+          {chronologicalReminders.map((rem) => {
             const isDueNow = rem.timeState === 'due_now';
             const isOverdue = rem.timeState === 'overdue';
+            const isEscalated = rem.timeState === 'escalated_overdue';
             const isDone = rem.isCompleted;
+            const isActionable = rem.isActionable !== false;
+            const isHindi = (currentLanguage?.code || '').startsWith('hi');
 
             return (
               <div
@@ -235,6 +247,8 @@ export default function PatientReminders() {
                 className={`rounded-2xl p-5 sm:p-6 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                   isDone
                     ? 'bg-[#EDF7F2] border-[#A3D9C1] text-[#2B2B2B]'
+                    : isEscalated
+                    ? 'bg-[#FDF2F2] border-2 border-[#C0392B]/40 text-[#2B2B2B] shadow-2xs'
                     : isOverdue
                     ? 'bg-[#FDF2F2] border-[#F5B7B1] text-[#2B2B2B] shadow-2xs'
                     : isDueNow
@@ -247,7 +261,7 @@ export default function PatientReminders() {
                   
                   {/* Time Badge */}
                   <div className={`w-14 sm:w-16 text-center shrink-0 font-black text-xs sm:text-sm ${
-                    isOverdue ? 'text-[#C0392B]' : isDueNow ? 'text-[#2C5AA0]' : isDone ? 'text-[#1F6B4A]' : 'text-[#6B6B6B]'
+                    isEscalated || isOverdue ? 'text-[#C0392B]' : isDueNow ? 'text-[#2C5AA0]' : isDone ? 'text-[#1F6B4A]' : 'text-[#6B6B6B]'
                   }`}>
                     {rem.formattedTime}
                   </div>
@@ -256,7 +270,7 @@ export default function PatientReminders() {
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
                     isDone
                       ? 'bg-white border-[#A3D9C1] text-[#1F6B4A]'
-                      : isOverdue
+                      : isEscalated || isOverdue
                       ? 'bg-white border-[#F5B7B1] text-[#C0392B]'
                       : isDueNow
                       ? 'bg-white border-[#2C5AA0] text-[#2C5AA0]'
@@ -280,13 +294,19 @@ export default function PatientReminders() {
                           <span>{t('dashboard.dueNow')}</span>
                         </span>
                       )}
-                      {isOverdue && (
+                      {isEscalated && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#C0392B] text-white text-xs font-bold">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>{isHindi ? "अलर्ट में भेजा गया (3+ घंटे)" : "Escalated to Alerts (3+ hrs)"}</span>
+                        </span>
+                      )}
+                      {isOverdue && !isEscalated && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#C0392B] text-white text-xs font-bold">
                           <AlertTriangle className="w-3 h-3" />
                           <span>{t('dashboard.overdue')}</span>
                         </span>
                       )}
-                      {!isDone && !isDueNow && !isOverdue && (
+                      {!isDone && !isDueNow && !isOverdue && !isEscalated && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-stone-100 text-[#6B6B6B] text-xs font-medium border border-[#E5E0D8]">
                           <Clock className="w-3 h-3" />
                           <span>{t('dashboard.upcoming')}</span>
@@ -295,25 +315,52 @@ export default function PatientReminders() {
                     </div>
 
                     <h3 className="text-base sm:text-lg font-black text-[#2B2B2B]">
-    {(currentLanguage?.code || '').startsWith('hi') ? (rem.hindiTitle || rem.title) : rem.title}
-  </h3>
+                      {isHindi ? (rem.hindiTitle || rem.title) : rem.title}
+                    </h3>
                   </div>
                 </div>
 
-                {/* Right: Min 56px Action Button */}
+                {/* Right: Min 56px Action Button (Disabled if before scheduled time) */}
                 <div className="sm:text-right shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleReminderDone(rem.id, rem.title)}
-                    className={`w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer ${
-                      isDone
-                        ? 'bg-white text-[#1F6B4A] border-2 border-[#1F6B4A] hover:bg-[#EDF7F2]'
-                        : 'bg-[#1F6B4A] hover:bg-[#18553B] text-white'
-                    }`}
-                  >
-                    <Check className="w-5 h-5 stroke-[3]" />
-                    <span>{isDone ? `${t('dashboard.completed')} ✓` : t('dashboard.markDone')}</span>
-                  </button>
+                  {isDone ? (
+                    <button
+                      type="button"
+                      onClick={() => handleReminderDone(rem.id, rem.title)}
+                      className="w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 bg-white text-[#1F6B4A] border-2 border-[#1F6B4A] hover:bg-[#EDF7F2] transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Check className="w-5 h-5 stroke-[3]" />
+                      <span>{t('dashboard.completed')} ✓</span>
+                    </button>
+                  ) : !isActionable ? (
+                    <button
+                      type="button"
+                      disabled={true}
+                      title={isHindi ? `${rem.formattedTime} पर सक्रिय होगा` : `Will become available at ${rem.formattedTime}`}
+                      className="w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed shadow-none select-none"
+                    >
+                      <Clock className="w-4 h-4 text-stone-400" />
+                      <span>
+                        {isHindi 
+                          ? `${rem.formattedTime} पर उपलब्ध` 
+                          : `Available at ${rem.formattedTime}`}
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleReminderDone(rem.id, rem.title)}
+                      className={`w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer ${
+                        isEscalated || isOverdue
+                          ? 'bg-[#C0392B] hover:bg-[#A93226] text-white'
+                          : isDueNow
+                          ? 'bg-[#2C5AA0] hover:bg-[#224780] text-white'
+                          : 'bg-[#1F6B4A] hover:bg-[#18553B] text-white'
+                      }`}
+                    >
+                      <Check className="w-5 h-5 stroke-[3]" />
+                      <span>{t('dashboard.markDone')}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
