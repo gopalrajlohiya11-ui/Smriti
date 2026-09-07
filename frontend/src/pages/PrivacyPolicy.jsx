@@ -359,11 +359,7 @@ export default function PrivacyPolicy() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-teal-900 font-semibold">
                   <Mail className="w-4 h-4 text-teal-700" />
-                  <a href="mailto:privacy@smriti.in" className="underline hover:text-teal-950">privacy@smriti.in</a>
-                </div>
-                <div className="flex items-center gap-2 text-teal-900 font-semibold">
-                  <Mail className="w-4 h-4 text-teal-700" />
-                  <a href="mailto:dementiacare@smriti.in" className="underline hover:text-teal-950">dementiacare@smriti.in</a>
+                  <a href="mailto:gopalrajlohiya2@gmail.com" className="underline hover:text-teal-950">gopalrajlohiya2@gmail.com</a>
                 </div>
                 <p className="text-[11px] text-stone-500 mt-1">Response Time: Within 7 business days</p>
               </div>
