@@ -29,7 +29,7 @@
   - [4. Clinical Caregiver & Clinician Dashboard](#4-clinical-caregiver--clinician-dashboard)
   - [5. WhatsApp AI Companion & Floating Assistant](#5-whatsapp-ai-companion--floating-assistant)
   - [6. Offline-First PWA & IndexedDB Synchronization](#6-offline-first-pwa--indexeddb-synchronization)
-  - [7. Dynamic Streak Engine & WebAuthn Biometrics](#7-dynamic-streak-engine--webauthn-biometrics)
+  - [7. Dynamic Streak Engine, WebAuthn Biometrics & Persistent Sessions](#7-dynamic-streak-engine-webauthn-biometrics--persistent-sessions)
 - [🏛️ System Architecture](#️-system-architecture)
 - [💻 Tech Stack](#-tech-stack)
 - [🚀 Quick Start & Installation](#-quick-start--installation)
@@ -54,6 +54,7 @@
 - **Live-Updating Routine Horizon**: Real-time clock synchronizing the single most relevant upcoming routine with smooth dismissal animations, confetti feedback, and voice confirmations.
 - **MongoDB Persistence & Offline Sync**: Routine completions ("Mark Done") persist directly to MongoDB via REST APIs and automatically queue into IndexedDB when offline.
 - **Memory Bank Photo Vault**: Family photo reel with relationship tags, year labels, and 1-tap voice audio prompts for reminiscence therapy.
+- **Streamlined Banner Header**: Clean greeting card with time-based greeting, location, and a dedicated `[🔊 Listen]` speech read-aloud button without visual clutter.
 
 ### 2. Culturally Resonant Cognitive Games Suite
 A comprehensive suite of 5 clinically informed cognitive stimulation games tailored with North-East Indian and pan-Indian cultural contexts:
@@ -74,8 +75,8 @@ A comprehensive suite of 5 clinically informed cognitive stimulation games tailo
 All games feature per-round cognitive telemetry logging (`POST /api/game-sessions`) for longitudinal clinical analysis.
 
 ### 3. Multilingual Localization & Async Web Speech Engine
-- **Full Hindi (`hi`) & Regional Translation**: Complete i18n localization across all game instructions, voice prompts, dashboard cards, navigation, and reminders.
-- **Asynchronous Voice Cache & Fallback**: Web Speech API (`speechUtils.js`) hooks into the `voiceschanged` event to avoid empty-voice race conditions and reliably selects native `hi-IN` and `en-IN` synthetic voices.
+- **Full Hindi (`hi`), Assamese (`as`) & Regional Translation**: Complete i18n localization across all game instructions, voice prompts, dashboard cards, navigation, and reminders.
+- **Asynchronous Voice Cache & Fallback**: Web Speech API (`speechUtils.js`) hooks into the `voiceschanged` event to avoid empty-voice race conditions and reliably selects native `hi-IN`, `as-IN`, and `en-IN` synthetic voices.
 - **Tactile Audio Guidance**: Every screen and game provides one-touch `🔊 Listen` / `सुनें` buttons for elderly users with reading difficulties.
 
 ### 4. Clinical Caregiver & Clinician Dashboard
@@ -87,8 +88,8 @@ All games feature per-round cognitive telemetry logging (`POST /api/game-session
 - **Clinician Profile & Security (`/caregiver/profile`)**: Account credentials, Google OAuth status, backup password configuration, and assigned patient roster.
 
 ### 5. WhatsApp AI Companion & Floating Assistant
-- **Direct WhatsApp Deep Link**: Dedicated one-tap green circular WhatsApp shortcut opening an instant conversation with the Smriti bot (`https://wa.me/15556680031?text=Hi%20Smriti`).
-- **Gemini AI Conversational Companion**: In-app floating AI chatbot equipped with voice input, audio speech response, and compassionate dementia-aware dialogue.
+- **Direct WhatsApp Deep Link**: Dedicated one-tap green circular WhatsApp shortcut opening an instant conversation with the Smriti bot (`https://wa.me/15556680031?text=Hi%20Smriti`), displayed exclusively on Patient Portal screens.
+- **Gemini AI Conversational Companion**: In-app floating AI chatbot equipped with voice input, audio speech response, and compassionate dementia-aware dialogue across Patient and Caregiver dashboards.
 - **Automated Cron Reminders**: Backend cron engine checks routine schedules and dispatches template reminders to patients' WhatsApp numbers.
 
 ### 6. Offline-First PWA & IndexedDB Synchronization
@@ -96,10 +97,12 @@ All games feature per-round cognitive telemetry logging (`POST /api/game-session
 - **IndexedDB Offline Cache**: Local database layer caching patient profile records, routines, photos, and game assets.
 - **Resilient Action Queue**: Queues routine completions and game scores offline, automatically syncing with MongoDB when internet connection is restored.
 
-### 7. Dynamic Streak Engine & WebAuthn Biometrics
+### 7. Dynamic Streak Engine, WebAuthn Biometrics & Persistent Sessions
+- **Persistent Login Sessions**: Always-on 365-day JWT sessions for both Patients and Caregivers. Automatically skips login screens on page refresh or browser restart, persisting until explicit sign-out.
+- **Session Isolation**: Independent credentials in `localStorage` allowing seamless switching between clinician and patient accounts on shared devices without session collision.
 - **Dynamic Streak Calculation (`streakUtils.js`)**: Real-time consecutive activity calculation based on actual game sessions and routine completions.
-- **WebAuthn FIDO2 Biometric Login**: 1-tap biometric fingerprint or Face Unlock authentication on supported devices.
-- **Accessible PIN Keypad**: 4-digit numeric keypad with tactile tap feedback and profile shortcuts.
+- **WebAuthn FIDO2 Biometric Login**: 1-tap biometric fingerprint or Face Unlock authentication on supported hardware with skippable post-signup enrollment.
+- **Accessible PIN Keypad**: 4-digit numeric keypad with tactile tap feedback and pre-populated demo shortcuts.
 
 ---
 
