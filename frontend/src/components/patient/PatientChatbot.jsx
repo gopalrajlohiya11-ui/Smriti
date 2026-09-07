@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { sendPatientChatMessage } from '../../services/api';
-import { getVoiceAutoPlaySetting } from '../../utils/speechUtils';
+import { speakLocalized, stopSpeech, getVoiceAutoPlaySetting } from '../../utils/speechUtils';
 import { 
   MessageCircle, 
   X, 
@@ -174,47 +174,27 @@ export default function PatientChatbot() {
 
   // Speech Synthesis helper
   const speakText = (text, forcedLangCode = null) => {
-    if (!('speechSynthesis' in window) || !autoSpeakEnabled) return;
-
-    window.speechSynthesis.cancel();
+    if (!autoSpeakEnabled) return;
     const cleanText = text.replace(/[🌸❤️✅⏳💊🩺👦📅⚡]/g, '').trim();
+    if (!cleanText) return;
 
     const targetLangCode = forcedLangCode || getPatientLangCode();
-    const langPrefix = targetLangCode.split('-')[0].toLowerCase();
-    const prefLangName = getPatientLangName();
 
-    const voices = window.speechSynthesis.getVoices();
-    const matchingVoice = voices.find(v => 
-      v.lang.toLowerCase() === targetLangCode.toLowerCase() || 
-      v.lang.toLowerCase().startsWith(langPrefix)
-    );
-
-    if (!matchingVoice && targetLangCode !== 'en-IN' && targetLangCode !== 'en-US') {
-      console.warn(`[Smriti Voice] No matching voice engine found in browser for language: ${prefLangName} (${targetLangCode}). Skipping audio playback.`);
-      setIsSpeakingAloud(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = targetLangCode;
-    utterance.rate = 0.9;
-    utterance.pitch = 1.05;
-
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
-    }
-
-    utterance.onstart = () => setIsSpeakingAloud(true);
-    utterance.onend = () => setIsSpeakingAloud(false);
-    utterance.onerror = () => setIsSpeakingAloud(false);
-
-    window.speechSynthesis.speak(utterance);
+    speakLocalized({
+      text: cleanText,
+      langCode: targetLangCode,
+      rate: 0.90,
+      pitch: 1.05,
+      isAutoPlay: false, // User or bot triggered message
+      patientId: getResolvedPatientId(),
+      onStart: () => setIsSpeakingAloud(true),
+      onEnd: () => setIsSpeakingAloud(false),
+      onError: () => setIsSpeakingAloud(false)
+    });
   };
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
+    stopSpeech();
     setIsSpeakingAloud(false);
   };
 

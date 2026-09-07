@@ -784,6 +784,11 @@ export default function MarketDayBasket() {
             <button
               type="button"
               onClick={() => {
+                if (isSpeaking) {
+                  stopSpeech();
+                  setIsSpeaking(false);
+                  return;
+                }
                 const speechText = activeRound.type === 'categorization' 
                   ? `${activeRound.title}. ${activeRound.instruction}`
                   : `${activeRound.title}. ${activeRound.scenario}`;
@@ -794,9 +799,9 @@ export default function MarketDayBasket() {
                   ? 'bg-indigo-800 border-indigo-900 text-white ring-4 ring-indigo-300 animate-pulse'
                   : 'bg-indigo-700 hover:bg-indigo-800 border-indigo-800 text-white shadow-xs'
               }`}
-              title="Listen to round instructions"
+              title={isSpeaking ? "Tap to stop audio" : "Listen to round instructions"}
             >
-              <Volume2 className="w-5 h-5" />
+              {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
           </div>
         </div>

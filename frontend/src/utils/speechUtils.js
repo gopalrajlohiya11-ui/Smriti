@@ -139,7 +139,10 @@ export const getAvailableVoice = (langCode, customVoiceList = null) => {
   return selectedVoice;
 };
 
+let activeSpeechRequestId = 0;
+
 export const stopSpeech = () => {
+  activeSpeechRequestId++;
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel();
@@ -186,7 +189,7 @@ export const setVoiceAutoPlaySetting = (enabled, patientId = null) => {
 };
 
 /**
- * Main speech synthesis trigger with async voice loading, retry, and detailed diagnostic logs.
+ * Main speech synthesis trigger with async voice loading, request tracking, and zero overlap.
  */
 export const speakLocalized = async ({
   text,
@@ -202,6 +205,10 @@ export const speakLocalized = async ({
 }) => {
   if (typeof window === 'undefined') return;
 
+  // Immediately cancel any previous speech
+  stopSpeech();
+  const thisRequestId = activeSpeechRequestId;
+
   // Suppress automatic speech if user disabled Voice Auto-Play
   if (isAutoPlay) {
     const isEnabled = getVoiceAutoPlaySetting(patientId);
@@ -216,13 +223,12 @@ export const speakLocalized = async ({
 
   // Assamese voice is not reliably supported in browser Web Speech API
   if (code === 'as' || code.startsWith('as-')) {
-    stopSpeech();
     if (onNotice) {
       onNotice(ASSAMESE_VOICE_NOTICE);
     }
     if (onStart) onStart();
     setTimeout(() => {
-      if (onEnd) onEnd();
+      if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
     }, 2500);
     return;
   }
@@ -231,8 +237,6 @@ export const speakLocalized = async ({
     if (onError) onError(new Error('Web Speech API not supported in this browser.'));
     return;
   }
-
-  stopSpeech();
 
   const clean = getCleanSpeechText(text);
   if (!clean) {
@@ -243,6 +247,16 @@ export const speakLocalized = async ({
   // Ensure voices are loaded asynchronously before voice selection
   const loadedVoices = await ensureVoicesLoaded();
 
+  // If a newer speech request started while voices were loading, abandon this one immediately!
+  if (thisRequestId !== activeSpeechRequestId) {
+    return;
+  }
+
+  // Final cancel right before queuing the new utterance
+  try {
+    window.speechSynthesis.cancel();
+  } catch (e) {}
+
   const utterance = new SpeechSynthesisUtterance(clean);
   utterance.rate = rate;
   utterance.pitch = pitch;
@@ -250,12 +264,6 @@ export const speakLocalized = async ({
   if (code.startsWith('hi')) {
     utterance.lang = 'hi-IN';
     const hiVoice = getAvailableVoice('hi', loadedVoices);
-    
-    // Detailed diagnostic logging as requested
-    const allVoices = (window.speechSynthesis.getVoices() || loadedVoices || []);
-    console.log('🎤 [SpeechSynthesis] ALL available voice langs:', allVoices.map(v => `${v.name} (${v.lang})`));
-    console.log('🎤 [SpeechSynthesis] Hindi voice found:', !!hiVoice, hiVoice ? `${hiVoice.name} [${hiVoice.lang}]` : 'NONE (will use browser default synthesizer for hi-IN)');
-
     if (hiVoice) {
       utterance.voice = hiVoice;
     }
@@ -268,17 +276,23 @@ export const speakLocalized = async ({
   }
 
   utterance.onstart = () => {
-    if (onStart) onStart();
+    if (thisRequestId === activeSpeechRequestId && onStart) {
+      onStart();
+    }
   };
 
   utterance.onend = () => {
-    if (onEnd) onEnd();
+    if (thisRequestId === activeSpeechRequestId && onEnd) {
+      onEnd();
+    }
   };
 
   utterance.onerror = (err) => {
-    console.warn('SpeechSynthesis error event:', err);
-    if (onError) onError(err);
-    if (onEnd) onEnd();
+    if (thisRequestId === activeSpeechRequestId) {
+      console.warn('SpeechSynthesis error event:', err);
+      if (onError) onError(err);
+      if (onEnd) onEnd();
+    }
   };
 
   try {

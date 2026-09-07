@@ -1,4 +1,4 @@
-import { speakLocalized, getVoiceAutoPlaySetting } from '../../../utils/speechUtils';
+import { speakLocalized, stopSpeech, getVoiceAutoPlaySetting } from '../../../utils/speechUtils';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -86,7 +86,7 @@ class RhythmAudioSynth {
     const isAutoPlayOn = getVoiceAutoPlaySetting(patientId);
     if (speakVoice && isAutoPlayOn && typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
-        window.speechSynthesis.cancel(); // Critical: instantly cancel previous speech to prevent overlapping on fast clicks
+        stopSpeech(); // Critical: instantly cancel previous speech to prevent overlapping on fast clicks
         const syllable = DRUM_SYLLABLES_TTS[drumIndex % DRUM_SYLLABLES_TTS.length];
         const u = new SpeechSynthesisUtterance(syllable);
         u.rate = 1.20;
@@ -316,6 +316,7 @@ export default function SoundRhythmMatch() {
   const TOTAL_LEVELS = 5;
   const [score, setScore] = useState(0);
   const [streakCount, setStreakCount] = useState(0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   // Session & Timing telemetry
   const [sessionStartTime] = useState(Date.now());
@@ -327,9 +328,7 @@ export default function SoundRhythmMatch() {
   useEffect(() => {
     return () => {
       if (autoProceedTimerRef.current) clearTimeout(autoProceedTimerRef.current);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopSpeech();
     };
   }, []);
 
@@ -352,16 +351,16 @@ export default function SoundRhythmMatch() {
 
   // Spoken feedback helper using speech synthesis (always cancels prior speech to prevent audio clashes)
   const speakText = useCallback((text, isAutoPlay = true) => {
-    if (isAudioMuted) return;
-    if (isAutoPlay && !getVoiceAutoPlaySetting(activePatientId || activePatient?.id)) return;
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.88;
-      utterance.pitch = 1.05;
-      window.speechSynthesis.speak(utterance);
-    }
-  }, [isAudioMuted, activePatientId, activePatient]);
+    if (isAudioMuted || !text) return;
+    speakLocalized({
+      text,
+      langCode: (currentLanguage?.code || 'en').startsWith('hi') ? 'hi-IN' : (currentLanguage?.code || 'en'),
+      rate: 0.88,
+      pitch: 1.05,
+      isAutoPlay,
+      patientId: activePatientId || activePatient?.id
+    });
+  }, [isAudioMuted, activePatientId, activePatient, currentLanguage]);
 
   // Generate random drum sequence of given length
   const generateSequence = useCallback((len) => {
@@ -630,20 +629,37 @@ export default function SoundRhythmMatch() {
           <button
             type="button"
             onClick={() => {
-              const isHindi = (currentLanguage?.code || '').startsWith('hi');
-              const msg = isHindi
-                ? 'ढोल की ताल को ध्यान से सुनें, क्रम याद रखें, और उसी क्रम में ढोल बजाएं!'
-                : 'Listen to the rhythm beats, remember the pattern, and tap the drums in the same sequence!';
-              speakLocalized({
-                text: msg,
-                langCode: currentLanguage?.code || 'en'
-              });
+              if (isPlayingAudio) {
+                stopSpeech();
+                setIsPlayingAudio(false);
+              } else {
+                const isHindi = (currentLanguage?.code || '').startsWith('hi');
+                const msg = isHindi
+                  ? 'ढोल की ताल को ध्यान से सुनें, क्रम याद रखें, और उसी क्रम में ढोल बजाएं!'
+                  : 'Listen to the rhythm beats, remember the pattern, and tap the drums in the same sequence!';
+                speakLocalized({
+                  text: msg,
+                  langCode: currentLanguage?.code || 'en',
+                  onStart: () => setIsPlayingAudio(true),
+                  onEnd: () => setIsPlayingAudio(false),
+                  onError: () => setIsPlayingAudio(false)
+                });
+              }
             }}
             className="px-3.5 py-1.5 rounded-2xl bg-white hover:bg-stone-50 border border-stone-300 text-stone-800 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
-            title="Listen to Instructions"
+            title={isPlayingAudio ? ((currentLanguage?.code || '').startsWith('hi') ? "आवाज बंद करें" : "Stop Voice") : ((currentLanguage?.code || '').startsWith('hi') ? "निर्देश सुनें" : "Listen to Instructions")}
           >
-            <Volume2 className="w-4 h-4 text-[#2C5AA0]" />
-            <span className="hidden sm:inline">{(currentLanguage?.code || '').startsWith('hi') ? "निर्देश सुनें" : "Listen"}</span>
+            {isPlayingAudio ? (
+              <>
+                <VolumeX className="w-4 h-4 text-red-500 animate-pulse" />
+                <span className="hidden sm:inline text-red-600">{(currentLanguage?.code || '').startsWith('hi') ? "बंद करें" : "Stop"}</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 text-[#2C5AA0]" />
+                <span className="hidden sm:inline">{(currentLanguage?.code || '').startsWith('hi') ? "निर्देश सुनें" : "Listen"}</span>
+              </>
+            )}
           </button>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-100/80 border border-amber-300 text-amber-900 text-xs sm:text-sm font-black shadow-2xs">
             <Flame className="w-4 h-4 text-amber-800 fill-amber-500" />

@@ -91,20 +91,29 @@ export default function PatientReminders() {
   };
 
   const handleReminderDone = (remId, title) => {
-    toggleReminder(activePatient.id, remId);
-    
-    confetti({
-      particleCount: 50,
-      spread: 65,
-      origin: { y: 0.7 },
-      colors: ['#1F6B4A', '#B5502E', '#2C5AA0']
-    });
+    const currentRem = (activePatient?.todayReminders || []).find(r => (r.id === remId || r._id === remId));
+    const wasCompleted = currentRem ? (currentRem.status === 'completed' || currentRem.acknowledged === true) : false;
 
-    const isHindi = (currentLanguage?.code || '').startsWith('hi');
-    const msg = isHindi 
-      ? `शानदार! आपने ${title} सफलतापूर्वक पूरा कर लिया!`
-      : `Wonderful job completing your ${title}!`;
-    speakText(msg, true);
+    toggleReminder(activePatient.id, remId);
+
+    // ONLY celebrate when transitioning from INCOMPLETE -> COMPLETED
+    if (!wasCompleted) {
+      confetti({
+        particleCount: 50,
+        spread: 65,
+        origin: { y: 0.7 },
+        colors: ['#1F6B4A', '#B5502E', '#2C5AA0']
+      });
+
+      const isHindi = (currentLanguage?.code || '').startsWith('hi');
+      const msg = isHindi 
+        ? `शानदार! आपने ${title} सफलतापूर्वक पूरा कर लिया!`
+        : `Wonderful job completing your ${title}!`;
+      speakText(msg, true);
+    } else {
+      // Un-marking: immediately cancel any existing audio and play NO celebration
+      stopSpeech();
+    }
   };
 
   const ESCALATION_THRESHOLD_MINUTES = 180;

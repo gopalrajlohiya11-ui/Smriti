@@ -305,17 +305,26 @@ export default function PatientDashboard() {
   }, [chronologicalReminders, completingReminderId, nowTime]);
 
   const handleReminderDone = (remId, title) => {
+    const currentRem = (activePatient?.todayReminders || []).find(r => (r.id === remId || r._id === remId));
+    const wasCompleted = currentRem ? (currentRem.status === 'completed' || currentRem.acknowledged === true) : false;
+
     setCompletingReminderId(remId);
 
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#1F6B4A', '#B5502E', '#2C5AA0']
-    });
+    // ONLY celebrate when transitioning from INCOMPLETE -> COMPLETED
+    if (!wasCompleted) {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#1F6B4A', '#B5502E', '#2C5AA0']
+      });
 
-    const isHindi = (currentLanguage?.code || '').startsWith('hi');
-    speakText(isHindi ? `शानदार! आपने ${title} पूरा कर लिया।` : `Great job! You completed ${title}.`, true);
+      const isHindi = (currentLanguage?.code || '').startsWith('hi');
+      speakText(isHindi ? `शानदार! आपने ${title} पूरा कर लिया।` : `Great job! You completed ${title}.`, true);
+    } else {
+      // Un-marking: immediately cancel any existing audio and play NO celebration
+      stopSpeech();
+    }
     
     toggleReminder(activePatient?.id || activePatient?._id, remId);
 

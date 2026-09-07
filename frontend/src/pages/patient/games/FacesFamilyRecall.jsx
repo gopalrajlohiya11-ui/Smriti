@@ -521,6 +521,11 @@ export default function FacesFamilyRecall() {
             <button
               type="button"
               onClick={() => {
+                if (isPlayingAudio) {
+                  stopSpeech();
+                  setIsPlayingAudio(false);
+                  return;
+                }
                 const isHindi = (currentLanguage?.code || '').startsWith('hi');
                 if (isHindi) {
                   speakText(questionMode === 'name' ? `स्तर ${currentLevel}। तस्वीर में दिखाए गए इस व्यक्ति को पहचानें।` : `स्तर ${currentLevel}। इनका आपसे क्या रिश्ता है?`);
@@ -533,10 +538,10 @@ export default function FacesFamilyRecall() {
                   ? 'bg-amber-100 border-amber-500 text-amber-950 animate-pulse' 
                   : 'bg-white hover:bg-stone-50 border-stone-300 text-stone-800'
               }`}
-              title="Listen to Question"
+              title={isPlayingAudio ? "Tap to Stop Voice" : "Listen to Question"}
             >
-              <Volume2 className="w-5 h-5 text-amber-800 shrink-0" />
-              <span className="hidden sm:inline">{(currentLanguage?.code || '').startsWith('hi') ? "निर्देश सुनें" : "Listen"}</span>
+              {isPlayingAudio ? <VolumeX className="w-5 h-5 text-amber-800 shrink-0" /> : <Volume2 className="w-5 h-5 text-amber-800 shrink-0" />}
+              <span className="hidden sm:inline">{isPlayingAudio ? ((currentLanguage?.code || '').startsWith('hi') ? "आवाज़ रोकें" : "Stop") : ((currentLanguage?.code || '').startsWith('hi') ? "निर्देश सुनें" : "Listen")}</span>
             </button>
           </div>
         </div>

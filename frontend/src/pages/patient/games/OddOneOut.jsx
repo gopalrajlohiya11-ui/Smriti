@@ -236,6 +236,7 @@ export default function OddOneOut() {
   const [roundStats, setRoundStats] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const TOTAL_LEVELS = 5;
   const currentTheme = THEMES[(currentLevel - 1) % THEMES.length];
@@ -243,13 +244,16 @@ export default function OddOneOut() {
   const gameStartTimeRef = useRef(Date.now());
 
   const speakText = useCallback((text, isAutoPlay = false) => {
-    if (isAudioMuted) return;
+    if (isAudioMuted || !text) return;
     speakLocalized({
       text,
       langCode: isHindi ? 'hi-IN' : (currentLanguage?.code || 'en'),
       rate: 0.90,
       isAutoPlay,
-      patientId: activePatient?.id || activePatient?._id
+      patientId: activePatient?.id || activePatient?._id,
+      onStart: () => setIsPlayingAudio(true),
+      onEnd: () => setIsPlayingAudio(false),
+      onError: () => setIsPlayingAudio(false)
     });
   }, [isAudioMuted, isHindi, currentLanguage, activePatient]);
 
@@ -498,16 +502,30 @@ export default function OddOneOut() {
             <button
               type="button"
               onClick={() => {
-                const voicePrompt = isHindi 
-                  ? `स्तर ${currentLevel}। ${currentTheme.hindiPrompt}` 
-                  : `Level ${currentLevel}. ${currentTheme.prompt}`;
-                speakText(voicePrompt);
+                if (isPlayingAudio) {
+                  stopSpeech();
+                  setIsPlayingAudio(false);
+                } else {
+                  const voicePrompt = isHindi 
+                    ? `स्तर ${currentLevel}। ${currentTheme.hindiPrompt}` 
+                    : `Level ${currentLevel}. ${currentTheme.prompt}`;
+                  speakText(voicePrompt);
+                }
               }}
               className="p-3 rounded-2xl bg-white hover:bg-stone-50 border-2 border-stone-300 text-stone-800 transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-2 text-xs sm:text-sm font-bold"
-              title="Listen to Instructions"
+              title={isPlayingAudio ? (isHindi ? "आवाज बंद करें" : "Stop Voice") : (isHindi ? "निर्देश सुनें" : "Listen to Instructions")}
             >
-              <Volume2 className="w-5 h-5 text-[#2C5AA0] shrink-0" />
-              <span className="hidden sm:inline">{isHindi ? "निर्देश सुनें" : "Listen"}</span>
+              {isPlayingAudio ? (
+                <>
+                  <VolumeX className="w-5 h-5 text-red-500 shrink-0 animate-pulse" />
+                  <span className="hidden sm:inline text-red-600">{isHindi ? "बंद करें" : "Stop"}</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-5 h-5 text-[#2C5AA0] shrink-0" />
+                  <span className="hidden sm:inline">{isHindi ? "निर्देश सुनें" : "Listen"}</span>
+                </>
+              )}
             </button>
           </div>
         </div>
