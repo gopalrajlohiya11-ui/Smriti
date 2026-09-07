@@ -25,6 +25,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
+import GeminiIcon from '../common/GeminiIcon';
 
 const LANGUAGE_CODE_MAP = {
   "hindi": "hi-IN",
@@ -545,19 +546,19 @@ export default function PatientChatbot() {
             </svg>
           </a>
 
-          {/* In-app Gemini AI Assistant */}
+          {/* In-app Google Gemini AI Assistant */}
           <button
             type="button"
             onClick={() => {
               setIsOpen(true);
               if (isSpeakingAloud) stopSpeaking();
             }}
-            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group bg-[#2C5AA0] hover:bg-[#224780] hover:scale-105 active:scale-95 ring-4 ring-[#2C5AA0]/20 shrink-0"
-            title="Open Smriti AI Assistant"
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-xl hover:shadow-2xl transition-all cursor-pointer relative group bg-gradient-to-tr from-[#1A56DB] via-[#6366F1] to-[#9333EA] hover:from-[#1E40AF] hover:via-[#4F46E5] hover:to-[#7E22CE] hover:scale-105 active:scale-95 ring-4 ring-[#6366F1]/30 shrink-0"
+            title="Smriti AI Assistant (Gemini Powered)"
             aria-label="Open AI Assistant"
           >
             <div className="relative flex items-center justify-center">
-              <MessageCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+              <GeminiIcon variant="white" className="w-8 h-8 sm:w-9 sm:h-9 drop-shadow-md" sparkles={true} />
             </div>
 
             {(isSpeakingAloud || isRecording) && (
@@ -601,16 +602,21 @@ export default function PatientChatbot() {
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shadow-xs">
-                    <FoxtailOrchidIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center shadow-xs">
+                    <GeminiIcon variant="white" className="w-5 h-5 sm:w-6 sm:h-6 text-white" sparkles={true} />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#2C5AA0] shadow-xs" />
                 </div>
 
                 <div>
-                  <h3 className="font-black text-lg sm:text-xl tracking-tight leading-tight">
-                    Smriti Assistant
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-lg sm:text-xl tracking-tight leading-tight">
+                      Smriti Assistant
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-white/20 text-white font-extrabold text-[10px] tracking-wider uppercase border border-white/25">
+                      Gemini AI
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -739,9 +745,9 @@ export default function PatientChatbot() {
                     <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold shadow-xs ${
                       isUser 
                         ? 'bg-[#2C5AA0] text-white' 
-                        : 'bg-[#EFF4FA] border border-[#2C5AA0]/30 text-[#2C5AA0]'
+                        : 'bg-gradient-to-tr from-[#EEF2FF] to-[#FAF5FF] border border-[#C7D2FE] text-[#4F46E5]'
                     }`}>
-                      {isUser ? <User className="w-5 h-5" /> : <FoxtailOrchidIcon className="w-5 h-5 text-[#2C5AA0]" />}
+                      {isUser ? <User className="w-5 h-5" /> : <GeminiIcon className="w-5 h-5" sparkles={false} />}
                     </div>
 
                     {/* Message Bubble */}
