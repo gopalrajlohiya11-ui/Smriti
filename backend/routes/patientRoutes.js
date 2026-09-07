@@ -483,7 +483,7 @@ router.delete('/:id', authenticateCaregiver, async (req, res) => {
 // 8. Patient AI Chatbot: POST /api/patients/:id/chat
 const { generatePatientChatReply } = require('../services/patientChatService');
 
-router.post('/:id/chat', authenticateAny, async (req, res) => {
+router.post('/:id/chat', optionalAuth, async (req, res) => {
   try {
     const { message, history, audioData, mimeType } = req.body;
     const patientId = req.params.id;
