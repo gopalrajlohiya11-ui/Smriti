@@ -611,7 +611,7 @@ const htmlContent = `<!DOCTYPE html>
       <ol style="margin-left: 0.22in; font-size: 0.165in; color:#1E293B; line-height: 1.55;">
         <li><strong>Node-Cron Daily Trigger:</strong> Evaluates patient routine times (09:00, 14:00, 20:00).</li>
         <li><strong>Meta Cloud API Outbound Dispatch:</strong> Sends consolidated WhatsApp reminder to patient phone.</li>
-        <li><strong>1-Tap Link (<code>wa.me/15556680031</code>):</strong> Patient receives alert or initiates conversation directly.</li>
+        <li><strong>1-Tap Link:</strong> <a href="https://wa.me/15556680031" target="_blank" style="color:#065F46; font-weight:700; text-decoration:underline;">wa.me/15556680031</a> — Patient receives alert or initiates conversation directly.</li>
         <li><strong>Automated "DONE" Acknowledgment:</strong> Replying "Done", "Ho gaya" or "হ’ল" ticks routine in DB.</li>
         <li><strong>Multi-Turn Gemini AI Webhook:</strong> Natural conversational Q&A grounded in patient context.</li>
       </ol>
@@ -662,7 +662,7 @@ const htmlContent = `<!DOCTYPE html>
       <span class="tag tag-done">ADAPTIVE SCORING API</span>
       <h3>⚙️ Dedicated ML Engine on Render (Live)</h3>
       <ul>
-        <li>Hosted at <code>https://dementia-ai-engine.onrender.com</code> (Live Integration).</li>
+        <li>Hosted at <a href="https://dementia-ai-engine.onrender.com" target="_blank" style="color:#065F46; font-weight:700; text-decoration:underline;">https://dementia-ai-engine.onrender.com</a> (Live Integration).</li>
         <li><code>POST /get_next_difficulty</code>: Evaluates past session history to calibrate adaptive starting difficulty.</li>
         <li><code>POST /calculate_health_score</code>: Computes 0-100 composite cognitive health index from telemetry.</li>
       </ul>
@@ -898,7 +898,7 @@ const htmlContent = `<!DOCTYPE html>
         <li><strong>Competition:</strong> Smart India Hackathon 2026 Finalist Team</li>
         <li><strong>Problem Statement:</strong> SIH26003 (Ministry of DoNER)</li>
         <li><strong>Domain:</strong> AI-Augmented Healthcare & Cognitive Care</li>
-        <li><strong>Contact:</strong> <code>gopalrajlohiya2@gmail.com</code></li>
+        <li><strong>Contact:</strong> <a href="mailto:gopalrajlohiya2@gmail.com" style="color:#C25E2E; font-weight:700; text-decoration:underline;">gopalrajlohiya2@gmail.com</a></li>
       </ul>
     </div>
 
@@ -907,8 +907,8 @@ const htmlContent = `<!DOCTYPE html>
       <ul>
         <li><strong>Live Frontend:</strong> Deployed on Vercel SPA Engine</li>
         <li><strong>Live Backend:</strong> Node.js / MongoDB Atlas on Render</li>
-        <li><strong>Live ML Engine:</strong> <code>https://dementia-ai-engine.onrender.com</code></li>
-        <li><strong>WhatsApp Bot:</strong> <code>https://wa.me/15556680031</code></li>
+        <li><strong>Live ML Engine:</strong> <a href="https://dementia-ai-engine.onrender.com" target="_blank" style="color:#1E40AF; font-weight:700; text-decoration:underline;">https://dementia-ai-engine.onrender.com</a></li>
+        <li><strong>WhatsApp Bot:</strong> <a href="https://wa.me/15556680031" target="_blank" style="color:#1E40AF; font-weight:700; text-decoration:underline;">https://wa.me/15556680031</a></li>
       </ul>
     </div>
   </div>
