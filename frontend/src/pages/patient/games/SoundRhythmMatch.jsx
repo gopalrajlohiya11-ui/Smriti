@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../context/AppContext';
-import { submitGameSessionApi } from '../../../services/api';
+import { submitGameSessionApi, fetchLastGameDifficulty } from '../../../services/api';
 import { queueOfflineAction } from '../../../utils/offlineDb';
 import confetti from 'canvas-confetti';
 import { 
@@ -317,12 +317,46 @@ export default function SoundRhythmMatch() {
   const [score, setScore] = useState(0);
   const [streakCount, setStreakCount] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [aiStartingBanner, setAiStartingBanner] = useState(null);
 
   // Session & Timing telemetry
   const [sessionStartTime] = useState(Date.now());
   const roundStartTimeRef = useRef(Date.now());
   const autoProceedTimerRef = useRef(null);
   const [roundDetails, setRoundDetails] = useState([]);
+
+  // Fetch Patient's Last ML Adaptive Difficulty from MongoDB / Render ML Microservice
+  useEffect(() => {
+    let isMounted = true;
+    async function initAdaptiveStartingDifficulty() {
+      try {
+        const pid = activePatientId || activePatient?.id || activePatient?._id;
+        const diffInfo = await fetchLastGameDifficulty(pid, 'sound-rhythm-match');
+        if (!isMounted) return;
+
+        if (diffInfo && typeof diffInfo.aiDifficulty === 'number') {
+          // Map ML difficulty (1-5) to Sound & Rhythm Match sequence length (3 to 6 beats)
+          const initialLen = Math.max(3, Math.min(6, diffInfo.aiDifficulty + 2));
+          setSequenceLength(initialLen);
+          console.log(`🤖 [SoundRhythmMatch AI Start] Calibrated starting sequence length: ${initialLen} (ML recommended level: ${diffInfo.aiDifficulty}) for patient ${pid}`);
+
+          if (diffInfo.hasHistory) {
+            const isHindiLang = (currentLanguage?.code || '').startsWith('hi');
+            const diffName = diffInfo.aiDifficulty <= 1 ? (isHindiLang ? 'सरल' : 'Gentle') : diffInfo.aiDifficulty === 2 ? (isHindiLang ? 'मध्यम' : 'Standard') : (isHindiLang ? 'उन्नत' : 'Advanced');
+            const msg = isHindiLang
+              ? `🤖 एआई अनुकूली स्तर: आपके हालिया प्रदर्शन के आधार पर स्तर ${diffInfo.aiDifficulty} (${diffName}) पर शुरू किया गया! 🌟`
+              : `🤖 AI Adaptive Calibration: Starting at Level ${diffInfo.aiDifficulty} (${diffName}) based on your recent progress! 🌟`;
+            setAiStartingBanner(msg);
+            setTimeout(() => { if (isMounted) setAiStartingBanner(null); }, 6000);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not initialize rhythm difficulty:', e);
+      }
+    }
+    initAdaptiveStartingDifficulty();
+    return () => { isMounted = false; };
+  }, [activePatientId, activePatient, currentLanguage]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -614,6 +648,23 @@ export default function SoundRhythmMatch() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-stone-900 pb-16 pt-4 px-4 sm:px-6 flex flex-col items-center">
       
+      {/* AI Adaptive Difficulty Banner */}
+      {aiStartingBanner && (
+        <div className="w-full max-w-4xl mb-4 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 text-white px-4 py-3 rounded-2xl shadow-md border-2 border-teal-400 flex items-center justify-between gap-3 animate-bounce">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
+            <p className="text-xs sm:text-sm font-black">{aiStartingBanner}</p>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setAiStartingBanner(null)} 
+            className="text-white/80 hover:text-white text-xs font-bold px-2 py-1 bg-white/20 rounded-lg shrink-0 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Top Header Bar with Always Visible Leave Game Button */}
       <header className="w-full max-w-4xl flex items-center justify-between py-3 mb-4 border-b border-stone-200">
         <button

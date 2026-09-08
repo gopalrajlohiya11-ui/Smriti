@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../context/AppContext';
-import { submitGameSessionApi } from '../../../services/api';
+import { submitGameSessionApi, fetchLastGameDifficulty } from '../../../services/api';
 import { queueOfflineAction } from '../../../utils/offlineDb';
 import { speakLocalized, stopSpeech } from '../../../utils/speechUtils';
 import confetti from 'canvas-confetti';
@@ -204,6 +204,7 @@ export default function DailyRoutineSequencer() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [finalStats, setFinalStats] = useState(null);
   const [isSavingScore, setIsSavingScore] = useState(false);
+  const [aiStartingBanner, setAiStartingBanner] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -212,7 +213,7 @@ export default function DailyRoutineSequencer() {
   }, []);
 
   // Speech Helper
-    const getRoutineSpeechText = useCallback((level) => {
+  const getRoutineSpeechText = useCallback((level) => {
     const isHindi = (currentLanguage?.code || '').startsWith('hi');
     if (isHindi) {
       return `स्तर ${level}। सुबह से रात तक जिस क्रम में आप दैनिक कार्य करते हैं, उसी क्रम में गतिविधियों को स्पर्श करें।`;
@@ -260,11 +261,42 @@ export default function DailyRoutineSequencer() {
     speakText(introMsg, true);
   }, [speakText]);
 
-  // Start game on mount
+  // Start game on mount with ML adaptive calibration
   useEffect(() => {
+    let isMounted = true;
+    async function initAdaptiveStartingDifficulty() {
+      try {
+        const pid = activePatient?.id || activePatient?._id;
+        const diffInfo = await fetchLastGameDifficulty(pid, 'daily-routine-sequencer');
+        if (!isMounted) return;
+
+        let initialLen = 4;
+        if (diffInfo && typeof diffInfo.aiDifficulty === 'number') {
+          // Map ML difficulty (1-5) to Daily Routine Sequencer sequence length (3 to 6)
+          initialLen = Math.max(3, Math.min(6, diffInfo.aiDifficulty <= 3 ? diffInfo.aiDifficulty + 2 : diffInfo.aiDifficulty + 1));
+          setSequenceLength(initialLen);
+          console.log(`🤖 [DailyRoutineSequencer AI Start] Calibrated starting sequence length: ${initialLen} (ML recommended level: ${diffInfo.aiDifficulty}) for patient ${pid}`);
+
+          if (diffInfo.hasHistory) {
+            const isHindiLang = (currentLanguage?.code || '').startsWith('hi');
+            const diffName = diffInfo.aiDifficulty <= 1 ? (isHindiLang ? 'सरल' : 'Gentle') : diffInfo.aiDifficulty === 2 ? (isHindiLang ? 'मध्यम' : 'Standard') : (isHindiLang ? 'उन्नत' : 'Advanced');
+            const msg = isHindiLang
+              ? `🤖 एआई अनुकूली स्तर: आपके हालिया प्रदर्शन के आधार पर स्तर ${diffInfo.aiDifficulty} (${diffName}) पर शुरू किया गया! 🌟`
+              : `🤖 AI Adaptive Calibration: Starting at Level ${diffInfo.aiDifficulty} (${diffName}) based on your recent progress! 🌟`;
+            setAiStartingBanner(msg);
+            setTimeout(() => { if (isMounted) setAiStartingBanner(null); }, 6000);
+          }
+        }
+        generateRound(1, initialLen);
+      } catch (e) {
+        generateRound(1, 4);
+      }
+    }
+
     gameStartTimeRef.current = Date.now();
-    generateRound(1, 4);
-  }, [generateRound]);
+    initAdaptiveStartingDifficulty();
+    return () => { isMounted = false; };
+  }, [activePatient, currentLanguage, generateRound]);
 
   // Handle Card Tap
   const handleCardClick = (card) => {
@@ -484,6 +516,23 @@ export default function DailyRoutineSequencer() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10">
       <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* AI Adaptive Difficulty Banner */}
+        {aiStartingBanner && (
+          <div className="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 text-white px-4 py-3 rounded-2xl shadow-md border-2 border-teal-400 flex items-center justify-between gap-3 animate-bounce">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
+              <p className="text-xs sm:text-sm font-black">{aiStartingBanner}</p>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setAiStartingBanner(null)} 
+              className="text-white/80 hover:text-white text-xs font-bold px-2 py-1 bg-white/20 rounded-lg shrink-0 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* 1. TOP HEADER & CONTROLS */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-stone-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">

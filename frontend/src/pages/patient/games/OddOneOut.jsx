@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../context/AppContext';
-import { submitGameSessionApi } from '../../../services/api';
+import { submitGameSessionApi, fetchLastGameDifficulty } from '../../../services/api';
 import { queueOfflineAction } from '../../../utils/offlineDb';
 import { speakLocalized, stopSpeech } from '../../../utils/speechUtils';
 import confetti from 'canvas-confetti';
@@ -237,6 +237,7 @@ export default function OddOneOut() {
   const [isSaving, setIsSaving] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [aiStartingBanner, setAiStartingBanner] = useState(null);
 
   const TOTAL_LEVELS = 5;
   const currentTheme = THEMES[(currentLevel - 1) % THEMES.length];
@@ -302,11 +303,41 @@ export default function OddOneOut() {
     speakText(voicePrompt, true);
   }, [isHindi, speakText]);
 
-  // Start game on mount
+  // Start game on mount with ML adaptive difficulty calibration
   useEffect(() => {
+    let isMounted = true;
+    async function initAdaptiveStartingDifficulty() {
+      try {
+        const pid = activePatient?.id || activePatient?._id;
+        const diffInfo = await fetchLastGameDifficulty(pid, 'odd-one-out');
+        if (!isMounted) return;
+
+        let initialCount = 3;
+        if (diffInfo && typeof diffInfo.aiDifficulty === 'number') {
+          // Map ML difficulty (1-5) to Odd One Out card count (3 to 6)
+          initialCount = Math.max(3, Math.min(6, diffInfo.aiDifficulty + 2));
+          setCardCount(initialCount);
+          console.log(`🤖 [OddOneOut AI Start] Calibrated starting card count: ${initialCount} (ML recommended level: ${diffInfo.aiDifficulty}) for patient ${pid}`);
+
+          if (diffInfo.hasHistory) {
+            const diffName = diffInfo.aiDifficulty <= 1 ? (isHindi ? 'सरल' : 'Gentle') : diffInfo.aiDifficulty === 2 ? (isHindi ? 'मध्यम' : 'Standard') : (isHindi ? 'उन्नत' : 'Advanced');
+            const msg = isHindi
+              ? `🤖 एआई अनुकूली स्तर: आपके हालिया प्रदर्शन के आधार पर स्तर ${diffInfo.aiDifficulty} (${diffName}) पर शुरू किया गया! 🌟`
+              : `🤖 AI Adaptive Calibration: Starting at Level ${diffInfo.aiDifficulty} (${diffName}) based on your recent progress! 🌟`;
+            setAiStartingBanner(msg);
+            setTimeout(() => { if (isMounted) setAiStartingBanner(null); }, 6000);
+          }
+        }
+        generateRound(1, initialCount);
+      } catch (e) {
+        generateRound(1, 3);
+      }
+    }
+
     gameStartTimeRef.current = Date.now();
-    generateRound(1, 3);
-  }, [generateRound]);
+    initAdaptiveStartingDifficulty();
+    return () => { isMounted = false; };
+  }, [activePatient, isHindi, generateRound]);
 
   const handleCardClick = (card) => {
     if (feedbackState || isGameOver) return;
@@ -448,6 +479,23 @@ export default function OddOneOut() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10">
       <div className="max-w-4xl mx-auto space-y-6">
+
+        {/* AI Adaptive Difficulty Banner */}
+        {aiStartingBanner && (
+          <div className="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 text-white px-4 py-3 rounded-2xl shadow-md border-2 border-teal-400 flex items-center justify-between gap-3 animate-bounce">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
+              <p className="text-xs sm:text-sm font-black">{aiStartingBanner}</p>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setAiStartingBanner(null)} 
+              className="text-white/80 hover:text-white text-xs font-bold px-2 py-1 bg-white/20 rounded-lg shrink-0 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* 1. TOP HEADER & CONTROLS */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">

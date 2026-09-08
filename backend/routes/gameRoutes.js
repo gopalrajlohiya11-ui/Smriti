@@ -365,6 +365,90 @@ router.post('/adaptive-difficulty', async (req, res) => {
   }
 });
 
+// 4b. GET /api/game-sessions/:patientId/last-difficulty (Fetch most recent ML difficulty for patient/game)
+const handleLastDifficultyRequest = async (req, res) => {
+  try {
+    const rawId = req.params.patientId;
+    let targetPatient = null;
+
+    if (mongoose.Types.ObjectId.isValid(rawId)) {
+      targetPatient = await Patient.findById(rawId);
+    }
+    if (!targetPatient && (rawId === 'pat-1' || rawId === 'default' || (typeof rawId === 'string' && rawId.toLowerCase().includes('ramesh')))) {
+      targetPatient = await Patient.findOne({ name: /Ramesh/i });
+    }
+    if (!targetPatient && (rawId === 'pat-2' || (typeof rawId === 'string' && rawId.toLowerCase().includes('meera')))) {
+      targetPatient = await Patient.findOne({ name: /Meera/i });
+    }
+    if (!targetPatient && (rawId === 'pat-3' || (typeof rawId === 'string' && rawId.toLowerCase().includes('biren')))) {
+      targetPatient = await Patient.findOne({ name: /Biren/i });
+    }
+    if (!targetPatient) {
+      targetPatient = await Patient.findOne({
+        $or: [
+          { id: rawId },
+          { name: new RegExp(String(rawId).replace(/[-_]/g, ' ').trim(), 'i') }
+        ]
+      }) || await Patient.findOne();
+    }
+
+    const patientId = targetPatient ? targetPatient._id : (mongoose.Types.ObjectId.isValid(rawId) ? rawId : null);
+
+    if (!patientId) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    const gameType = req.query.gameType;
+    let query = { patientId };
+    if (gameType) {
+      query.gameType = gameType;
+    }
+
+    let session = await GameSession.findOne(query).sort({ timestamp: -1 });
+
+    // If no session found for this specific game, find the most recent overall session for this patient
+    if (!session && gameType) {
+      session = await GameSession.findOne({ patientId }).sort({ timestamp: -1 });
+    }
+
+    let aiDifficulty = 2;
+    let aiReasoning = 'Standard baseline starting tier.';
+    let aiSource = 'baseline_default';
+    let hasHistory = false;
+
+    if (session) {
+      hasHistory = true;
+      aiDifficulty = typeof session.aiDifficulty === 'number' ? session.aiDifficulty : (targetPatient?.recommendedDifficulty || 2);
+      aiReasoning = session.aiReasoning || targetPatient?.aiReasoning || 'Calibrated from recent gameplay telemetry.';
+      aiSource = session.aiSource || 'ml_model';
+    } else if (targetPatient && typeof targetPatient.recommendedDifficulty === 'number') {
+      aiDifficulty = targetPatient.recommendedDifficulty;
+      aiReasoning = targetPatient.aiReasoning || 'Calibrated from patient profile.';
+      aiSource = 'patient_profile';
+      hasHistory = true;
+    }
+
+    return res.json({
+      status: 'ok',
+      patientId: patientId.toString(),
+      patientName: targetPatient?.name || 'Patient',
+      gameType: gameType || 'all',
+      aiDifficulty,
+      aiReasoning,
+      aiSource,
+      hasHistory,
+      lastPlayed: session?.timestamp || null,
+      lastScore: session?.score || null
+    });
+  } catch (err) {
+    console.error('Error in /last-difficulty endpoint:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+router.get('/:patientId/last-difficulty', handleLastDifficultyRequest);
+router.get('/last-difficulty/:patientId', handleLastDifficultyRequest);
+
 // 5. GET /api/game-sessions/:patientId (Fetch game sessions for specific patient)
 router.get('/:patientId', async (req, res) => {
   try {

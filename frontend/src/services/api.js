@@ -604,3 +604,39 @@ export async function fetchAdaptiveDifficultyApi(telemetry) {
   }
 }
 
+// 13. Fetch Last Recommended ML Difficulty for Patient (GET /api/game-sessions/:patientId/last-difficulty?gameType=...)
+export async function fetchLastGameDifficulty(patientId, gameType = '') {
+  const cleanId = String(patientId?._id || patientId?.id || patientId || 'default');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const token = localStorage.getItem('smriti_caregiver_token') || localStorage.getItem('smriti_patient_token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const url = `${API_BASE_URL}/game-sessions/${cleanId}/last-difficulty${gameType ? `?gameType=${gameType}` : ''}`;
+    const response = await fetch(url, {
+      headers,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(`HTTP error ${response.status}`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn(`Could not fetch last difficulty for ${gameType} (${cleanId}):`, err.message);
+    return {
+      status: 'fallback',
+      aiDifficulty: 2,
+      aiReasoning: 'Standard starting baseline.',
+      aiSource: 'fallback',
+      hasHistory: false
+    };
+  }
+}
+
+
