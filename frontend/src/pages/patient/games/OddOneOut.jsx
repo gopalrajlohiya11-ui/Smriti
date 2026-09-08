@@ -348,6 +348,7 @@ export default function OddOneOut() {
         if (currentLevel < TOTAL_LEVELS) {
           const nextLvl = currentLevel + 1;
           const nextCount = calculateNextOddCardCount(100, cardCount);
+          console.log(`[OddOneOut Adaptive Difficulty] Round ${currentLevel} finished with Accuracy: 100% (Attempts: 1, Correct: 1). Card Count: ${cardCount} -> Next Round Card Count: ${nextCount}`);
           setCardCount(nextCount);
           setCurrentLevel(nextLvl);
           generateRound(nextLvl, nextCount);
@@ -369,8 +370,8 @@ export default function OddOneOut() {
       const metric = {
         level: currentLevel,
         cardCount: cards.length,
-        accuracy: 50,
-        correctCount: 1,
+        accuracy: 33,
+        correctCount: 0,
         totalAttempts: 2,
         timeTakenSeconds: timeTaken + 2
       };
@@ -380,7 +381,8 @@ export default function OddOneOut() {
       setTimeout(() => {
         if (currentLevel < TOTAL_LEVELS) {
           const nextLvl = currentLevel + 1;
-          const nextCount = calculateNextOddCardCount(50, cardCount);
+          const nextCount = calculateNextOddCardCount(33, cardCount);
+          console.log(`[OddOneOut Adaptive Difficulty] Round ${currentLevel} finished with Accuracy: 33% (Attempts: 2, Correct: 0). Card Count: ${cardCount} -> Next Round Card Count: ${nextCount}`);
           setCardCount(nextCount);
           setCurrentLevel(nextLvl);
           generateRound(nextLvl, nextCount);

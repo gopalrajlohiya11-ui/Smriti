@@ -374,6 +374,7 @@ export default function DailyRoutineSequencer() {
       // Move to next level with warm transition
       const nextLvl = currentLevel + 1;
       const nextLength = calculateNextSequenceLength(roundAccuracy, sequenceLength);
+      console.log(`[DailyRoutineSequencer Adaptive Difficulty] Round ${currentLevel} finished with Accuracy: ${roundAccuracy}% (Attempts: ${totalAtt}, Correct: ${correctCount}). Sequence Length: ${sequenceLength} -> Next Round Sequence Length: ${nextLength}`);
       setSequenceLength(nextLength);
 
       const isHindi = (currentLanguage?.code || '').startsWith('hi');

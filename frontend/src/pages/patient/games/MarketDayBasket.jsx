@@ -599,7 +599,8 @@ export default function MarketDayBasket() {
     }
 
     // 3. Adaptive difficulty for next round
-    const nextCount = calculateNextItemCount(currentAccuracy, itemCount);
+    const nextCount = calculateNextItemCount(roundAcc, itemCount);
+    console.log(`[MarketDayBasket Adaptive Difficulty] Round ${currentRoundIndex + 1} finished with Accuracy: ${roundAcc}% (Attempts: ${roundAttemptsRef.current}, Correct: ${roundCorrectRef.current}). Item Count: ${itemCount} -> Next Round Item Count: ${nextCount}`);
     setItemCount(nextCount);
 
     const nextLevelNum = currentRoundIndex + 2;

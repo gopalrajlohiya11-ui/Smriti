@@ -369,6 +369,7 @@ export default function FacesFamilyRecall() {
     if (currentLevel < TOTAL_LEVELS) {
       const nextLvl = currentLevel + 1;
       const nextOptions = calculateNextOptionCount(lastRoundAccuracy, optionCount);
+      console.log(`[FacesFamilyRecall Adaptive Difficulty] Round ${currentLevel} finished with Accuracy: ${lastRoundAccuracy}%. Option Count: ${optionCount} -> Next Round Option Count: ${nextOptions}`);
       setOptionCount(nextOptions);
 
       const isHindi = (currentLanguage?.code || '').startsWith('hi');

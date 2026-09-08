@@ -520,6 +520,7 @@ export default function SoundRhythmMatch() {
 
         // Adaptive difficulty calculation
         const nextLen = calculateNextSequenceLength(roundAccuracy, sequenceLength);
+        console.log(`[SoundRhythmMatch Adaptive Difficulty] Round ${currentLevel} finished with Accuracy: ${roundAccuracy}% (Attempts: ${sequence.length + roundErrors}, Correct: ${sequence.length}). Sequence Length: ${sequenceLength} -> Next Round Sequence Length: ${nextLen}`);
         setSequenceLength(nextLen);
 
         setGamePhase('playing_demo');
