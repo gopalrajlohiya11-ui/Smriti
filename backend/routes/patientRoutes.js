@@ -238,6 +238,7 @@ const caregiverHasAccessToPatient = (caregiver, patient) => {
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const caregiver = req.caregiver;
+    let patients = [];
     
     if (caregiver) {
       // Find all patients owned by or assigned to this caregiver
@@ -248,15 +249,35 @@ router.get('/', optionalAuth, async (req, res) => {
         ]
       };
 
-      let patients = await Patient.find(query).sort({ createdAt: 1 });
+      patients = await Patient.find(query).sort({ createdAt: 1 }).lean();
       if ((!patients || patients.length === 0) && (caregiver.role === 'clinician' || caregiver.email === 'dr.ananya@smriti.in')) {
-        patients = await Patient.find({}).sort({ createdAt: 1 });
+        patients = await Patient.find({}).sort({ createdAt: 1 }).lean();
       }
-      return res.json(patients);
+    } else {
+      // Public / Demo fallback if not authenticated
+      patients = await Patient.find({}).sort({ createdAt: 1 }).lean();
     }
 
-    // Public / Demo fallback if not authenticated
-    const patients = await Patient.find({}).sort({ createdAt: 1 });
+    // Batch load today's reminders in 1 fast query if requested
+    if (req.query.includeReminders === 'true' || req.query.withReminders === 'true' || req.query.batch === 'true') {
+      const patientIds = (patients || []).map(p => p._id);
+      const allReminders = await Reminder.find({ patientId: { $in: patientIds } }).sort({ scheduledTime: 1 }).lean();
+      
+      const remindersByPatient = {};
+      allReminders.forEach(r => {
+        const pid = r.patientId ? r.patientId.toString() : '';
+        if (pid) {
+          if (!remindersByPatient[pid]) remindersByPatient[pid] = [];
+          remindersByPatient[pid].push(r);
+        }
+      });
+
+      patients = patients.map(p => ({
+        ...p,
+        reminders: remindersByPatient[p._id.toString()] || []
+      }));
+    }
+
     res.json(patients);
   } catch (err) {
     res.status(500).json({ error: err.message });

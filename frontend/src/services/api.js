@@ -203,10 +203,11 @@ export async function registerPatientBiometricApi(patientId, credentialId, publi
   }
 }
 
-// 4. Fetch Real Patients from MongoDB (Caregiver-Scoped)
-export async function fetchRealPatients() {
+// 4. Fetch Real Patients from MongoDB (Caregiver-Scoped with Batch Reminders)
+export async function fetchRealPatients(includeReminders = true) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients`, {
+    const url = `${API_BASE_URL}/patients${includeReminders ? '?batch=true&includeReminders=true' : ''}`;
+    const response = await fetch(url, {
       headers: getAuthHeaders()
     });
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
