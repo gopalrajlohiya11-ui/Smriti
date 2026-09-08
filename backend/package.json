@@ -23,6 +23,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
     "node-cron": "^4.6.0",
-    "openai": "^7.9.0"
+    "openai": "^7.9.0",
+    "pptxgenjs": "^4.0.1"
   }
 }
