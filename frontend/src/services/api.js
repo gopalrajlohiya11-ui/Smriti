@@ -1,8 +1,34 @@
 import { defaultGameSessionsByPatient } from '../data/mockData';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-  ? (import.meta.env.VITE_API_BASE_URL.endsWith('/api') ? import.meta.env.VITE_API_BASE_URL : `${import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')}/api`)
-  : 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl.replace(/\/+$/, '')}/api`;
+  }
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Helper for fast-aborting network requests with timeout
+export async function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error(`Network timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
+}
 
 // Helper for authorized headers
 function getAuthHeaders() {
@@ -17,11 +43,11 @@ function getAuthHeaders() {
 // 1. Caregiver Login (Email + Password)
 export async function loginCaregiverApi(email, password) {
   try {
-    const response = await fetch(`${API_BASE_URL}/caregivers/login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/caregivers/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    });
+    }, 2000);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Invalid email or password');
     return data;
@@ -136,11 +162,11 @@ export async function registerCaregiverBiometricApi(credentialId) {
 // 2d. Caregiver Biometric Login
 export async function loginCaregiverBiometricApi(credentialId, email) {
   try {
-    const response = await fetch(`${API_BASE_URL}/caregivers/biometric-login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/caregivers/biometric-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credentialId, email })
-    });
+    }, 2500);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Biometric authentication failed');
     return data;
@@ -150,16 +176,14 @@ export async function loginCaregiverBiometricApi(credentialId, email) {
   }
 }
 
-
-
 // 3. Patient Login (Name/Age/PIN keypad)
 export async function loginPatientApi(name, age, pin, phoneNumber) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, age, pin, phoneNumber })
-    });
+    }, 2000);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Patient login failed');
     return data;
@@ -172,11 +196,11 @@ export async function loginPatientApi(name, age, pin, phoneNumber) {
 // 3b. Patient Biometric Login (Feature 2)
 export async function loginPatientBiometricApi(credentialId, patientId, name) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/biometric-login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/biometric-login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credentialId, patientId, name })
-    });
+    }, 2500);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Biometric authentication failed');
     return data;
@@ -189,11 +213,11 @@ export async function loginPatientBiometricApi(credentialId, patientId, name) {
 // 3c. Register Biometric for Patient (Feature 2)
 export async function registerPatientBiometricApi(patientId, credentialId, publicKey) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/register-biometric`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/register-biometric`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ credentialId, publicKey })
-    });
+    }, 2500);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to register biometric');
     return data;
@@ -207,9 +231,9 @@ export async function registerPatientBiometricApi(patientId, credentialId, publi
 export async function fetchRealPatients(includeReminders = true) {
   try {
     const url = `${API_BASE_URL}/patients${includeReminders ? '?batch=true&includeReminders=true' : ''}`;
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: getAuthHeaders()
-    });
+    }, 2500);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -223,12 +247,12 @@ export async function fetchCurrentPatientApi() {
   try {
     const token = localStorage.getItem('smriti_patient_token');
     if (!token) return null;
-    const response = await fetch(`${API_BASE_URL}/patients/me`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/me`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
-    });
+    }, 2000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -318,9 +342,9 @@ export async function fetchPublicPatientApi(patientId = 'default') {
 // 7. Fetch Real Reminders for Patient
 export async function fetchPatientReminders(patientId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/reminders`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/reminders`, {
       headers: getAuthHeaders()
-    });
+    }, 2000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -340,11 +364,11 @@ export async function toggleReminderStatus(reminderId, nextAcknowledged, patient
       scheduledTime: reminderData.scheduledTime
     };
 
-    const response = await fetch(`${API_BASE_URL}/reminders/${reminderId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/${reminderId}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
-    });
+    }, 2500);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -356,9 +380,9 @@ export async function toggleReminderStatus(reminderId, nextAcknowledged, patient
 // 8b. Fetch Memory Bank Photos from MongoDB
 export async function fetchPatientPhotos(patientId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/photos`, {
       headers: getAuthHeaders()
-    });
+    }, 2000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -370,11 +394,11 @@ export async function fetchPatientPhotos(patientId) {
 // 8c. Add Memory Bank Photo to MongoDB
 export async function addPatientPhotoApi(patientId, photoData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/photos`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(photoData)
-    });
+    }, 3000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -386,10 +410,10 @@ export async function addPatientPhotoApi(patientId, photoData) {
 // 8d. Delete Memory Bank Photo from MongoDB
 export async function deletePatientPhotoApi(patientId, photoId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/photos/${photoId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/photos/${photoId}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
-    });
+    }, 2500);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -403,7 +427,7 @@ export async function fetchPatientGameSessions(patientId) {
   if (!patientId) return [];
   const cleanId = String(patientId?._id || patientId?.id || patientId);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s safety timeout
+  const timeoutId = setTimeout(() => controller.abort(), 3000);
 
   try {
     const response = await fetch(`${API_BASE_URL}/game-sessions/${cleanId}`, {
@@ -420,9 +444,9 @@ export async function fetchPatientGameSessions(patientId) {
     }
 
     // Fallback to /api/patients/:id/games
-    const fallbackRes = await fetch(`${API_BASE_URL}/patients/${cleanId}/games`, {
+    const fallbackRes = await fetchWithTimeout(`${API_BASE_URL}/patients/${cleanId}/games`, {
       headers: getAuthHeaders()
-    });
+    }, 2000);
     if (fallbackRes.ok) {
       const fallbackData = await fallbackRes.json();
       if (Array.isArray(fallbackData) && fallbackData.length > 0) {
@@ -444,11 +468,11 @@ export async function fetchPatientGameSessions(patientId) {
 // 8f. Record Game Session in MongoDB
 export async function recordGameSessionApi(patientId, gameData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/games`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/patients/${patientId}/games`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(gameData)
-    });
+    }, 2500);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -460,10 +484,10 @@ export async function recordGameSessionApi(patientId, gameData) {
 // 8b. Dismiss Overdue Alert by Caregiver (Issue 1)
 export async function dismissReminderApi(reminderId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/reminders/${reminderId}/dismiss`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/${reminderId}/dismiss`, {
       method: 'PATCH',
       headers: getAuthHeaders()
-    });
+    }, 2000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     return await response.json();
   } catch (err) {
@@ -475,9 +499,9 @@ export async function dismissReminderApi(reminderId) {
 // 8c. Fetch Active Overdue Alerts Directly from MongoDB
 export async function fetchActiveAlertsApi() {
   try {
-    const response = await fetch(`${API_BASE_URL}/reminders/alerts`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/alerts`, {
       headers: getAuthHeaders()
-    });
+    }, 2000);
     if (!response.ok) throw new Error(`HTTP error ${response.status}`);
     const data = await response.json();
     return data.alerts || [];

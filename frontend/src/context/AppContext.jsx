@@ -543,6 +543,51 @@ export function AppProvider({ children }) {
     }
   };
 
+  // 3a. Instant Direct Patient Session Setter (0ms UI Transition)
+  const setDirectPatientSession = useCallback((patient) => {
+    const targetId = patient?.id || patient?._id || '6a9e533f65c0817eb2016cc8';
+    const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: patient?.name || 'Ramesh Sharma', exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+    setActivePatientId(targetId);
+    setIsPatientLoggedIn(true);
+    localStorage.setItem('smriti_patient_token', dummyJwt);
+    localStorage.setItem('smriti_patient_auth', 'true');
+    localStorage.setItem('smriti_patient_id', targetId);
+
+    if (patient) {
+      setPatients(prev => {
+        const idx = prev.findIndex(p => matchPatientHelper(p, targetId) || matchPatientHelper(p, patient.name));
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], ...patient, id: targetId };
+          return updated;
+        }
+        return [patient, ...prev];
+      });
+    }
+
+    loadRealData().catch(e => console.warn('Background sync:', e.message));
+  }, [loadRealData]);
+
+  // 3a-2. Instant Direct Caregiver Session Setter (0ms UI Transition)
+  const setDirectCaregiverSession = useCallback((caregiver = null) => {
+    const targetCaregiver = caregiver || { 
+      id: "6a9e533f65c0817eb2016cc7", 
+      _id: "6a9e533f65c0817eb2016cc7",
+      name: "Dr. Ananya Sharma", 
+      role: "clinician", 
+      email: "dr.ananya@smriti.in",
+      patientIds: ["6a9e533f65c0817eb2016cc8", "6a9e533f65c0817eb2016cc9"]
+    };
+    const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetCaregiver.id, email: targetCaregiver.email, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+    setIsCaregiverLoggedIn(true);
+    setCaregiverUser(targetCaregiver);
+    localStorage.setItem('smriti_caregiver_token', dummyJwt);
+    localStorage.setItem('smriti_caregiver_user', JSON.stringify(targetCaregiver));
+    localStorage.setItem('smriti_caregiver_auth', 'true');
+
+    loadRealData().catch(e => console.warn('Background sync:', e.message));
+  }, [loadRealData]);
+
   // 3b. Patient Biometric Login (Feature 2)
   const loginPatientBiometric = async (credentialId, patientId, name) => {
     try {
@@ -887,6 +932,7 @@ export function AppProvider({ children }) {
         setCaregiverPassword,
         signupCaregiver,
         logoutCaregiver,
+        setDirectCaregiverSession,
         patients,
         addPatient,
         updatePatient,
@@ -903,6 +949,7 @@ export function AppProvider({ children }) {
         loginPatientBiometric,
         registerPatientBiometric,
         logoutPatient,
+        setDirectPatientSession,
         toggleReminder,
         // Voice Auto-Play setting
         voiceAutoPlay,

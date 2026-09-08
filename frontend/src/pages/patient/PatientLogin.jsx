@@ -28,7 +28,17 @@ import { getStoredCaregiverSession, getStoredPatientSession } from '../../utils/
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginPatient, loginPatientBiometric, loginCaregiver, loginCaregiverBiometric, signupCaregiver, patients, currentLanguage } = useApp();
+  const { 
+    loginPatient, 
+    loginPatientBiometric, 
+    loginCaregiver, 
+    loginCaregiverBiometric, 
+    signupCaregiver, 
+    setDirectPatientSession,
+    setDirectCaregiverSession,
+    patients, 
+    currentLanguage 
+  } = useApp();
 
   // Fallback demo patients for login shortcut buttons if unauthenticated context is empty
   const displayPatients = (patients && patients.length > 0) ? patients : initialPatients;
@@ -350,21 +360,13 @@ export default function PatientLogin({ defaultRole }) {
 
 
 
-  const handleQuickSelectPatient = async (p) => {
+  const handleQuickSelectPatient = (p) => {
     setPatientName(p.name);
     setPatientAge((p.age || 74).toString());
     setPin('1234');
     setErrorMsg('');
-    try {
-      setIsSubmitting(true);
-      await loginPatient(p.name, p.age, '1234');
-      navigate('/patient');
-    } catch (err) {
-      console.warn('Patient quick select login fallback:', err.message);
-      navigate('/patient');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setDirectPatientSession(p);
+    navigate('/patient');
   };
 
   return (
@@ -817,20 +819,12 @@ export default function PatientLogin({ defaultRole }) {
                 <div className="flex justify-center">
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       setAdminEmail('dr.ananya@smriti.in');
                       setAdminPassword('caregiver123');
                       setErrorMsg('');
-                      try {
-                        setIsSubmitting(true);
-                        await loginCaregiver('dr.ananya@smriti.in', 'caregiver123');
-                        navigate('/caregiver');
-                      } catch (err) {
-                        console.warn('Caregiver shortcut login error:', err.message);
-                        navigate('/caregiver');
-                      } finally {
-                        setIsSubmitting(false);
-                      }
+                      setDirectCaregiverSession();
+                      navigate('/caregiver');
                     }}
                     className="w-full py-2.5 px-4 text-xs font-bold bg-stone-50 hover:bg-teal-50 text-stone-800 hover:text-teal-900 border border-stone-200 hover:border-teal-300 rounded-xl text-center transition-colors cursor-pointer shadow-2xs flex items-center justify-center gap-2"
                   >
