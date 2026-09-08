@@ -146,7 +146,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         <div className="space-y-6">
           <Link to="/patient" className="flex items-center gap-3 group focus:outline-none">
             <div className="w-12 h-12 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] flex items-center justify-center text-white shadow-xs transition-colors">
-              <FoxtailOrchidIcon className="w-7 h-7 text-white" />
+              <span className="text-2xl select-none" role="img" aria-label="Smriti Logo">🌸</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             ) : (
               <Link to="/patient" className="md:hidden flex items-center gap-2 shrink-0">
                 <div className="w-8 h-8 rounded-xl bg-[#B5502E] flex items-center justify-center text-white shadow-xs">
-                  <FoxtailOrchidIcon className="w-4 h-4 text-white" />
+                  <span className="text-base select-none" role="img" aria-label="Smriti Logo">🌸</span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-base font-black text-[#2B2B2B] leading-none">Smriti</span>

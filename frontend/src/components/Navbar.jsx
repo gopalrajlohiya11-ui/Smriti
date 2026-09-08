@@ -75,7 +75,7 @@ export default function Navbar() {
           {/* Left: Brand Logo & Name */}
           <Link to={isPatientRoute ? "/patient" : isCaregiverRoute ? "/caregiver" : "/"} className="flex items-center gap-3 group focus:outline-none shrink-0">
             <div className="w-11 h-11 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] flex items-center justify-center text-white shadow-xs transition-colors">
-              <FoxtailOrchidIcon className="w-6 h-6 text-white" />
+              <span className="text-2xl select-none" role="img" aria-label="Smriti Logo">🌸</span>
             </div>
             <div>
               <div className="flex items-center gap-2">

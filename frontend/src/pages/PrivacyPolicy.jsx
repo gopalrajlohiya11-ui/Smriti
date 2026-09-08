@@ -42,7 +42,7 @@ export default function PrivacyPolicy() {
 
             <Link to="/" className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-amber-800 flex items-center justify-center text-white shadow-sm">
-                <FoxtailOrchidIcon className="w-5 h-5 text-white" />
+                <span className="text-lg select-none" role="img" aria-label="Smriti Logo">🌸</span>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">

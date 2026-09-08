@@ -441,11 +441,9 @@ export default function PatientLogin({ defaultRole }) {
             </button>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black text-[#2B2B2B] tracking-tight flex items-center justify-center gap-2.5">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#2B2B2B] tracking-tight flex items-center justify-center gap-2">
             <span>Smriti</span>
-            <span className="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#B5502E] text-white text-base sm:text-lg shadow-2xs">
-              <FoxtailOrchidIcon className="w-5 h-5 text-white" />
-            </span>
+            <span className="text-2xl sm:text-3xl select-none" role="img" aria-label="Smriti Flower Logo">🌸</span>
           </h1>
 
           <p className="text-sm sm:text-base text-[#6B6B6B] font-medium">

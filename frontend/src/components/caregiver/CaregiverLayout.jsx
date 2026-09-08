@@ -58,7 +58,7 @@ export default function CaregiverLayout({
         <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
           <Link to="/caregiver" className="flex items-center gap-3 group focus:outline-none">
             <div className="w-10 h-10 rounded-xl bg-amber-800 flex items-center justify-center text-white shadow-md shadow-amber-950/30 group-hover:scale-105 transition-transform shrink-0">
-              <FoxtailOrchidIcon className="w-6 h-6 text-white" />
+              <span className="text-xl select-none" role="img" aria-label="Smriti Logo">🌸</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function CaregiverLayout({
       <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800 sticky top-0 z-50">
         <Link to="/caregiver" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-amber-800 flex items-center justify-center text-white shrink-0">
-            <FoxtailOrchidIcon className="w-5 h-5 text-white" />
+            <span className="text-base select-none" role="img" aria-label="Smriti Logo">🌸</span>
           </div>
           <span className="font-black text-lg text-white tracking-tight">Smriti</span>
           <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800/60">
