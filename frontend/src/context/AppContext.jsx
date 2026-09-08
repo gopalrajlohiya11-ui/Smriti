@@ -1,6 +1,6 @@
 import { calculatePatientStreak } from '../utils/streakUtils';
 import { getVoiceAutoPlaySetting, setVoiceAutoPlaySetting } from '../utils/speechUtils';
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { initialPatients, initialRedFlags, regionalLanguages, standard10Reminders, meeraStandardReminders } from '../data/mockData';
 import { 
   getStoredCaregiverSession, 
