@@ -215,7 +215,12 @@ router.get('/:id/games', async (req, res) => {
 // 1f. Get All Public / Demo Patients: GET /api/patients/public
 router.get('/public', async (req, res) => {
   try {
-    const patients = await Patient.find({}).sort({ createdAt: 1 });
+    const patients = await Patient.find({
+      $or: [
+        { isDemoSeed: true },
+        { name: { $in: ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'] } }
+      ]
+    }).sort({ createdAt: 1 });
     res.json(patients);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -225,20 +230,19 @@ router.get('/public', async (req, res) => {
 // Helper: Verify if a caregiver has access to a specific patient
 const caregiverHasAccessToPatient = (caregiver, patient) => {
   if (!caregiver || !patient) return false;
-  if (caregiver.role === 'clinician' && !patient.caregiverId) return true; // Unassigned demo records accessible to clinicians
   const isDirectOwner = patient.caregiverId && patient.caregiverId.toString() === caregiver._id.toString();
   const isInAssignedList = caregiver.patientIds && caregiver.patientIds.some(pid => pid.toString() === patient._id.toString());
   return isDirectOwner || isInAssignedList;
 };
 
-// 2. Get patients: GET /api/patients (Scoped to authenticated caregiver, or public demo fallback)
+// 2. Get patients: GET /api/patients (Scoped strictly to authenticated caregiver, or public demo fallback)
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const caregiver = req.caregiver;
     let patients = [];
     
     if (caregiver) {
-      // Find all patients owned by or assigned to this caregiver
+      // Find strictly all patients owned by or assigned to this caregiver
       const query = {
         $or: [
           { caregiverId: caregiver._id },
@@ -247,12 +251,11 @@ router.get('/', optionalAuth, async (req, res) => {
       };
 
       patients = await Patient.find(query).sort({ createdAt: 1 }).lean();
-      if ((!patients || patients.length === 0) && caregiver.email === 'dr.ananya@smriti.in') {
-        patients = await Patient.find({}).sort({ createdAt: 1 }).lean();
-      }
     } else {
-      // Public / Demo fallback if not authenticated
-      patients = await Patient.find({}).sort({ createdAt: 1 }).lean();
+      // Public / Demo fallback if not authenticated: ONLY demo accounts
+      patients = await Patient.find({
+        name: { $in: ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'] }
+      }).sort({ createdAt: 1 }).lean();
     }
 
     // Batch load today's reminders in 1 fast query if requested
