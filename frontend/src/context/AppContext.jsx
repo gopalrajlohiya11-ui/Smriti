@@ -127,10 +127,17 @@ export function AppProvider({ children }) {
     return saved ? JSON.parse(saved) : initialPatients;
   });
 
-  // Red Flags Alert Store
+  // Red Flags Alert Store (Scoped to logged-in user)
   const [redFlags, setRedFlags] = useState(() => {
+    const isCaregiverAuth = !!localStorage.getItem('smriti_caregiver_token');
+    const isPatientAuth = !!localStorage.getItem('smriti_patient_token');
     const saved = localStorage.getItem('smriti_red_flags');
-    return saved ? JSON.parse(saved) : initialRedFlags;
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return (!isCaregiverAuth && !isPatientAuth) ? initialRedFlags : [];
   });
 
   // Update pending sync actions count
@@ -342,6 +349,8 @@ export function AppProvider({ children }) {
       // 4. Update direct database-synchronized active alerts
       if (realDbAlerts && Array.isArray(realDbAlerts)) {
         setRedFlags(realDbAlerts);
+      } else if (isCaregiverAuth && enrichedPatients.length === 0) {
+        setRedFlags([]);
       }
     } catch (err) {
       console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
@@ -479,7 +488,9 @@ export function AppProvider({ children }) {
       // Clean start for new caregiver roster
       localStorage.removeItem('smriti_patients');
       localStorage.removeItem('smriti_patient_id');
+      localStorage.removeItem('smriti_red_flags');
       setPatients([]);
+      setRedFlags([]);
       setActivePatientId(null);
       loadRealData().catch(e => console.warn('Background sync:', e.message));
       return { success: true, caregiver: data.caregiver };

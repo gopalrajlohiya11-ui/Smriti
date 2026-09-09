@@ -28,31 +28,49 @@ router.post('/', authenticateCaregiver, async (req, res) => {
 router.get('/alerts', optionalAuth, async (req, res) => {
   try {
     const now = new Date();
-    let patientIds = [];
+    const query = {
+      acknowledged: false,
+      dismissed: false,
+      scheduledTime: { $lte: now }
+    };
 
     if (req.caregiver) {
-      // Scoped to caregiver's patients
+      // Scoped strictly to this caregiver's patients
       const accessiblePatients = await Patient.find({
         $or: [
           { caregiverId: req.caregiver._id },
           { _id: { $in: req.caregiver.patientIds || [] } }
         ]
       }).select('_id');
-      patientIds = accessiblePatients.map(p => p._id);
+      const patientIds = accessiblePatients.map(p => p._id);
+
+      // If this caregiver has 0 patients, they have 0 active alerts
+      if (patientIds.length === 0) {
+        return res.json({
+          status: 'ok',
+          count: 0,
+          alerts: []
+        });
+      }
+      query.patientId = { $in: patientIds };
     } else if (req.patient) {
-      patientIds = [req.patient._id];
+      query.patientId = req.patient._id;
     } else if (req.query.patientId) {
       const pId = await resolvePatientId(req.query.patientId);
-      if (pId) patientIds = [pId];
-    }
-
-    const query = {
-      acknowledged: false,
-      dismissed: false,
-      scheduledTime: { $lte: now }
-    };
-    if (patientIds.length > 0) {
-      query.patientId = { $in: patientIds };
+      if (pId) {
+        query.patientId = pId;
+      } else {
+        return res.json({ status: 'ok', count: 0, alerts: [] });
+      }
+    } else {
+      // Unauthenticated demo fallback: only show alerts for demo patients
+      const demoPatients = await Patient.find({ name: { $in: ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'] } }).select('_id');
+      const demoIds = demoPatients.map(p => p._id);
+      if (demoIds.length > 0) {
+        query.patientId = { $in: demoIds };
+      } else {
+        return res.json({ status: 'ok', count: 0, alerts: [] });
+      }
     }
 
     const overdueReminders = await Reminder.find(query)
