@@ -612,11 +612,20 @@ export async function fetchPatientMLHealthScore(patientId) {
   } catch (err) {
     clearTimeout(timeoutId);
     console.warn('ML health score API warning (fallback active):', err.message);
+    const isDemoId = cleanId === 'pat-1' || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc8' || cleanId === '6a9e533f65c0817eb2016cc9' || (typeof cleanId === 'string' && (cleanId.toLowerCase().includes('ramesh') || cleanId.toLowerCase().includes('meera')));
+    if (isDemoId) {
+      return {
+        cognitiveHealthScore: 88,
+        clinicalStatus: 'Stable',
+        source: 'fallback',
+        weeklyAggregates: { gamesPlayedThisWeek: 4, avgReactionTime: 2.8, totalMistakesThisWeek: 2 }
+      };
+    }
     return {
-      cognitiveHealthScore: 88,
-      clinicalStatus: 'Stable',
-      source: 'fallback',
-      weeklyAggregates: { gamesPlayedThisWeek: 4, avgReactionTime: 2.8, totalMistakesThisWeek: 2 }
+      cognitiveHealthScore: 0,
+      clinicalStatus: 'Pending Assessment',
+      source: 'baseline',
+      weeklyAggregates: { gamesPlayedThisWeek: 0, avgReactionTime: 0, totalMistakesThisWeek: 0 }
     };
   }
 }

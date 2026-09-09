@@ -39,6 +39,26 @@ async function calculatePatientMLHealth(patientId) {
       timestamp: { $gte: sevenDaysAgo }
     }).sort({ timestamp: -1 });
 
+    if (recentSessions.length === 0) {
+      const patDoc = await Patient.findById(patientId);
+      const isDemo = patDoc?.isDemoSeed === true || 
+        ['pat-1', 'pat-2', 'pat-3'].includes(patDoc?.id) || 
+        ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patDoc?.name);
+      
+      if (!isDemo) {
+        return {
+          score: 0,
+          status: 'Pending Assessment',
+          source: 'baseline',
+          weeklyAggregates: {
+            gamesPlayedThisWeek: 0,
+            avgReactionTime: 0,
+            totalMistakesThisWeek: 0
+          }
+        };
+      }
+    }
+
     let gamesPlayedThisWeek = recentSessions.length;
     let totalReactionTime = 0;
     let reactionCount = 0;
@@ -84,10 +104,10 @@ async function calculatePatientMLHealth(patientId) {
   } catch (err) {
     console.warn('Error computing weekly ML health score:', err.message);
     return {
-      score: 85,
-      status: 'Stable',
+      score: 0,
+      status: 'Pending Assessment',
       source: 'fallback',
-      weeklyAggregates: { gamesPlayedThisWeek: 1, avgReactionTime: 3.0, totalMistakesThisWeek: 0 }
+      weeklyAggregates: { gamesPlayedThisWeek: 0, avgReactionTime: 0, totalMistakesThisWeek: 0 }
     };
   }
 }
@@ -310,7 +330,7 @@ router.get('/ml-health-score/:patientId', async (req, res) => {
           { id: rawId },
           { name: new RegExp(String(rawId).replace(/[-_]/g, ' ').trim(), 'i') }
         ]
-      }) || await Patient.findOne();
+      });
     }
 
     const patientId = targetPatient ? targetPatient._id : (mongoose.Types.ObjectId.isValid(rawId) ? rawId : null);
@@ -329,6 +349,17 @@ router.get('/ml-health-score/:patientId', async (req, res) => {
       await targetPatient.save();
     }
 
+    const isDemo = targetPatient?.isDemoSeed === true || 
+      ['pat-1', 'pat-2', 'pat-3'].includes(targetPatient?.id) || 
+      ['pat-1', 'pat-2', 'pat-3'].includes(targetPatient?._id?.toString()) || 
+      ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(targetPatient?.name);
+
+    const defaultReasoning = isDemo
+      ? 'Patient maintains regular cognitive engagement with fast reaction speeds. Adaptive difficulty calibrated for cognitive maintenance.'
+      : (mlResult.weeklyAggregates?.gamesPlayedThisWeek > 0
+          ? 'Initial session data recorded. AI telemetry analyzing accuracy and response timing.'
+          : 'No cognitive sessions recorded yet. Have the patient complete memory games in the patient portal to generate live AI clinical evaluation.');
+
     res.json({
       status: 'ok',
       patientId: patientId.toString(),
@@ -337,8 +368,8 @@ router.get('/ml-health-score/:patientId', async (req, res) => {
       clinicalStatus: mlResult.status,
       source: mlResult.source,
       weeklyAggregates: mlResult.weeklyAggregates,
-      recommendedDifficulty: targetPatient?.recommendedDifficulty || 2,
-      aiReasoning: targetPatient?.aiReasoning || 'AI model evaluated active weekly cognitive performance.'
+      recommendedDifficulty: targetPatient?.recommendedDifficulty || (isDemo ? 2 : 1),
+      aiReasoning: targetPatient?.aiReasoning || defaultReasoning
     });
   } catch (err) {
     console.error('Error in /ml-health-score endpoint:', err);

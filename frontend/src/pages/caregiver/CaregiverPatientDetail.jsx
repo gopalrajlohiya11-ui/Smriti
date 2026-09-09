@@ -484,8 +484,13 @@ export default function CaregiverPatientDetail() {
     );
   }
 
+  const isDemo = selectedPatient?.isDemoSeed === true || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(selectedPatient?.id) || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(selectedPatient?._id) || 
+    ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(selectedPatient?.name);
+
   const completedTodayCount = selectedPatient.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
-  const totalTodayCount = selectedPatient.todayReminders?.length || 10;
+  const totalTodayCount = selectedPatient.todayReminders?.length || (isDemo ? 10 : 0);
   const progressPct = totalTodayCount > 0 ? Math.round((completedTodayCount / totalTodayCount) * 100) : 0;
 
   // Calculate 7-day blended cognitive and routine performance from real MongoDB GameSessions
@@ -508,12 +513,18 @@ export default function CaregiverPatientDetail() {
         ? `${dayNames[dayDate.getDay()]} (Today)` 
         : dayNames[dayDate.getDay()];
 
-      // Base fallback values from patient model / mock data
-      const fallbackEntry = selectedPatient?.weeklyPerformance?.[index] || {
-        memoryScore: 84 + index,
-        routineScore: 88 + index,
-        overallScore: 86 + index
-      };
+      // Base fallback values ONLY for demo patients
+      const fallbackEntry = isDemo
+        ? (selectedPatient?.weeklyPerformance?.[index] || {
+            memoryScore: 84 + index,
+            routineScore: 88 + index,
+            overallScore: 86 + index
+          })
+        : {
+            memoryScore: 0,
+            routineScore: 0,
+            overallScore: 0
+          };
 
       // Match game sessions on this calendar day
       const daySessions = (gameSessions || []).filter(session => {
@@ -540,7 +551,7 @@ export default function CaregiverPatientDetail() {
           return sum + normalized;
         }, 0);
         memoryScore = Math.round(totalAccuracyOrScore / daySessions.length);
-        memoryScore = Math.min(100, Math.max(40, memoryScore));
+        memoryScore = Math.min(100, Math.max(0, memoryScore));
       }
 
       let routineScore = fallbackEntry.routineScore;
@@ -548,7 +559,16 @@ export default function CaregiverPatientDetail() {
         routineScore = Math.round((completedTodayCount / totalTodayCount) * 100);
       }
 
-      const overallScore = Math.round((memoryScore + routineScore) / 2);
+      let overallScore = 0;
+      if (isRealSession && routineScore > 0) {
+        overallScore = Math.round((memoryScore + routineScore) / 2);
+      } else if (isRealSession) {
+        overallScore = memoryScore;
+      } else if (routineScore > 0) {
+        overallScore = routineScore;
+      } else if (isDemo) {
+        overallScore = fallbackEntry.overallScore;
+      }
 
       return {
         day: dayLabel,
@@ -559,7 +579,7 @@ export default function CaregiverPatientDetail() {
         sessionCount: daySessions.length
       };
     });
-  }, [gameSessions, selectedPatient, completedTodayCount, totalTodayCount]);
+  }, [gameSessions, selectedPatient, completedTodayCount, totalTodayCount, isDemo]);
 
   return (
     <CaregiverLayout>
@@ -648,7 +668,7 @@ export default function CaregiverPatientDetail() {
                 <span>Preview Patient Portal</span>
               </button>
 
-              {selectedPatient.isDemoSeed ? (
+              {isDemo ? (
                 <button
                   type="button"
                   disabled
@@ -681,13 +701,18 @@ export default function CaregiverPatientDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Today's Routine Adherence</p>
-              <p className="text-xl font-bold text-slate-900">{completedTodayCount} of {totalTodayCount} Completed ({progressPct}%)</p>
+              <p className="text-xl font-bold text-slate-900">
+                {totalTodayCount === 0 
+                  ? '0 of 0 Completed (No routines scheduled)' 
+                  : `${completedTodayCount} of ${totalTodayCount} Completed (${progressPct}%)`
+                }
+              </p>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Active Engagement Streak</p>
               <p className="text-xl font-bold text-amber-900 flex items-center gap-1">
                 <Flame className="w-4 h-4 text-amber-800" />
-                <span>{selectedPatient.streakDays || 14} Consecutive Days</span>
+                <span>{selectedPatient.streakDays ?? (isDemo ? 14 : 0)} Consecutive Days</span>
               </p>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
@@ -746,12 +771,15 @@ export default function CaregiverPatientDetail() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clinical Status (ML Evaluated)</p>
               <div className="pt-0.5">
                 {(() => {
-                  const status = mlEvaluation?.clinicalStatus || selectedPatient?.clinicalStatus || 'Stable';
+                  const status = mlEvaluation?.clinicalStatus || (isDemo ? (selectedPatient?.clinicalStatus || 'Stable') : (gameSessions.length > 0 ? 'Evaluating' : 'Pending Assessment'));
                   const isStable = status.toLowerCase().includes('stable');
                   const isMild = status.toLowerCase().includes('mild') || status.toLowerCase().includes('monitor');
+                  const isPending = status.toLowerCase().includes('pending');
                   return (
                     <span className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-black text-sm border ${
-                      isStable
+                      isPending
+                        ? 'bg-slate-500/25 text-slate-300 border-slate-500/40'
+                        : isStable
                         ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
                         : isMild
                         ? 'bg-amber-500/25 text-amber-300 border-amber-500/40'
@@ -770,12 +798,12 @@ export default function CaregiverPatientDetail() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cognitive Health Score</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-white">
-                  {mlEvaluation?.cognitiveHealthScore || selectedPatient?.cognitiveHealthScore || 88}
+                  {mlEvaluation?.cognitiveHealthScore ?? (isDemo ? (selectedPatient?.cognitiveHealthScore || 88) : (gameSessions.length > 0 ? 70 : 0))}
                 </span>
                 <span className="text-xs text-slate-400 font-bold">/ 100</span>
                 <span className="text-xs text-emerald-400 font-bold ml-auto flex items-center gap-0.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>ML Score</span>
+                  <span>{isDemo || gameSessions.length > 0 ? 'ML Score' : 'Baseline'}</span>
                 </span>
               </div>
             </div>
@@ -785,9 +813,9 @@ export default function CaregiverPatientDetail() {
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Recommended Difficulty Tier</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-amber-300">
-                  Level {mlEvaluation?.recommendedDifficulty || selectedPatient?.recommendedDifficulty || 2}
+                  Level {mlEvaluation?.recommendedDifficulty || (isDemo ? (selectedPatient?.recommendedDifficulty || 2) : 1)}
                 </span>
-                <span className="text-xs text-slate-300 font-semibold">(Adaptive AI)</span>
+                <span className="text-xs text-slate-300 font-semibold">({isDemo || gameSessions.length > 0 ? 'Adaptive AI' : 'Initial Tier'})</span>
               </div>
             </div>
 
@@ -798,8 +826,16 @@ export default function CaregiverPatientDetail() {
             <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-white">AI Model Reasoning: </span>
-              <span>{mlEvaluation?.aiReasoning || selectedPatient?.aiReasoning || "Patient maintains regular cognitive engagement with fast reaction speeds. Adaptive difficulty calibrated for cognitive maintenance."}</span>
-              {mlEvaluation?.weeklyAggregates && (
+              <span>
+                {mlEvaluation?.aiReasoning || (isDemo 
+                  ? (selectedPatient?.aiReasoning || "Patient maintains regular cognitive engagement with fast reaction speeds. Adaptive difficulty calibrated for cognitive maintenance.")
+                  : (gameSessions.length > 0 
+                      ? "Initial session data recorded. AI telemetry analyzing accuracy and response timing." 
+                      : "No cognitive sessions recorded yet. Have the patient complete memory games in the patient portal to generate live AI clinical evaluation."
+                    )
+                )}
+              </span>
+              {mlEvaluation?.weeklyAggregates && mlEvaluation.weeklyAggregates.gamesPlayedThisWeek > 0 && (
                 <span className="block text-[11px] text-slate-400 mt-1">
                   Weekly Telemetry: {mlEvaluation.weeklyAggregates.gamesPlayedThisWeek} game(s) played • Avg reaction time: {mlEvaluation.weeklyAggregates.avgReactionTime}s • Mistakes: {mlEvaluation.weeklyAggregates.totalMistakesThisWeek}
                 </span>
@@ -823,13 +859,24 @@ export default function CaregiverPatientDetail() {
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Real Game Sessions Synced ({gameSessions.length})</span>
                 </span>
-              ) : (
+              ) : isDemo ? (
                 <span className="text-xs text-slate-500 font-semibold">
                   Clinical Score Scale (0-100)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 shadow-2xs">
+                  <span>Awaiting Telemetry (0 Sessions)</span>
                 </span>
               )}
             </div>
           </div>
+
+          {!isDemo && (!gameSessions || gameSessions.length === 0) && (
+            <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80 text-xs text-amber-900 flex items-center gap-2.5">
+              <span className="text-base shrink-0">📊</span>
+              <span>No cognitive game sessions recorded this week. Have the patient play daily challenges in the Patient Portal to generate live performance history.</span>
+            </div>
+          )}
 
           <div className="w-full h-64 bg-slate-50 rounded-xl p-4 border border-slate-200/80">
             <ResponsiveContainer width="100%" height="100%">
@@ -846,7 +893,7 @@ export default function CaregiverPatientDetail() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis dataKey="day" stroke="#64748b" tick={{ fontSize: 11 }} />
-                <YAxis domain={[40, 100]} stroke="#64748b" tick={{ fontSize: 11 }} />
+                <YAxis domain={[0, 100]} stroke="#64748b" tick={{ fontSize: 11 }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: '#ffffff', 
