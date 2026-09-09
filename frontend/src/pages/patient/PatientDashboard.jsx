@@ -29,9 +29,11 @@ import {
   Moon,
   Sparkles,
   ShieldCheck,
-  MessageCircle
+  MessageCircle,
+  Trees
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { NORTHEAST_STATES, getRegionById } from '../../data/regionalData';
 
 export default function PatientDashboard() {
   const { t } = useTranslation();
@@ -107,6 +109,24 @@ export default function PatientDashboard() {
     const timer = setInterval(() => setNowTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Regional State Personalization (Seven Sisters + Sikkim)
+  const [selectedStateId, setSelectedStateId] = useState(() => {
+    return localStorage.getItem('smriti_patient_state') || 'assam';
+  });
+
+  const currentRegion = useMemo(() => getRegionById(selectedStateId), [selectedStateId]);
+
+  useEffect(() => {
+    const handleStateChange = () => {
+      const stored = localStorage.getItem('smriti_patient_state');
+      if (stored && stored !== selectedStateId) {
+        setSelectedStateId(stored);
+      }
+    };
+    window.addEventListener('smriti_state_changed', handleStateChange);
+    return () => window.removeEventListener('smriti_state_changed', handleStateChange);
+  }, [selectedStateId]);
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioMessage, setAudioMessage] = useState('');
@@ -388,64 +408,129 @@ export default function PatientDashboard() {
         )}
 
         {/* ======================================================== */}
-        {/* 1. STATUS HEADER: GREETING & VOICE BUTTON                */}
+        {/* 1. STATE-PERSONALIZED HORIZON HERO BANNER                */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#E5E0D8] shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
-            
-            <div className="flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-3.5 sm:gap-4">
-              <img
-                src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
-                alt={activePatient?.name || "Patient"}
-                className="w-20 h-20 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
-              />
-              <div className="space-y-0.5">
-                <p className="text-xs font-semibold text-[#6B6B6B] uppercase tracking-wider">
-                  {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
-                </p>
-                
-                <div className="flex items-center justify-center sm:justify-start gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
-                    {greetingWord}, <span className="text-[#B5502E]">{(activePatient?.name || 'Ramesh').split(' ')[0]}</span>
-                  </h1>
-
+        <div className="relative rounded-3xl overflow-hidden shadow-md border border-[#E5E0D8]">
+          {/* Scenic Landscape Background with Gradient Overlay */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${currentRegion.landscapeImage})` }}
+          />
+          <div className={`absolute inset-0 bg-gradient-to-r ${currentRegion.bannerGradient || 'from-[#0E382B]/90 via-[#1B4D3E]/85 to-[#0E382B]/90'} backdrop-blur-[1px]`} />
+          
+          {/* Content Over Banner */}
+          <div className="relative z-10 p-5 sm:p-8 text-white">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+              
+              <div className="flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-4">
+                <div className="relative">
+                  <img
+                    src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
+                    alt={activePatient?.name || "Patient"}
+                    className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover border-3 border-amber-300 shadow-md"
+                  />
+                  <span className="absolute -bottom-1 -right-1 text-base bg-black/60 rounded-full px-1 border border-white/40 shadow-xs">
+                    {currentRegion.emblemEmoji}
+                  </span>
                 </div>
 
-                <p className="text-xs text-[#6B6B6B] font-medium flex items-center justify-center sm:justify-start gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#B5502E]" />
-                  <span>{activePatient?.location || 'Guwahati, Assam'}</span>
-                </p>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-emerald-100 text-[11px] font-black uppercase tracking-wider border border-white/20 backdrop-blur-xs">
+                      {currentRegion.greetingNative}
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-100/90 uppercase tracking-wider">
+                      {nowTime.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
+                    {greetingWord}, <span className="text-amber-300">{(activePatient?.name || 'Ramesh').split(' ')[0]}</span>
+                  </h1>
+
+                  <p className="text-xs sm:text-sm text-emerald-100/90 font-medium flex items-center justify-center sm:justify-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-300" />
+                    <span>{currentRegion.prominentCity}</span>
+                    <span className="text-emerald-300/60">•</span>
+                    <span className="italic text-emerald-200/80">{currentRegion.tagline}</span>
+                  </p>
+                </div>
               </div>
+
+              {/* Action Cluster: Status Audio + Hometown Sounds */}
+              <div className="flex items-center justify-center sm:justify-end gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
+                
+                {/* Memory of Home Quick Launcher */}
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('smriti_open_memory_modal'))}
+                  className="min-h-[50px] sm:min-h-[54px] px-4 py-2.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-black shadow-md bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 transition-all cursor-pointer active:scale-98 shrink-0 border border-amber-300"
+                  title="Play relaxing local nature sounds & stories"
+                >
+                  <Trees className="w-5 h-5 text-stone-950 shrink-0" />
+                  <span>{isHindi ? "घर की स्मृति 🌿" : "Memory of Home 🌿"}</span>
+                </button>
+
+                {/* Listen to Daily Status */}
+                <button
+                  type="button"
+                  onClick={handleStatusAudio}
+                  className={`min-h-[50px] sm:min-h-[54px] px-4 py-2.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-black shadow-md transition-all cursor-pointer active:scale-98 shrink-0 ${
+                    isPlayingAudio
+                      ? 'bg-amber-400 text-stone-900 ring-4 ring-amber-300/40 animate-pulse'
+                      : 'bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xs'
+                  }`}
+                  title="Listen to daily status"
+                  aria-label="Listen to Status"
+                >
+                  <Volume2 className="w-5 h-5 shrink-0 text-amber-300" />
+                  <span>{isPlayingAudio ? (isHindi ? 'बोल रहे हैं...' : 'Speaking...') : (isHindi ? 'स्थिति सुनें' : 'Listen Status')}</span>
+                </button>
+
+              </div>
+
             </div>
 
-            {/* Header Right Action Cluster */}
-            <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
-              
-              {/* Listen to Status Button */}
-              <button
-                type="button"
-                onClick={handleStatusAudio}
-                className={`min-h-[48px] sm:min-h-[56px] px-3.5 sm:px-4 py-2.5 sm:py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-black shadow-2xs transition-all cursor-pointer active:scale-98 shrink-0 ${
-                  isPlayingAudio
-                    ? 'bg-[#2C5AA0] text-white ring-4 ring-[#2C5AA0]/30 animate-pulse'
-                    : 'bg-stone-100 hover:bg-stone-200 text-[#2B2B2B] border border-[#E5E0D8]'
-                }`}
-                title="Listen to daily status"
-                aria-label="Listen to Status"
-              >
-                <Volume2 className="w-5 h-5 shrink-0 text-[#2C5AA0]" />
-                <span>{isPlayingAudio ? (isHindi ? 'बोल रहे हैं...' : 'Speaking...') : (isHindi ? 'स्थिति सुनें' : 'Listen')}</span>
-              </button>
+            {isPlayingAudio && audioMessage && (
+              <div className="mt-4 p-3.5 bg-black/40 rounded-2xl text-xs sm:text-sm text-amber-200 font-bold text-center border border-amber-300/30 animate-in fade-in">
+                🔊 "{audioMessage}"
+              </div>
+            )}
+          </div>
+        </div>
 
+        {/* ======================================================== */}
+        {/* 1.5 REGIONAL PROVERB & REASSURANCE CARD                  */}
+        {/* ======================================================== */}
+        <div className="bg-gradient-to-r from-[#FDFBF7] to-[#F5EFEB] rounded-2xl p-4 sm:p-5 border border-[#E5DFD7] shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0E382B] text-amber-300 flex items-center justify-center text-xl shrink-0 shadow-xs">
+              {currentRegion.emblemEmoji}
             </div>
-
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base font-black text-[#0E382B]">
+                  {currentRegion.proverb}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-stone-600 font-medium">
+                {currentRegion.proverbTranslation}
+              </p>
+            </div>
           </div>
 
-          {isPlayingAudio && audioMessage && (
-            <div className="mt-4 p-3.5 bg-[#EFF4FA] rounded-2xl text-xs sm:text-sm text-[#2C5AA0] font-bold text-center border border-[#2C5AA0]/20 animate-in fade-in">
-              🔊 "{audioMessage}"
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('smriti_open_memory_modal'))}
+              className="text-[11px] text-[#0E382B] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 border border-emerald-300/60 cursor-pointer flex items-center gap-1 transition-colors"
+            >
+              <span>🌿 Nature Sounds</span>
+            </button>
+            <div className="text-[11px] text-stone-500 font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
+              🧵 {currentRegion.textileMotif}
             </div>
-          )}
+          </div>
         </div>
 
         {/* ======================================================== */}

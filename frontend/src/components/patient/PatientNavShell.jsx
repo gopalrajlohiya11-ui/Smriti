@@ -21,10 +21,15 @@ import {
   X,
   Check,
   Download,
-  Smartphone
+  Smartphone,
+  Trees,
+  Sparkles,
+  MapPin
 } from 'lucide-react';
 import FoxtailOrchidIcon from '../FoxtailOrchidIcon';
 import { getStoredPatientSession } from '../../utils/authUtils';
+import MemoryOfHomeModal from './MemoryOfHomeModal';
+import { NORTHEAST_STATES, getRegionById } from '../../data/regionalData';
 
 export default function PatientNavShell({ children, showBack = false, pageTitle = '' }) {
   const { t } = useTranslation();
@@ -54,6 +59,37 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const [comingSoonToast, setComingSoonToast] = useState('');
+  const [memoryModalOpen, setMemoryModalOpen] = useState(false);
+
+  // Regional State Personalization (Assam, Meghalaya, etc.)
+  const [selectedStateId, setSelectedStateId] = useState(() => {
+    return localStorage.getItem('smriti_patient_state') || 'assam';
+  });
+
+  const currentRegion = getRegionById(selectedStateId);
+
+  useEffect(() => {
+    const handleStateChange = () => {
+      const stored = localStorage.getItem('smriti_patient_state');
+      if (stored && stored !== selectedStateId) {
+        setSelectedStateId(stored);
+      }
+    };
+    const handleOpenMemoryModal = () => setMemoryModalOpen(true);
+
+    window.addEventListener('smriti_state_changed', handleStateChange);
+    window.addEventListener('smriti_open_memory_modal', handleOpenMemoryModal);
+    return () => {
+      window.removeEventListener('smriti_state_changed', handleStateChange);
+      window.removeEventListener('smriti_open_memory_modal', handleOpenMemoryModal);
+    };
+  }, [selectedStateId]);
+
+  const handleSelectState = (stateId) => {
+    setSelectedStateId(stateId);
+    localStorage.setItem('smriti_patient_state', stateId);
+    window.dispatchEvent(new Event('smriti_state_changed'));
+  };
 
   // A+ / A- Text Size Accessibility (NHS-Style)
   const [fontSizeLevel, setFontSizeLevel] = useState(() => {
@@ -142,33 +178,65 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col md:flex-row text-[#2B2B2B]">
       
       {/* ======================================================== */}
-      {/* 1. DESKTOP / TABLET PERSISTENT LEFT SIDEBAR              */}
+      {/* 1. DESKTOP / TABLET PERSISTENT DEEP FOREST GREEN SIDEBAR */}
       {/* ======================================================== */}
-      <aside className="hidden md:flex flex-col justify-between w-64 lg:w-72 bg-white border-r border-[#E5E0D8] sticky top-0 h-screen p-5 shrink-0 z-30 shadow-2xs">
+      <aside className="hidden md:flex flex-col justify-between w-64 lg:w-72 bg-gradient-to-b from-[#0E382B] via-[#0A2D22] to-[#061C15] text-white sticky top-0 h-screen p-5 shrink-0 z-30 shadow-xl relative border-r-4 border-[#B85026]/40">
         
+        {/* Subtle Regional Weaving Textile Border Accent (Gamosa / Dakmanda Motif Line) */}
+        <div 
+          className="absolute top-0 right-0 bottom-0 w-1.5 opacity-80" 
+          style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, #B85026 0px, #B85026 8px, #FFFFFF 8px, #FFFFFF 12px, #1F6B4A 12px, #1F6B4A 20px, #D4AF37 20px, #D4AF37 24px)'
+          }} 
+        />
+
         {/* Brand & Logo */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Link to="/patient" className="flex items-center gap-3 group focus:outline-none">
-            <div className="w-12 h-12 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] flex items-center justify-center text-white shadow-xs transition-colors">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#B85026] to-[#8C3A18] flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-105 border border-amber-300/30">
               <span className="text-2xl select-none" role="img" aria-label="Smriti Logo">🌸</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-black tracking-tight text-[#2B2B2B]">
+                <span className="text-2xl font-black tracking-tight text-white">
                   Smriti
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 rounded-full">
-                  Care
+                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
+                  NER Care
                 </span>
               </div>
-              <p className="text-[11px] text-[#6B6B6B] font-medium leading-tight">
-                Memory Companion
+              <p className="text-[11px] text-emerald-200/70 font-medium leading-tight flex items-center gap-1 mt-0.5">
+                <span>{currentRegion.emblemEmoji}</span>
+                <span>{currentRegion.name} Edition</span>
               </p>
             </div>
           </Link>
 
+          {/* Regional Personalization Card / Memory of Home Launcher */}
+          <button
+            type="button"
+            onClick={() => setMemoryModalOpen(true)}
+            className="w-full p-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/15 text-left transition-all cursor-pointer group shadow-sm flex items-center justify-between gap-2"
+            title="Open Memory of Home — Ambient Sounds & Stories"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-400/30 group-hover:scale-105 transition-transform">
+                <Trees className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-white truncate group-hover:text-emerald-300 transition-colors">
+                  Memory of Home 🌿
+                </p>
+                <p className="text-[10px] text-emerald-200/80 truncate font-medium">
+                  {currentRegion.name} • Sounds & Tales
+                </p>
+              </div>
+            </div>
+            <Sparkles className="w-4 h-4 text-amber-300 shrink-0 group-hover:rotate-12 transition-transform" />
+          </button>
+
           {/* Nav Links: 5 Persistent Destinations with 52px Touch Targets */}
-          <nav className="space-y-2 pt-2" aria-label="Main Navigation">
+          <nav className="space-y-1.5 pt-1" aria-label="Main Navigation">
             {navItems.map((item) => {
               const active = isNavActive(item);
               const Icon = item.icon;
@@ -180,18 +248,18 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                   to={item.path}
                   className={`w-full min-h-[52px] px-4 py-3 rounded-2xl font-black text-sm lg:text-base flex items-center gap-3.5 transition-all cursor-pointer ${
                     active
-                      ? 'bg-[#FDF6F0] text-[#B5502E] border-2 border-[#B5502E]/30 shadow-xs'
-                      : 'text-[#2B2B2B] hover:text-[#B5502E] hover:bg-stone-50 border-2 border-transparent'
+                      ? 'bg-gradient-to-r from-[#B85026] to-[#A03E18] text-white shadow-md border-l-4 border-amber-300'
+                      : 'text-emerald-100/90 hover:text-white hover:bg-white/10 border-l-4 border-transparent'
                   }`}
                 >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center relative ${
-                    active ? 'bg-[#B5502E] text-white' : 'bg-stone-100 text-[#6B6B6B]'
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center relative transition-colors ${
+                    active ? 'bg-white/20 text-white' : 'bg-white/5 text-emerald-200/80'
                   }`}>
                     <Icon className="w-5 h-5 stroke-[2.5]" />
                   </div>
                   <span className="flex-1">{item.label}</span>
                   {isReminders && overdueCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-[#C0392B] text-white text-xs font-black shrink-0 animate-in fade-in">
+                    <span className="px-2 py-0.5 rounded-full bg-[#E53E3E] text-white text-xs font-black shrink-0 animate-in fade-in shadow-xs">
                       {overdueCount}
                     </span>
                   )}
@@ -202,18 +270,18 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         </div>
 
         {/* Sidebar Footer: Patient Badge + Switch User */}
-        <div className="pt-4 border-t border-[#E5E0D8] space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5E0D8]">
+        <div className="pt-4 border-t border-white/10 space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-black/25 rounded-2xl border border-white/10">
             <img 
               src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
               alt={activePatient?.name || "Patient"}
-              className="w-10 h-10 rounded-xl object-cover border border-[#E5E0D8]"
+              className="w-10 h-10 rounded-xl object-cover border border-emerald-400/30"
             />
             <div className="truncate flex-1">
-              <p className="text-xs font-bold text-[#2B2B2B] truncate">{activePatient?.name || 'Ramesh Sharma'}</p>
-              <p className="text-[11px] text-[#1F6B4A] font-semibold flex items-center gap-1">
+              <p className="text-xs font-bold text-white truncate">{activePatient?.name || 'Ramesh Sharma'}</p>
+              <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
-                <span>Active</span>
+                <span>{currentRegion.prominentCity.split(',')[0]}</span>
               </p>
             </div>
           </div>
@@ -222,9 +290,9 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             <button
               type="button"
               onClick={() => navigate('/caregiver')}
-              className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-teal-200"
+              className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-emerald-200 bg-emerald-900/40 hover:bg-emerald-900/60 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-emerald-500/30"
             >
-              <ArrowLeft className="w-4 h-4 text-teal-700" />
+              <ArrowLeft className="w-4 h-4 text-emerald-300" />
               <span>Exit Preview</span>
             </button>
           ) : (
@@ -234,7 +302,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 logoutPatient();
                 navigate('/');
               }}
-              className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-[#6B6B6B] hover:text-[#C0392B] hover:bg-rose-50 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-rose-200"
+              className="w-full min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-emerald-200/70 hover:text-white hover:bg-rose-900/40 flex items-center justify-center gap-2 transition-colors cursor-pointer border border-transparent hover:border-rose-400/30"
             >
               <LogOut className="w-4 h-4" />
               <span>{isHindi ? "लॉग आउट" : "Log Out"}</span>
@@ -314,7 +382,19 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
           </div>
 
           {/* Right Controls: Desktop Inline controls vs Mobile Compact Settings Sheet Trigger */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+
+            {/* DESKTOP & TABLET: Regional Home & Ambient Trigger Pill */}
+            <button
+              type="button"
+              onClick={() => setMemoryModalOpen(true)}
+              className="hidden sm:inline-flex min-h-[44px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-800 to-[#0E382B] text-white hover:from-emerald-700 hover:to-[#144939] text-xs font-black items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95 border border-emerald-600/40"
+              title="Memory of Home — Ambient Nature Sounds & Reminiscence Stories"
+            >
+              <Trees className="w-4 h-4 text-emerald-300" />
+              <span>{currentRegion.emblemEmoji} {currentRegion.name}</span>
+              <span className="text-[10px] bg-white/20 text-emerald-100 px-1.5 py-0.5 rounded font-mono">Sounds 🌿</span>
+            </button>
             
             {/* MOBILE ONLY: Single Settings Button (Opens Slide-up Sheet) */}
             <div className="md:hidden">
@@ -326,7 +406,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 aria-label="Settings"
               >
                 <SlidersHorizontal className="w-4 h-4 text-[#B5502E]" />
-                <span className="text-[11px] font-bold">{currentLanguage.code.toUpperCase()}</span>
+                <span className="text-[11px] font-bold">{currentRegion.emblemEmoji}</span>
               </button>
             </div>
 
@@ -340,7 +420,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             >
               <Type className="w-4 h-4 text-[#B5502E]" />
               <span className="font-mono font-black">
-                {fontSizeLevel === 'normal' ? 'A (Normal)' : fontSizeLevel === 'large' ? 'A+ (Large)' : 'A++ (Max)'}
+                {fontSizeLevel === 'normal' ? 'A' : fontSizeLevel === 'large' ? 'A+' : 'A++'}
               </span>
             </button>
 
@@ -585,6 +665,47 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
               </div>
             </div>
 
+            {/* Northeast State Personalization */}
+            <div className="space-y-2 pt-1 border-t border-stone-100">
+              <label className="text-xs font-black text-[#0E382B] uppercase tracking-wider flex items-center gap-1.5">
+                <Trees className="w-4 h-4 text-[#0E382B]" />
+                <span>{isHindi ? "पूर्वोत्तर राज्य (Northeast State)" : "Patient Hometown / Region (NER)"}</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+                {NORTHEAST_STATES.map((st) => {
+                  const isSelected = selectedStateId.toLowerCase() === st.id.toLowerCase();
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => handleSelectState(st.id)}
+                      className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors cursor-pointer border ${
+                        isSelected
+                          ? 'bg-[#EDF7F2] text-[#0E382B] border-[#1F6B4A] font-black'
+                          : 'bg-stone-50 text-[#2B2B2B] border-stone-200 hover:bg-stone-100'
+                      }`}
+                    >
+                      <span className="truncate">{st.emblemEmoji} {st.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0E382B] stroke-[3] shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Launch Memory of Home in Mobile Sheet */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileSettingsOpen(false);
+                  setMemoryModalOpen(true);
+                }}
+                className="w-full mt-2 min-h-[46px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0E382B] to-[#164E3D] text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <Trees className="w-4 h-4 text-emerald-300" />
+                <span>Open Memory of Home 🌿 (Sounds & Stories)</span>
+              </button>
+            </div>
+
             {/* Install App Button */}
             <div className="pt-2 border-t border-stone-100">
               <button
@@ -633,6 +754,15 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
           </div>
         </div>
       )}
+
+      {/* Memory of Home Ambient & Hometown Stories Modal */}
+      <MemoryOfHomeModal
+        isOpen={memoryModalOpen}
+        onClose={() => setMemoryModalOpen(false)}
+        selectedStateId={selectedStateId}
+        onSelectState={handleSelectState}
+        patientName={activePatient?.name || 'Elder'}
+      />
 
     </div>
   );
