@@ -135,7 +135,7 @@ export default function PatientProfile() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
               <div className="relative shrink-0">
                 <img
-                  src={activePatient?.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'}
+                  src={activePatient?.avatar || '/avatars/ramesh_sharma.png'}
                   alt={activePatient?.name || 'Patient'}
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
                 />

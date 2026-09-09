@@ -60,6 +60,7 @@ async function seedCleanDemoData() {
       password: hashedPassword,
       contact: '+91 94350 12345',
       role: 'clinician',
+      avatar: '/avatars/dr_ananya_sharma.png',
       notificationPreference: 'whatsapp',
       patientIds: []
     });
@@ -86,7 +87,7 @@ async function seedCleanDemoData() {
       emergencyContact: '+91 98640 54321',
       notes: 'Enjoys morning walks by Brahmaputra and Assam tea. Responds warmly to family photos and Assamese folk music.',
       medicalNotes: 'Mild Alzheimer\'s Disease, Hypertension. Morning Donepezil 5mg.',
-      avatar: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
+      avatar: '/avatars/ramesh_sharma.png',
       caregiverId: caregiverAnanya._id,
       notificationPreference: 'whatsapp',
       isDemoSeed: true
@@ -107,7 +108,7 @@ async function seedCleanDemoData() {
       emergencyContact: '+91 94361 98765',
       notes: 'Loves classical choir music, Shillong pine walks, and weaving handicrafts. Speaks Khasi & English.',
       medicalNotes: 'Early-Stage Memory Impairment, Mild Osteoarthritis. Morning Memantine 10mg.',
-      avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80',
+      avatar: '/avatars/meera_baruah.png',
       caregiverId: caregiverAnanya._id,
       notificationPreference: 'whatsapp',
       isDemoSeed: true

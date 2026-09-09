@@ -92,7 +92,7 @@ export function AppProvider({ children }) {
   });
   const [caregiverUser, setCaregiverUser] = useState(() => {
     const session = getStoredCaregiverSession();
-    return (session.isValid && session.user) ? session.user : { name: "Dr. Ananya Sharma", role: "clinician", email: "dr.ananya@smriti.in" };
+    return (session.isValid && session.user) ? session.user : { name: "Dr. Ananya Sharma", role: "clinician", email: "dr.ananya@smriti.in", avatar: "/avatars/dr_ananya_sharma.png" };
   });
 
   // Patient Authentication (Validated Persistent Session)
@@ -306,7 +306,7 @@ export function AppProvider({ children }) {
           rawPhone: bp.phoneNumber,
           location: bp.location || (isDemo && fallbackPatient ? fallbackPatient.location : 'Guwahati, Assam'),
           nativeLanguage: bp.language || (isDemo && fallbackPatient ? fallbackPatient.nativeLanguage : 'Assamese'),
-          avatar: bp.avatar || (isDemo && fallbackPatient ? fallbackPatient.avatar : 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'),
+          avatar: bp.avatar || (isDemo && fallbackPatient ? fallbackPatient.avatar : '/avatars/ramesh_sharma.png'),
           lastActive: isDemo ? 'Active on WhatsApp' : 'New Patient Registered',
           streakDays: isDemo ? (fallbackPatient?.streakDays || 14) : calculatePatientStreak(bp, [], formattedReminders),
           cognitiveStage: bp.cognitiveStage || (isDemo && fallbackPatient ? fallbackPatient.cognitiveStage : 'Early Memory Support'),
@@ -707,7 +707,7 @@ export function AppProvider({ children }) {
         phone: newPatientData.phone || "+91 90000 00000",
         location: newPatientData.location || "Guwahati, Assam",
         nativeLanguage: newPatientData.nativeLanguage || "Assamese",
-        avatar: newPatientData.avatar || `https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80`,
+        avatar: newPatientData.avatar || `/avatars/ramesh_sharma.png`,
         lastActive: "Just now",
         streakDays: 0,
         cognitiveStage: newPatientData.cognitiveStage || "Early Memory Support",

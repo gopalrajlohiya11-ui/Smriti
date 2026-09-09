@@ -251,8 +251,8 @@ export default function CaregiverDashboard() {
       pin: cleanPin,
       age: parseInt(newPatientForm.age, 10),
       avatar: newPatientForm.gender === 'Female' 
-        ? 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80'
-        : 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'
+        ? '/avatars/meera_baruah.png'
+        : '/avatars/ramesh_sharma.png'
     });
 
     if (isDeviceBiometricSupported && created) {

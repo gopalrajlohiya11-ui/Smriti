@@ -85,7 +85,7 @@ export default function CaregiverNotifications() {
                   {/* Left: Patient Avatar + Alert Details */}
                   <div className="flex items-start gap-4">
                     <img 
-                      src={targetPatient?.avatar || flag.patientAvatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'} 
+                      src={targetPatient?.avatar || flag.patientAvatar || '/avatars/ramesh_sharma.png'} 
                       alt={targetPatient?.name || 'Patient'} 
                       className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs" 
                     />

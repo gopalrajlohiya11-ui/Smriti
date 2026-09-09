@@ -395,7 +395,7 @@ export default function PatientDashboard() {
             
             <div className="flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-3.5 sm:gap-4">
               <img
-                src={activePatient?.avatar || "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80"}
+                src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
                 alt={activePatient?.name || "Patient"}
                 className="w-20 h-20 sm:w-18 sm:h-18 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
               />

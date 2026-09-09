@@ -1946,7 +1946,7 @@ export default function CaregiverPatientDetail() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <img
-                    src={avatarPreview || editForm.avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80'}
+                    src={avatarPreview || editForm.avatar || '/avatars/ramesh_sharma.png'}
                     alt="Preview"
                     className="w-16 h-16 rounded-2xl object-cover border border-slate-300"
                   />

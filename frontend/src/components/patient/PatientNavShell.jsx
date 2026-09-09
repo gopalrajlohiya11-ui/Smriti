@@ -205,7 +205,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         <div className="pt-4 border-t border-[#E5E0D8] space-y-3">
           <div className="flex items-center gap-3 p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5E0D8]">
             <img 
-              src={activePatient?.avatar || "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80"}
+              src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
               alt={activePatient?.name || "Patient"}
               className="w-10 h-10 rounded-xl object-cover border border-[#E5E0D8]"
             />
