@@ -16,6 +16,11 @@ import {
   fetchPublicPatientApi,
   fetchPatientReminders, 
   toggleReminderStatus,
+  createReminderApi,
+  createBatchRemindersApi,
+  updateReminderApi,
+  deleteReminderApi,
+  clearPatientRemindersApi,
   dismissReminderApi,
   fetchActiveAlertsApi,
   loginCaregiverApi,
@@ -927,6 +932,158 @@ export function AppProvider({ children }) {
     }
   };
 
+  // 6b. Add New Reminder for Patient
+  const addReminder = async (patientId, reminderData) => {
+    const targetPId = patientId || activePatientId;
+    const tempId = `rem-temp-${Date.now()}`;
+    const newRem = {
+      id: tempId,
+      _id: tempId,
+      type: reminderData.type || 'activity',
+      title: reminderData.title || 'Daily Routine',
+      detail: reminderData.detail || '',
+      time: reminderData.time || (reminderData.scheduledTime ? new Date(reminderData.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '9:00 AM'),
+      status: 'pending',
+      acknowledged: false,
+      dismissed: false,
+      scheduledTime: reminderData.scheduledTime || new Date()
+    };
+
+    // Optimistic update
+    setPatients(prev => prev.map(p => {
+      if (matchPatientHelper(p, targetPId)) {
+        const updatedReminders = [...(p.todayReminders || []), newRem];
+        return { ...p, todayReminders: updatedReminders };
+      }
+      return p;
+    }));
+
+    try {
+      const created = await createReminderApi(targetPId, reminderData);
+      setTimeout(loadRealData, 400);
+      return created;
+    } catch (err) {
+      console.warn('Backend add reminder error:', err.message);
+      setTimeout(loadRealData, 500);
+      return newRem;
+    }
+  };
+
+  // 6c. Edit/Update Reminder Full Details
+  const updateReminder = async (patientId, reminderId, updatedData) => {
+    const targetPId = patientId || activePatientId;
+
+    // Optimistic update
+    setPatients(prev => prev.map(p => {
+      if (matchPatientHelper(p, targetPId)) {
+        const updatedReminders = (p.todayReminders || []).map(r => {
+          if (r.id === reminderId || r._id === reminderId) {
+            return {
+              ...r,
+              ...updatedData,
+              time: updatedData.time || (updatedData.scheduledTime ? new Date(updatedData.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : r.time)
+            };
+          }
+          return r;
+        });
+        return { ...p, todayReminders: updatedReminders };
+      }
+      return p;
+    }));
+
+    try {
+      const res = await updateReminderApi(reminderId, { ...updatedData, patientId: targetPId });
+      setTimeout(loadRealData, 400);
+      return res;
+    } catch (err) {
+      console.warn('Backend update reminder error:', err.message);
+      setTimeout(loadRealData, 500);
+      return updatedData;
+    }
+  };
+
+  // 6d. Delete Single Reminder
+  const deleteReminder = async (patientId, reminderId) => {
+    const targetPId = patientId || activePatientId;
+
+    // Optimistic update
+    setPatients(prev => prev.map(p => {
+      if (matchPatientHelper(p, targetPId)) {
+        const updatedReminders = (p.todayReminders || []).map((r, rIdx) => {
+          if (r.id === reminderId || r._id === reminderId || (typeof reminderId === 'string' && reminderId.startsWith('rem-') && parseInt(reminderId.replace('rem-', ''), 10) - 1 === rIdx)) {
+            return null;
+          }
+          return r;
+        }).filter(Boolean);
+        return { ...p, todayReminders: updatedReminders };
+      }
+      return p;
+    }));
+
+    try {
+      const res = await deleteReminderApi(reminderId, targetPId);
+      setTimeout(loadRealData, 400);
+      return res;
+    } catch (err) {
+      console.warn('Backend delete reminder error:', err.message);
+      setTimeout(loadRealData, 500);
+    }
+  };
+
+  // 6e. Apply Standard 10-Routine Template (Batch)
+  const applyStandardReminders = async (patientId, templateList, replaceExisting = true) => {
+    const targetPId = patientId || activePatientId;
+    const listToApply = Array.isArray(templateList) ? templateList : standard10Reminders;
+
+    // Optimistic update
+    setPatients(prev => prev.map(p => {
+      if (matchPatientHelper(p, targetPId)) {
+        const formatted = listToApply.map((item, idx) => ({
+          id: `rem-applied-${idx}-${Date.now()}`,
+          _id: `rem-applied-${idx}-${Date.now()}`,
+          type: item.type || 'activity',
+          title: item.title,
+          detail: item.detail || '',
+          time: item.time || '9:00 AM',
+          status: item.acknowledged ? 'completed' : 'pending',
+          acknowledged: !!item.acknowledged,
+          dismissed: false,
+          scheduledTime: item.scheduledTime || new Date()
+        }));
+        return { ...p, todayReminders: replaceExisting ? formatted : [...(p.todayReminders || []), ...formatted] };
+      }
+      return p;
+    }));
+
+    try {
+      const res = await createBatchRemindersApi(targetPId, listToApply, replaceExisting);
+      setTimeout(loadRealData, 500);
+      return res;
+    } catch (err) {
+      console.warn('Backend batch reminders error:', err.message);
+      setTimeout(loadRealData, 600);
+    }
+  };
+
+  // 6f. Clear All Reminders for Patient
+  const clearAllPatientReminders = async (patientId) => {
+    const targetPId = patientId || activePatientId;
+    setPatients(prev => prev.map(p => {
+      if (matchPatientHelper(p, targetPId)) {
+        return { ...p, todayReminders: [] };
+      }
+      return p;
+    }));
+
+    try {
+      const res = await clearPatientRemindersApi(targetPId);
+      setTimeout(loadRealData, 400);
+      return res;
+    } catch (err) {
+      console.warn('Backend clear reminders error:', err.message);
+    }
+  };
+
   // 7. Memory Bank Photos (Real MongoDB Vault)
   const loadPatientPhotos = useCallback(async (patientId) => {
     if (!patientId) return [];
@@ -997,6 +1154,11 @@ export function AppProvider({ children }) {
         logoutPatient,
         setDirectPatientSession,
         toggleReminder,
+        addReminder,
+        updateReminder,
+        deleteReminder,
+        applyStandardReminders,
+        clearAllPatientReminders,
         // Voice Auto-Play setting
         voiceAutoPlay,
         setVoiceAutoPlay,

@@ -377,6 +377,85 @@ export async function toggleReminderStatus(reminderId, nextAcknowledged, patient
   }
 }
 
+// 8a-1. Create Single Reminder
+export async function createReminderApi(patientId, reminderData) {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ patientId, ...reminderData })
+    }, 3000);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not create reminder in backend:`, err.message);
+    throw err;
+  }
+}
+
+// 8a-2. Create Batch Reminders / Apply Template
+export async function createBatchRemindersApi(patientId, reminders, replaceExisting = true) {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/batch`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ patientId, reminders, replaceExisting })
+    }, 5000);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not batch create reminders in backend:`, err.message);
+    throw err;
+  }
+}
+
+// 8a-3. Edit/Update Reminder Full Details
+export async function updateReminderApi(reminderId, reminderData) {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/${reminderId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(reminderData)
+    }, 3000);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not update reminder ${reminderId} in backend:`, err.message);
+    throw err;
+  }
+}
+
+// 8a-4. Delete Single Reminder
+export async function deleteReminderApi(reminderId, patientId) {
+  try {
+    const query = patientId ? `?patientId=${patientId}` : '';
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/${reminderId}${query}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }, 3000);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not delete reminder ${reminderId} in backend:`, err.message);
+    throw err;
+  }
+}
+
+// 8a-5. Clear All Reminders for Patient
+export async function clearPatientRemindersApi(patientId) {
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/reminders/patient/${patientId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }, 3000);
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.warn(`⚠️ Could not clear reminders for patient ${patientId}:`, err.message);
+    throw err;
+  }
+}
+
 // 8b. Fetch Memory Bank Photos from MongoDB
 export async function fetchPatientPhotos(patientId) {
   try {

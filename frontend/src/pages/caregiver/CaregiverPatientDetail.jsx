@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { fetchPatientGameSessions, fetchPatientMLHealthScore } from '../../services/api';
 import CaregiverLayout from '../../components/caregiver/CaregiverLayout';
@@ -52,11 +52,129 @@ import {
   Zap,
   RotateCw,
   Radio,
-  Music
+  Music,
+  Sun,
+  Sunset,
+  Moon,
+  Coffee,
+  Utensils,
+  CheckCheck,
+  AlertCircle
 } from 'lucide-react';
 
 import { matchPatientHelper } from '../../utils/authUtils';
 import { initialPatients } from '../../data/mockData';
+
+// Standard 9-10 Morning-to-Night Routine Placeholders Template
+const DEFAULT_10_ROUTINE_TEMPLATE = [
+  {
+    time: '07:00 AM',
+    period: 'Morning',
+    title: 'Morning Wake-up & Hydration',
+    type: 'hydration',
+    detail: 'Warm lemon water or Assam herbal tea to start the day',
+    categoryLabel: 'Hydration'
+  },
+  {
+    time: '08:00 AM',
+    period: 'Morning',
+    title: 'Morning Medicine & BP Check',
+    type: 'medicine',
+    detail: 'Donepezil 5mg & blood pressure medicine with water',
+    categoryLabel: 'Medication'
+  },
+  {
+    time: '08:45 AM',
+    period: 'Morning',
+    title: 'Nutritious Breakfast & Fresh Fruit',
+    type: 'meal',
+    detail: 'Warm porridge / Idli & papaya slices',
+    categoryLabel: 'Meal'
+  },
+  {
+    time: '10:30 AM',
+    period: 'Morning',
+    title: 'Cognitive Memory & Brain Games',
+    type: 'game',
+    detail: 'Play Daily Routine Sequencer & Market Day Basket',
+    categoryLabel: 'Cognitive'
+  },
+  {
+    time: '01:00 PM',
+    period: 'Afternoon',
+    title: 'Wholesome Lunch & Hydration',
+    type: 'meal',
+    detail: 'Balanced dal, rice/roti, fresh greens & water',
+    categoryLabel: 'Meal'
+  },
+  {
+    time: '02:00 PM',
+    period: 'Afternoon',
+    title: 'Afternoon Rest & Wind-down',
+    type: 'rest',
+    detail: '30-45 minutes quiet resting / calming music',
+    categoryLabel: 'Rest'
+  },
+  {
+    time: '04:30 PM',
+    period: 'Evening',
+    title: 'Gentle Evening Walk',
+    type: 'activity',
+    detail: '15-20 min light garden stroll with caregiver',
+    categoryLabel: 'Activity'
+  },
+  {
+    time: '05:30 PM',
+    period: 'Evening',
+    title: 'Evening Tea & Family Social Call',
+    type: 'activity',
+    detail: 'Warm Assam tea and check-in call with family',
+    categoryLabel: 'Social'
+  },
+  {
+    time: '07:30 PM',
+    period: 'Night',
+    title: 'Light Dinner & Warm Soup',
+    type: 'meal',
+    detail: 'Easy-to-digest light evening meal',
+    categoryLabel: 'Meal'
+  },
+  {
+    time: '09:00 PM',
+    period: 'Night',
+    title: 'Bedtime Medicine & Restorative Sleep',
+    type: 'medicine',
+    detail: 'Night medication & relaxing sleep preparation',
+    categoryLabel: 'Medication'
+  }
+];
+
+const ROUTINE_TYPE_CONFIG = {
+  medicine: { label: 'Prescription Medicine', icon: Pill, color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  hydration: { label: 'Hydration / Tea', icon: Droplets, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  meal: { label: 'Meal / Nutrition', icon: Utensils, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  game: { label: 'Cognitive Game', icon: BrainCircuit, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  activity: { label: 'Physical Activity / Walk', icon: Footprints, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rest: { label: 'Rest & Wind-down', icon: Moon, color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  appointment: { label: 'Clinical Appointment', icon: Calendar, color: 'bg-teal-50 text-teal-700 border-teal-200' },
+  social: { label: 'Family & Social', icon: Users, color: 'bg-pink-50 text-pink-700 border-pink-200' },
+  other: { label: 'General Routine', icon: Clock, color: 'bg-slate-50 text-slate-700 border-slate-200' }
+};
+
+const getRoutinePeriodFromTime = (timeStr) => {
+  if (!timeStr) return 'Morning';
+  const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (!match) return 'Morning';
+  let hours = parseInt(match[1], 10);
+  const meridiem = match[3] ? match[3].toUpperCase() : 'AM';
+  if (meridiem === 'PM' && hours < 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  if (hours >= 5 && hours < 12) return 'Morning';
+  if (hours >= 12 && hours < 17) return 'Afternoon';
+  if (hours >= 17 && hours < 20) return 'Evening';
+  return 'Night';
+};
 
 export default function CaregiverPatientDetail() {
   const { id } = useParams();
@@ -67,6 +185,11 @@ export default function CaregiverPatientDetail() {
     deletePatient, 
     registerPatientBiometric, 
     toggleReminder, 
+    addReminder,
+    updateReminder,
+    deleteReminder,
+    applyStandardReminders,
+    clearAllPatientReminders,
     loginPatient,
     caregiverUser,
     loadPatientPhotos,
@@ -164,6 +287,153 @@ export default function CaregiverPatientDetail() {
       setPatientPhotosList(prev => prev.filter(p => p._id !== photoId && p.id !== photoId));
     } catch (err) {
       console.error('Delete photo error:', err);
+    }
+  };
+
+  // Routine & Daily Schedule Management State
+  const [showAddRoutineModal, setShowAddRoutineModal] = useState(false);
+  const [showEditRoutineModal, setShowEditRoutineModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [editingRoutine, setEditingRoutine] = useState(null);
+  const [routineFilter, setRoutineFilter] = useState('all');
+  const [routineActionLoading, setRoutineActionLoading] = useState(false);
+  const [routineToast, setRoutineToast] = useState('');
+  
+  const [routineForm, setRoutineForm] = useState({
+    time: '08:00 AM',
+    title: '',
+    type: 'medicine',
+    detail: ''
+  });
+
+  const [templateFormList, setTemplateFormList] = useState(DEFAULT_10_ROUTINE_TEMPLATE.map(i => ({ ...i })));
+
+  const handleOpenAddRoutine = () => {
+    setRoutineForm({
+      time: '08:00 AM',
+      title: '',
+      type: 'medicine',
+      detail: ''
+    });
+    setShowAddRoutineModal(true);
+  };
+
+  const handleOpenEditRoutine = (rem) => {
+    setEditingRoutine(rem);
+    setRoutineForm({
+      time: rem.time || '08:00 AM',
+      title: rem.title || '',
+      type: rem.type || 'activity',
+      detail: rem.detail || ''
+    });
+    setShowEditRoutineModal(true);
+  };
+
+  const handleOpenTemplateModal = () => {
+    setTemplateFormList(DEFAULT_10_ROUTINE_TEMPLATE.map(i => ({ ...i })));
+    setShowTemplateModal(true);
+  };
+
+  const handleTemplateItemChange = (idx, field, value) => {
+    setTemplateFormList(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleAddTemplateItem = () => {
+    setTemplateFormList(prev => [
+      ...prev,
+      {
+        time: '03:00 PM',
+        period: 'Afternoon',
+        title: 'Custom Routine Slot',
+        type: 'activity',
+        detail: 'Routine details...',
+        categoryLabel: 'Activity'
+      }
+    ]);
+  };
+
+  const handleDeleteTemplateItem = (idx) => {
+    setTemplateFormList(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleApplyTemplateSubmit = async (replaceExisting = true) => {
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      setRoutineActionLoading(true);
+      await applyStandardReminders(pId, templateFormList, replaceExisting);
+      setShowTemplateModal(false);
+      setRoutineToast(`Applied ${templateFormList.length} routines to ${selectedPatient.name}'s daily schedule!`);
+      setTimeout(() => setRoutineToast(''), 4000);
+    } catch (err) {
+      setRoutineToast('Failed to apply routine template. Please retry.');
+    } finally {
+      setRoutineActionLoading(false);
+    }
+  };
+
+  const handleAddRoutineSubmit = async (e) => {
+    e.preventDefault();
+    if (!routineForm.title.trim()) return;
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      setRoutineActionLoading(true);
+      await addReminder(pId, routineForm);
+      setShowAddRoutineModal(false);
+      setRoutineToast(`Added "${routineForm.title}" to schedule!`);
+      setTimeout(() => setRoutineToast(''), 3000);
+    } catch (err) {
+      setRoutineToast('Failed to add routine.');
+    } finally {
+      setRoutineActionLoading(false);
+    }
+  };
+
+  const handleEditRoutineSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingRoutine || !routineForm.title.trim()) return;
+    const pId = selectedPatient.id || selectedPatient._id;
+    const remId = editingRoutine._id || editingRoutine.id;
+    try {
+      setRoutineActionLoading(true);
+      await updateReminder(pId, remId, routineForm);
+      setShowEditRoutineModal(false);
+      setEditingRoutine(null);
+      setRoutineToast(`Updated "${routineForm.title}" successfully!`);
+      setTimeout(() => setRoutineToast(''), 3000);
+    } catch (err) {
+      setRoutineToast('Failed to update routine.');
+    } finally {
+      setRoutineActionLoading(false);
+    }
+  };
+
+  const handleDeleteRoutineClick = async (remId, title) => {
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      await deleteReminder(pId, remId);
+      setRoutineToast(`Deleted routine "${title || 'item'}".`);
+      setTimeout(() => setRoutineToast(''), 3000);
+    } catch (err) {
+      setRoutineToast('Failed to delete routine.');
+    }
+  };
+
+  const handleClearAllRoutinesClick = async () => {
+    if (!window.confirm(`Are you sure you want to clear all scheduled routines for ${selectedPatient.name}?`)) return;
+    const pId = selectedPatient.id || selectedPatient._id;
+    try {
+      setRoutineActionLoading(true);
+      await clearAllPatientReminders(pId);
+      setRoutineToast(`Cleared all routines for ${selectedPatient.name}.`);
+      setTimeout(() => setRoutineToast(''), 3000);
+    } catch (err) {
+      setRoutineToast('Failed to clear routines.');
+    } finally {
+      setRoutineActionLoading(false);
     }
   };
 
@@ -1206,71 +1476,257 @@ export default function CaregiverPatientDetail() {
         </div>
 
         {/* ======================================================== */}
-        {/* 3. TODAY'S 10 SCHEDULED ROUTINES                         */}
+        {/* 3. TODAY'S ROUTINE PLANNER & SCHEDULED SLOTS             */}
         {/* ======================================================== */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-teal-800" />
-              <span>Today's Scheduled Routine Slots ({totalTodayCount})</span>
-            </h3>
-            <span className="text-xs text-slate-500 font-medium">
-              Click to toggle acknowledgment status
-            </span>
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-5">
+          
+          {/* Section Header with Action Buttons */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-teal-50 text-teal-800 border border-teal-200">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <span>Daily Schedule & Routine Planner</span>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                      {totalTodayCount} {totalTodayCount === 1 ? 'Slot' : 'Slots'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Chronological morning-to-night care schedule synced with Patient Portal and Daily Routine games.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Caregiver Actions: Apply Template, Add Custom, Clear */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleOpenTemplateModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Open 10-routine placeholder template manager"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-200" />
+                <span>10-Routine Template</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenAddRoutine}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300"
+                title="Add a custom routine slot"
+              >
+                <Plus className="w-3.5 h-3.5 text-slate-700" />
+                <span>Add Routine</span>
+              </button>
+
+              {totalTodayCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllRoutinesClick}
+                  disabled={routineActionLoading}
+                  className="p-2 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors border border-slate-200 cursor-pointer"
+                  title="Clear all routines"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {selectedPatient.todayReminders?.map((rem) => {
-              const isDone = rem.status === 'completed' || rem.acknowledged === true;
-              return (
-                <div
-                  key={rem.id}
-                  className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
-                    isDone 
-                      ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
-                      : 'bg-slate-50 border-slate-200/80 text-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm ${
-                      isDone ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700'
-                    }`}>
-                      {rem.type === 'medicine' && <Pill className="w-4 h-4" />}
-                      {rem.type === 'hydration' && <Droplets className="w-4 h-4" />}
-                      {rem.type === 'meal' && <span>🍲</span>}
-                      {rem.type === 'game' && <BrainCircuit className="w-4 h-4" />}
-                      {rem.type === 'activity' && <Footprints className="w-4 h-4" />}
-                      {rem.type === 'appointment' && <Calendar className="w-4 h-4" />}
-                      {rem.type === 'rest' && <span>🌙</span>}
-                    </div>
-                    <div>
-                      <p className="font-bold text-xs text-slate-900">{rem.title}</p>
-                      <p className="text-[11px] text-slate-500">{rem.time} • {rem.detail}</p>
-                    </div>
-                  </div>
+          {/* Routine Feedback Toast */}
+          {routineToast && (
+            <div className="p-3.5 bg-teal-50 border border-teal-200 text-teal-900 rounded-xl flex items-center justify-between text-xs font-bold shadow-2xs animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0" />
+                <span>{routineToast}</span>
+              </div>
+              <button onClick={() => setRoutineToast('')} className="text-slate-400 hover:text-slate-700">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
+          {/* Time-of-Day Filter Tabs */}
+          {totalTodayCount > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/80 w-fit">
+              {[
+                { id: 'all', label: 'All Slots', icon: null },
+                { id: 'morning', label: '🌅 Morning', icon: Sun },
+                { id: 'afternoon', label: '☀️ Afternoon', icon: Sun },
+                { id: 'evening', label: '🌆 Evening', icon: Sunset },
+                { id: 'night', label: '🌙 Night', icon: Moon }
+              ].map(tab => {
+                const count = tab.id === 'all' 
+                  ? (selectedPatient.todayReminders?.length || 0)
+                  : (selectedPatient.todayReminders?.filter(r => getRoutinePeriodFromTime(r.time).toLowerCase() === tab.id).length || 0);
+
+                const isActive = routineFilter === tab.id;
+                return (
                   <button
+                    key={tab.id}
                     type="button"
-                    onClick={() => toggleReminder(selectedPatient.id, rem.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border ${
-                      isDone 
-                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs' 
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 shadow-2xs'
+                    onClick={() => setRoutineFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isActive 
+                        ? 'bg-white text-teal-900 shadow-xs border border-slate-200/80' 
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
-                    {isDone ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Done</span>
-                      </>
-                    ) : (
-                      <span>Mark Done</span>
-                    )}
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isActive ? 'bg-teal-100 text-teal-900' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {count}
+                    </span>
                   </button>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Routine Slots List / Empty State */}
+          {(!selectedPatient.todayReminders || selectedPatient.todayReminders.length === 0) ? (
+            <div className="p-8 sm:p-10 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 flex items-center justify-center mx-auto text-2xl shadow-xs">
+                ⏰
+              </div>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h4 className="text-base font-extrabold text-slate-900">
+                  No Daily Routines Configured
+                </h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Apply our recommended <strong>10 Morning-to-Night Placeholders Template</strong> (covering wake-up, medicines, meals, cognitive exercises, walks, and sleep), or add custom slots individually.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={handleOpenTemplateModal}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-teal-300" />
+                  <span>Apply 10-Routine Template</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAddRoutine}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-2xs transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-slate-700" />
+                  <span>Add Single Slot</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {(selectedPatient.todayReminders || [])
+                .filter(rem => {
+                  if (routineFilter === 'all') return true;
+                  return getRoutinePeriodFromTime(rem.time).toLowerCase() === routineFilter;
+                })
+                .map((rem, remIdx) => {
+                  const isDone = rem.status === 'completed' || rem.acknowledged === true;
+                  const typeCfg = ROUTINE_TYPE_CONFIG[rem.type] || ROUTINE_TYPE_CONFIG.other;
+                  const IconComp = typeCfg.icon || Clock;
+                  const period = getRoutinePeriodFromTime(rem.time);
+                  const remId = rem._id || rem.id || `rem-idx-${remIdx}`;
+
+                  return (
+                    <div
+                      key={remId}
+                      className={`p-4 sm:p-4.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 shadow-2xs group hover:border-teal-300 ${
+                        isDone 
+                          ? 'bg-emerald-50/50 border-emerald-200/90' 
+                          : 'bg-slate-50/70 border-slate-200/90'
+                      }`}
+                    >
+                      {/* Top row: Icon, Time, Period, and Edit/Delete */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${typeCfg.color}`}>
+                            <IconComp className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-black text-slate-900">
+                                {rem.time || '09:00 AM'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.2 rounded-md bg-white border border-slate-200 text-slate-600">
+                                {period}
+                              </span>
+                            </div>
+                            <h4 className="font-extrabold text-sm text-slate-900 mt-0.5 line-clamp-1">
+                              {rem.title}
+                            </h4>
+                          </div>
+                        </div>
+
+                        {/* Edit & Delete Quick Icons */}
+                        <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditRoutine(rem)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-800 hover:bg-teal-50 transition-colors cursor-pointer"
+                            title="Edit this routine"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRoutineClick(remId, rem.title)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Delete this routine"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Detail / Description note */}
+                      {rem.detail && (
+                        <p className="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-slate-200/70 line-clamp-2">
+                          {rem.detail}
+                        </p>
+                      )}
+
+                      {/* Bottom row: Type tag & Acknowledgment button */}
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${typeCfg.color}`}>
+                          {typeCfg.label}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleReminder(selectedPatient.id, remId)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                            isDone 
+                              ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs' 
+                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 shadow-2xs'
+                          }`}
+                        >
+                          {isDone ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
+                              <span>Acknowledged</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Mark Done</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
 
         {/* ======================================================== */}
@@ -1837,6 +2293,403 @@ export default function CaregiverPatientDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: ADD CUSTOM ROUTINE SLOT                           */}
+      {/* ======================================================== */}
+      {showAddRoutineModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 sm:p-8 relative my-8 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-800 border border-teal-200">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Add Scheduled Routine Slot
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    For {selectedPatient.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddRoutineModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddRoutineSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Scheduled Time *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 08:30 AM"
+                    value={routineForm.time}
+                    onChange={(e) => setRoutineForm({ ...routineForm, time: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Format: HH:MM AM/PM</span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category / Type *</label>
+                  <select
+                    value={routineForm.type}
+                    onChange={(e) => setRoutineForm({ ...routineForm, type: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold cursor-pointer"
+                  >
+                    <option value="medicine">💊 Prescription Medicine</option>
+                    <option value="hydration">💧 Hydration / Tea</option>
+                    <option value="meal">🍲 Meal / Nutrition</option>
+                    <option value="game">🧠 Cognitive Game</option>
+                    <option value="activity">🚶 Physical Activity / Walk</option>
+                    <option value="rest">🌙 Rest & Wind-down</option>
+                    <option value="appointment">🗓️ Clinical Appointment</option>
+                    <option value="social">👥 Family & Social</option>
+                    <option value="other">⏰ General Routine</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Routine Title / Task *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Donepezil 5mg Prescriptions"
+                  value={routineForm.title}
+                  onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Clinical Instructions & Notes</label>
+                <textarea
+                  rows="2"
+                  placeholder="e.g. Take with 1 glass of warm water after light meal"
+                  value={routineForm.detail}
+                  onChange={(e) => setRoutineForm({ ...routineForm, detail: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddRoutineModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={routineActionLoading || !routineForm.title.trim()}
+                  className="px-5 py-2 rounded-xl bg-teal-800 text-white font-bold hover:bg-teal-900 cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{routineActionLoading ? 'Saving...' : 'Add Routine Slot'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: EDIT ROUTINE SLOT                                 */}
+      {/* ======================================================== */}
+      {showEditRoutineModal && editingRoutine && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 sm:p-8 relative my-8 animate-in fade-in zoom-in-95 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-800 border border-teal-200">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Edit Scheduled Routine
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Modify time, task title, category, or clinical notes
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditRoutineModal(false);
+                  setEditingRoutine(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditRoutineSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Scheduled Time *</label>
+                  <input
+                    type="text"
+                    required
+                    value={routineForm.time}
+                    onChange={(e) => setRoutineForm({ ...routineForm, time: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Format: HH:MM AM/PM</span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category / Type *</label>
+                  <select
+                    value={routineForm.type}
+                    onChange={(e) => setRoutineForm({ ...routineForm, type: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold cursor-pointer"
+                  >
+                    <option value="medicine">💊 Prescription Medicine</option>
+                    <option value="hydration">💧 Hydration / Tea</option>
+                    <option value="meal">🍲 Meal / Nutrition</option>
+                    <option value="game">🧠 Cognitive Game</option>
+                    <option value="activity">🚶 Physical Activity / Walk</option>
+                    <option value="rest">🌙 Rest & Wind-down</option>
+                    <option value="appointment">🗓️ Clinical Appointment</option>
+                    <option value="social">👥 Family & Social</option>
+                    <option value="other">⏰ General Routine</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Routine Title / Task *</label>
+                <input
+                  type="text"
+                  required
+                  value={routineForm.title}
+                  onChange={(e) => setRoutineForm({ ...routineForm, title: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Clinical Instructions & Notes</label>
+                <textarea
+                  rows="2"
+                  value={routineForm.detail}
+                  onChange={(e) => setRoutineForm({ ...routineForm, detail: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditRoutineModal(false);
+                    setEditingRoutine(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={routineActionLoading || !routineForm.title.trim()}
+                  className="px-5 py-2 rounded-xl bg-teal-800 text-white font-bold hover:bg-teal-900 cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{routineActionLoading ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: 10-ROUTINE PLACEHOLDER TEMPLATE BUILDER           */}
+      {/* ======================================================== */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full p-5 sm:p-7 relative my-8 animate-in fade-in zoom-in-95 space-y-4 max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-teal-50 text-teal-800 border border-teal-200">
+                  <Sparkles className="w-5 h-5 text-teal-700" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <span>10-Slot Routine Template</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                      Morning to Night
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Chronologically structured daily routine. You can edit any value before applying.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTemplateModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Editable List of 10 Slots */}
+            <div className="overflow-y-auto space-y-3 pr-1 py-1 flex-1">
+              {templateFormList.map((item, idx) => {
+                const typeCfg = ROUTINE_TYPE_CONFIG[item.type] || ROUTINE_TYPE_CONFIG.other;
+                const IconComp = typeCfg.icon || Clock;
+
+                return (
+                  <div
+                    key={idx}
+                    className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-2.5 hover:border-slate-300 transition-all"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-teal-800 text-white font-black text-xs flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          Slot {idx + 1} • {getRoutinePeriodFromTime(item.time)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTemplateItem(idx)}
+                        className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                        title="Remove this slot"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 text-xs">
+                      {/* Time Input */}
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Time</label>
+                        <input
+                          type="text"
+                          value={item.time}
+                          onChange={(e) => handleTemplateItemChange(idx, 'time', e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-bold focus:outline-none focus:border-teal-700"
+                        />
+                      </div>
+
+                      {/* Type Selector */}
+                      <div className="sm:col-span-4">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Category</label>
+                        <select
+                          value={item.type}
+                          onChange={(e) => handleTemplateItemChange(idx, 'type', e.target.value)}
+                          className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-teal-700 cursor-pointer text-xs"
+                        >
+                          <option value="hydration">💧 Hydration</option>
+                          <option value="medicine">💊 Medicine</option>
+                          <option value="meal">🍲 Meal</option>
+                          <option value="game">🧠 Brain Game</option>
+                          <option value="activity">🚶 Walk/Activity</option>
+                          <option value="rest">🌙 Rest</option>
+                          <option value="appointment">🗓️ Appointment</option>
+                          <option value="social">👥 Social</option>
+                        </select>
+                      </div>
+
+                      {/* Title Input */}
+                      <div className="sm:col-span-5">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Task Title</label>
+                        <input
+                          type="text"
+                          value={item.title}
+                          onChange={(e) => handleTemplateItemChange(idx, 'title', e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-teal-700"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Detail / Description input */}
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Instructions / details / dosage notes..."
+                        value={item.detail}
+                        onChange={(e) => handleTemplateItemChange(idx, 'detail', e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-700 text-xs focus:outline-none focus:border-teal-700"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleAddTemplateItem}
+                className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-teal-700 rounded-xl text-xs font-bold text-slate-600 hover:text-teal-900 flex items-center justify-center gap-1.5 transition-colors cursor-pointer bg-slate-50/50"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Another Slot to Template</span>
+              </button>
+            </div>
+
+            {/* Modal Footer with Actions */}
+            <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTemplateFormList(DEFAULT_10_ROUTINE_TEMPLATE.map(i => ({ ...i })))}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+              >
+                Reset to Standard 10
+              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowTemplateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={routineActionLoading || templateFormList.length === 0}
+                  onClick={() => handleApplyTemplateSubmit(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold cursor-pointer border border-slate-300"
+                  title="Keep existing routines and append these"
+                >
+                  Append ({templateFormList.length})
+                </button>
+                <button
+                  type="button"
+                  disabled={routineActionLoading || templateFormList.length === 0}
+                  onClick={() => handleApplyTemplateSubmit(true)}
+                  className="px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold shadow-xs cursor-pointer disabled:opacity-40 flex items-center gap-1.5"
+                  title="Replace today's schedule with this customized template"
+                >
+                  <CheckCheck className="w-4 h-4" />
+                  <span>{routineActionLoading ? 'Applying...' : `Apply & Replace (${templateFormList.length})`}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

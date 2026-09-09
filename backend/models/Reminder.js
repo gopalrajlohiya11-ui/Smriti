@@ -4,7 +4,7 @@ const reminderSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: true },
   type: { 
     type: String, 
-    enum: ['medicine', 'hydration', 'activity', 'appointment', 'meal', 'game', 'rest'], 
+    enum: ['medicine', 'hydration', 'activity', 'appointment', 'meal', 'game', 'rest', 'social', 'other'], 
     required: true 
   },
   title: { type: String },

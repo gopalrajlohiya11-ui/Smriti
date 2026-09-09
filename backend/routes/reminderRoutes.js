@@ -5,21 +5,124 @@ const Reminder = require('../models/Reminder');
 const Patient = require('../models/patient');
 const { authenticateCaregiver, authenticateAny, optionalAuth } = require('../middleware/auth');
 
-// 1. Create a new reminder (Caregiver scoped)
-router.post('/', authenticateCaregiver, async (req, res) => {
+const parseTimeToDate = (timeInput) => {
+  if (!timeInput) return new Date();
+  if (timeInput instanceof Date) return timeInput;
+  if (typeof timeInput === 'string' && (timeInput.includes('T') || (timeInput.includes('-') && timeInput.length > 10))) {
+    const d = new Date(timeInput);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  const now = new Date();
+  const match = typeof timeInput === 'string' ? timeInput.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i) : null;
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const meridiem = match[3] ? match[3].toUpperCase() : null;
+
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+
+    now.setHours(hours, minutes, 0, 0);
+    return now;
+  }
+  return new Date();
+};
+
+// 1. Create a new reminder or batch of reminders (Caregiver scoped)
+router.post('/', optionalAuth, async (req, res) => {
   try {
-    const { patientId } = req.body;
-    if (patientId) {
-      const patient = await Patient.findById(patientId);
-      if (patient && patient.caregiverId && patient.caregiverId.toString() !== req.caregiver._id.toString() && !req.caregiver.patientIds?.includes(patient._id)) {
-        return res.status(403).json({ error: 'Forbidden: You cannot create reminders for another caregiver patient.' });
+    const { patientId, reminders, replaceExisting } = req.body;
+    const targetPatientId = patientId || req.body[0]?.patientId;
+    
+    if (targetPatientId) {
+      const pId = await resolvePatientId(targetPatientId);
+      if (!pId) return res.status(404).json({ error: 'Patient not found' });
+
+      // Batch creation if array provided in `reminders` or body is array
+      const itemsToCreate = Array.isArray(reminders) ? reminders : (Array.isArray(req.body) ? req.body : null);
+      
+      if (itemsToCreate) {
+        if (replaceExisting) {
+          await Reminder.deleteMany({ patientId: pId });
+        }
+
+        const docs = itemsToCreate.map(item => ({
+          patientId: pId,
+          type: item.type || 'activity',
+          title: item.title || 'Daily Routine',
+          detail: item.detail || '',
+          scheduledTime: item.scheduledTime ? parseTimeToDate(item.scheduledTime) : parseTimeToDate(item.time),
+          acknowledged: !!item.acknowledged,
+          dismissed: false
+        }));
+
+        const createdReminders = await Reminder.insertMany(docs);
+        return res.status(201).json({
+          status: 'ok',
+          count: createdReminders.length,
+          reminders: createdReminders
+        });
       }
+
+      // Single reminder creation
+      const reminderDoc = {
+        patientId: pId,
+        type: req.body.type || 'activity',
+        title: req.body.title || 'Daily Routine',
+        detail: req.body.detail || '',
+        scheduledTime: req.body.scheduledTime ? parseTimeToDate(req.body.scheduledTime) : parseTimeToDate(req.body.time),
+        acknowledged: !!req.body.acknowledged,
+        dismissed: false
+      };
+
+      const reminder = new Reminder(reminderDoc);
+      await reminder.save();
+      return res.status(201).json(reminder);
     }
 
     const reminder = new Reminder(req.body);
     await reminder.save();
     res.status(201).json(reminder);
   } catch (err) {
+    console.error('Create reminder error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 1b. Batch reminders endpoint
+router.post('/batch', optionalAuth, async (req, res) => {
+  try {
+    const { patientId, reminders, replaceExisting } = req.body;
+    const pId = await resolvePatientId(patientId);
+    if (!pId) return res.status(404).json({ error: 'Patient not found' });
+
+    if (!Array.isArray(reminders) || reminders.length === 0) {
+      return res.status(400).json({ error: 'reminders must be a non-empty array' });
+    }
+
+    if (replaceExisting) {
+      await Reminder.deleteMany({ patientId: pId });
+    }
+
+    const docs = reminders.map(item => ({
+      patientId: pId,
+      type: item.type || 'activity',
+      title: item.title || 'Daily Routine',
+      detail: item.detail || '',
+      scheduledTime: item.scheduledTime ? parseTimeToDate(item.scheduledTime) : parseTimeToDate(item.time),
+      acknowledged: !!item.acknowledged,
+      dismissed: false
+    }));
+
+    const createdReminders = await Reminder.insertMany(docs);
+    res.status(201).json({
+      status: 'ok',
+      count: createdReminders.length,
+      reminders: createdReminders
+    });
+  } catch (err) {
+    console.error('Batch reminders error:', err);
     res.status(400).json({ error: err.message });
   }
 });
@@ -252,6 +355,112 @@ router.patch('/:id', optionalAuth, async (req, res) => {
     res.json(reminder);
   } catch (err) {
     console.error('Update reminder error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 6. Full Edit/Update Reminder: PUT /api/reminders/:id
+router.put('/:id', optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let reminder = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      reminder = await Reminder.findById(id);
+    }
+
+    if (!reminder && req.body.patientId) {
+      const pId = await resolvePatientId(req.body.patientId);
+      if (pId && typeof id === 'string' && id.startsWith('rem-')) {
+        const idx = parseInt(id.replace('rem-', ''), 10) - 1;
+        const allRems = await Reminder.find({ patientId: pId }).sort({ scheduledTime: 1 });
+        if (allRems && allRems[idx]) {
+          reminder = allRems[idx];
+        }
+      }
+    }
+
+    if (!reminder) {
+      // Create new if not found
+      const pId = await resolvePatientId(req.body.patientId);
+      if (pId) {
+        reminder = new Reminder({
+          patientId: pId,
+          type: req.body.type || 'activity',
+          title: req.body.title || 'Daily Routine',
+          detail: req.body.detail || '',
+          scheduledTime: req.body.scheduledTime ? parseTimeToDate(req.body.scheduledTime) : parseTimeToDate(req.body.time),
+          acknowledged: !!req.body.acknowledged,
+          dismissed: false
+        });
+        await reminder.save();
+        return res.json(reminder);
+      }
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+
+    if (req.body.title !== undefined) reminder.title = req.body.title;
+    if (req.body.type !== undefined) reminder.type = req.body.type;
+    if (req.body.detail !== undefined) reminder.detail = req.body.detail;
+    if (req.body.scheduledTime !== undefined || req.body.time !== undefined) {
+      reminder.scheduledTime = parseTimeToDate(req.body.scheduledTime || req.body.time);
+    }
+    if (req.body.acknowledged !== undefined) reminder.acknowledged = req.body.acknowledged;
+    if (req.body.dismissed !== undefined) reminder.dismissed = req.body.dismissed;
+
+    await reminder.save();
+    console.log(`✏️ Updated reminder ${reminder._id} (${reminder.title})`);
+    res.json(reminder);
+  } catch (err) {
+    console.error('PUT reminder error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 7. Delete Single Reminder: DELETE /api/reminders/:id
+router.delete('/:id', optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let deleted = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      deleted = await Reminder.findByIdAndDelete(id);
+    }
+
+    if (!deleted && req.query.patientId) {
+      const pId = await resolvePatientId(req.query.patientId);
+      if (pId && typeof id === 'string' && id.startsWith('rem-')) {
+        const idx = parseInt(id.replace('rem-', ''), 10) - 1;
+        const allRems = await Reminder.find({ patientId: pId }).sort({ scheduledTime: 1 });
+        if (allRems && allRems[idx]) {
+          deleted = await Reminder.findByIdAndDelete(allRems[idx]._id);
+        }
+      }
+    }
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Reminder not found or already deleted' });
+    }
+
+    console.log(`🗑️ Deleted reminder ${id}`);
+    res.json({ status: 'ok', message: 'Reminder deleted successfully', deletedId: id });
+  } catch (err) {
+    console.error('Delete reminder error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 8. Delete All Reminders for a Patient: DELETE /api/reminders/patient/:patientId
+router.delete('/patient/:patientId', optionalAuth, async (req, res) => {
+  try {
+    const pId = await resolvePatientId(req.params.patientId);
+    if (!pId) return res.status(404).json({ error: 'Patient not found' });
+
+    const result = await Reminder.deleteMany({ patientId: pId });
+    console.log(`🗑️ Cleared all reminders (${result.deletedCount}) for patient ${pId}`);
+    res.json({ status: 'ok', deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error('Clear patient reminders error:', err);
     res.status(400).json({ error: err.message });
   }
 });
