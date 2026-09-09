@@ -453,6 +453,10 @@ export default function CaregiverPatientDetail() {
   const [gamesLoadError, setGamesLoadError] = useState(null);
   const [expandedSessionIds, setExpandedSessionIds] = useState(new Set());
 
+  // Front-Screen 3-Item Limit with Expand All Controls
+  const [isGamesExpanded, setIsGamesExpanded] = useState(false);
+  const [isRoutinesExpanded, setIsRoutinesExpanded] = useState(false);
+
   const patientIdParam = selectedPatient?._id || selectedPatient?.id || id;
 
   const loadPatientGames = useCallback(async () => {
@@ -1296,7 +1300,7 @@ export default function CaregiverPatientDetail() {
             </div>
           ) : (
             <div className="space-y-3.5">
-              {gameSessions.map((session, sIdx) => {
+              {(isGamesExpanded ? gameSessions : gameSessions.slice(0, 3)).map((session, sIdx) => {
                 const sId = session._id || session.id || `session-${sIdx}`;
                 const isExpanded = expandedSessionIds.has(sId);
                 const info = getGameBadgeInfo(session.gameType, session.title);
@@ -1357,82 +1361,85 @@ export default function CaregiverPatientDetail() {
                         </div>
                       </div>
 
-                      {/* Right: Score, Accuracy, and Expand Button */}
-                      <div className="flex items-center justify-between md:justify-end gap-3 sm:gap-4 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
-                        
-                        {/* Score & Accuracy Badge */}
-                        <div className="text-left md:text-right space-y-0.5">
-                          <div className="flex items-center md:justify-end gap-1.5">
-                            <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
-                            <span className="text-base sm:text-lg font-black text-slate-900">
-                              {session.score} <span className="text-xs text-slate-500 font-semibold">pts</span>
-                            </span>
+                      {/* Right: Metrics & Expand Round-by-Round Accordion */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Score</p>
+                            <p className="text-sm font-extrabold text-slate-900">{session.score || 0}</p>
                           </div>
-                          <p className="text-[11px] font-bold text-teal-800">
-                            {accuracySummary}
-                          </p>
+                          {avgAccuracy !== null && (
+                            <div className="px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-center">
+                              <p className="text-[10px] text-teal-700 font-bold uppercase tracking-wider">Accuracy</p>
+                              <p className="text-sm font-extrabold text-teal-900">{avgAccuracy}%</p>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Expand Button */}
-                        <button
-                          type="button"
-                          onClick={() => toggleSessionExpand(sId)}
-                          className={`p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer border ${
-                            isExpanded
-                              ? 'bg-teal-800 text-white border-teal-900 shadow-xs'
-                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                          }`}
-                          title="View round-by-round breakdown"
-                        >
-                          <span className="hidden sm:inline">{isExpanded ? 'Hide Details' : 'View Rounds'}</span>
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4" />
-                          )}
-                        </button>
-
+                        {hasRounds && (
+                          <button
+                            type="button"
+                            onClick={() => toggleSessionExpand(sId)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300 shadow-2xs flex items-center gap-1"
+                          >
+                            <span>{isExpanded ? 'Hide Levels' : 'View Levels'}</span>
+                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-600" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-600" />}
+                          </button>
+                        )}
                       </div>
-
                     </div>
 
-                    {/* Expandable Level-by-Level Breakdown */}
+                    {/* Summary Row */}
+                    <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="font-semibold">{accuracySummary}</span>
+                      </div>
+                      {session.roundsCompleted && (
+                        <span className="text-[11px] font-medium text-slate-500">
+                          {session.roundsCompleted} round(s) logged
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Expanded Level Telemetry */}
                     {isExpanded && (
-                      <div className="px-4 sm:px-6 pb-5 pt-1 bg-slate-50/80 border-t border-slate-100 animate-in fade-in space-y-3">
-                        <div className="flex items-center justify-between pt-2">
-                          <p className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                            <BrainCircuit className="w-3.5 h-3.5 text-teal-800" />
-                            <span>Granular Level-by-Level Telemetry</span>
+                      <div className="p-4 bg-slate-50/70 border-t border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Level-by-Level Playthrough Breakdown
                           </p>
-                          {avgAccuracy !== null && (
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-200">
-                              Avg Precision: {avgAccuracy}%
+                          {hasRounds && (
+                            <span className="text-[11px] text-slate-500">
+                              {session.roundDetails.length} levels analyzed
                             </span>
                           )}
                         </div>
 
                         {hasRounds ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
                             {session.roundDetails.map((round, rIdx) => {
-                              const acc = round.accuracy || 100;
+                              const acc = round.accuracy !== undefined 
+                                ? round.accuracy 
+                                : (round.totalAttempts ? Math.round((round.correctCount / round.totalAttempts) * 100) : 100);
                               const isHighAcc = acc >= 80;
                               const isMediumAcc = acc >= 50 && acc < 80;
 
                               return (
                                 <div
                                   key={rIdx}
-                                  className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 shadow-2xs"
+                                  className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2"
                                 >
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black text-slate-900">
-                                      Level {round.level || rIdx + 1}
+                                    <span className="text-xs font-bold text-slate-900">
+                                      Round {round.roundNumber || rIdx + 1}
                                     </span>
-                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
                                       isHighAcc 
-                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
                                         : isMediumAcc 
-                                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                          : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                          ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                                          : 'bg-rose-50 text-rose-800 border-rose-200'
                                     }`}>
                                       {acc}%
                                     </span>
@@ -1467,7 +1474,7 @@ export default function CaregiverPatientDetail() {
                         ) : (
                           <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
                             <CheckCircle2 className="w-4 h-4 text-teal-700 shrink-0" />
-                            <span>Playthrough recorded successfully with final score of <strong>{session.score} points</strong>. Level-by-level telemetry was not captured for this legacy session.</span>
+                            <span>Playthrough recorded with score of <strong>{session.score} points</strong>.</span>
                           </div>
                         )}
                       </div>
@@ -1475,6 +1482,29 @@ export default function CaregiverPatientDetail() {
                   </div>
                 );
               })}
+
+              {/* Expand All / Collapse Toggle for Game History */}
+              {gameSessions.length > 3 && (
+                <div className="pt-2 flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsGamesExpanded(!isGamesExpanded)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300 shadow-2xs flex items-center gap-2"
+                  >
+                    {isGamesExpanded ? (
+                      <>
+                        <ChevronUp className="w-4 h-4 text-slate-600" />
+                        <span>Show Less (Top 3 Sessions)</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4 text-slate-600" />
+                        <span>Expand Game History (+{gameSessions.length - 3} More Sessions)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1627,108 +1657,144 @@ export default function CaregiverPatientDetail() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {(selectedPatient.todayReminders || [])
-                .filter(rem => {
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {(() => {
+                  const filteredRoutines = (selectedPatient.todayReminders || []).filter(rem => {
+                    if (routineFilter === 'all') return true;
+                    return getRoutinePeriodFromTime(rem.time).toLowerCase() === routineFilter;
+                  });
+                  const displayedRoutines = isRoutinesExpanded ? filteredRoutines : filteredRoutines.slice(0, 3);
+
+                  return displayedRoutines.map((rem, remIdx) => {
+                    const isDone = rem.status === 'completed' || rem.acknowledged === true;
+                    const typeCfg = ROUTINE_TYPE_CONFIG[rem.type] || ROUTINE_TYPE_CONFIG.other;
+                    const IconComp = typeCfg.icon || Clock;
+                    const period = getRoutinePeriodFromTime(rem.time);
+                    const remId = rem._id || rem.id || `rem-idx-${remIdx}`;
+
+                    return (
+                      <div
+                        key={remId}
+                        className={`p-4 sm:p-4.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 shadow-2xs group hover:border-teal-300 ${
+                          isDone 
+                            ? 'bg-emerald-50/50 border-emerald-200/90' 
+                            : 'bg-slate-50/70 border-slate-200/90'
+                        }`}
+                      >
+                        {/* Top row: Icon, Time, Period, and Edit/Delete */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${typeCfg.color}`}>
+                              <IconComp className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-black text-slate-900">
+                                  {rem.time || '09:00 AM'}
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.2 rounded-md bg-white border border-slate-200 text-slate-600">
+                                  {period}
+                                </span>
+                              </div>
+                              <h4 className="font-extrabold text-sm text-slate-900 mt-0.5 line-clamp-1">
+                                {rem.title}
+                              </h4>
+                            </div>
+                          </div>
+
+                          {/* Edit & Delete Quick Icons */}
+                          <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditRoutine(rem)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-teal-800 hover:bg-teal-50 transition-colors cursor-pointer"
+                              title="Edit this routine"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRoutineClick(remId, rem.title)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete this routine"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Detail / Description note */}
+                        {rem.detail && (
+                          <p className="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-slate-200/70 line-clamp-2">
+                            {rem.detail}
+                          </p>
+                        )}
+
+                        {/* Bottom row: Type tag & Acknowledgment button */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${typeCfg.color}`}>
+                            {typeCfg.label}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleReminder(selectedPatient.id, remId)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                              isDone 
+                                ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs' 
+                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 shadow-2xs'
+                            }`}
+                          >
+                            {isDone ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
+                                <span>Acknowledged</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Mark Done</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Expand All / Collapse Toggle for Daily Routines */}
+              {(() => {
+                const filteredRoutines = (selectedPatient.todayReminders || []).filter(rem => {
                   if (routineFilter === 'all') return true;
                   return getRoutinePeriodFromTime(rem.time).toLowerCase() === routineFilter;
-                })
-                .map((rem, remIdx) => {
-                  const isDone = rem.status === 'completed' || rem.acknowledged === true;
-                  const typeCfg = ROUTINE_TYPE_CONFIG[rem.type] || ROUTINE_TYPE_CONFIG.other;
-                  const IconComp = typeCfg.icon || Clock;
-                  const period = getRoutinePeriodFromTime(rem.time);
-                  const remId = rem._id || rem.id || `rem-idx-${remIdx}`;
+                });
+                if (filteredRoutines.length <= 3) return null;
 
-                  return (
-                    <div
-                      key={remId}
-                      className={`p-4 sm:p-4.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 shadow-2xs group hover:border-teal-300 ${
-                        isDone 
-                          ? 'bg-emerald-50/50 border-emerald-200/90' 
-                          : 'bg-slate-50/70 border-slate-200/90'
-                      }`}
+                return (
+                  <div className="pt-2 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsRoutinesExpanded(!isRoutinesExpanded)}
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300 shadow-2xs flex items-center gap-2"
                     >
-                      {/* Top row: Icon, Time, Period, and Edit/Delete */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${typeCfg.color}`}>
-                            <IconComp className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-black text-slate-900">
-                                {rem.time || '09:00 AM'}
-                              </span>
-                              <span className="text-[10px] font-bold px-2 py-0.2 rounded-md bg-white border border-slate-200 text-slate-600">
-                                {period}
-                              </span>
-                            </div>
-                            <h4 className="font-extrabold text-sm text-slate-900 mt-0.5 line-clamp-1">
-                              {rem.title}
-                            </h4>
-                          </div>
-                        </div>
-
-                        {/* Edit & Delete Quick Icons */}
-                        <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditRoutine(rem)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-teal-800 hover:bg-teal-50 transition-colors cursor-pointer"
-                            title="Edit this routine"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRoutineClick(remId, rem.title)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                            title="Delete this routine"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Detail / Description note */}
-                      {rem.detail && (
-                        <p className="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-slate-200/70 line-clamp-2">
-                          {rem.detail}
-                        </p>
+                      {isRoutinesExpanded ? (
+                        <>
+                          <ChevronUp className="w-4 h-4 text-slate-600" />
+                          <span>Show Less (Top 3 Routines)</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4 text-slate-600" />
+                          <span>Expand All (+{filteredRoutines.length - 3} More Reminders)</span>
+                        </>
                       )}
-
-                      {/* Bottom row: Type tag & Acknowledgment button */}
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${typeCfg.color}`}>
-                          {typeCfg.label}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => toggleReminder(selectedPatient.id, remId)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-                            isDone 
-                              ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs' 
-                              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 shadow-2xs'
-                          }`}
-                        >
-                          {isDone ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
-                              <span>Acknowledged</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Mark Done</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
