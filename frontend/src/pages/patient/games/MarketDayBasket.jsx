@@ -455,7 +455,7 @@ export default function MarketDayBasket() {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
-      rate: 0.85,
+      rate: 1.0,
       pitch: 1.0,
       isAutoPlay,
       patientId: activePatient?.id || activePatient?._id,
@@ -979,8 +979,8 @@ export default function MarketDayBasket() {
                         {/* Real Photograph Tile */}
                         <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden bg-stone-200 border border-stone-300 shadow-inner relative">
                           <img
-                            src={item.image}
-                            alt={item.name}
+                            src={item?.image || 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80'}
+                            alt={item?.name || 'Produce item'}
                             className={`w-full h-full object-cover transition-transform duration-300 ${isSelected ? 'brightness-90 contrast-105' : 'group-hover:scale-105'}`}
                             loading="lazy"
                           />

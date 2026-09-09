@@ -307,7 +307,7 @@ export default function DailyRoutineSequencer() {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
-      rate: 0.85,
+      rate: 1.0,
       pitch: 1.0,
       isAutoPlay,
       patientId: activePatient?.id || activePatient?._id,
@@ -341,14 +341,21 @@ export default function DailyRoutineSequencer() {
     roundStartTimeRef.current = Date.now();
 
     // Voice instruction for round start (Automatic speech trigger -> isAutoPlay: true)
-    const introMsg = `Level ${levelNum}. Tap the activities in the order you do them during the day, from morning to night.`;
+    const isHindi = (currentLanguage?.code || '').startsWith('hi');
+    const introMsg = isHindi
+      ? `स्तर ${levelNum}। सुबह से रात तक जिस क्रम में आप दैनिक कार्य करते हैं, उसी क्रम में गतिविधियों को स्पर्श करें।`
+      : `Level ${levelNum}. Tap the activities in the order you do them during the day, from morning to night.`;
     speakText(introMsg, true);
-  }, [speakText, dynamicPatientRoutines]);
+  }, [speakText, currentLanguage, dynamicPatientRoutines]);
 
-  // Start game on mount with ML adaptive calibration
+  const hasInitializedRef = useRef(false);
+
+  // Start game on mount with ML adaptive calibration (runs ONCE per session)
   useEffect(() => {
     let isMounted = true;
     if (dynamicPatientRoutines.length < 2) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     async function initAdaptiveStartingDifficulty() {
       try {
@@ -382,7 +389,7 @@ export default function DailyRoutineSequencer() {
     gameStartTimeRef.current = Date.now();
     initAdaptiveStartingDifficulty();
     return () => { isMounted = false; };
-  }, [activePatient, currentLanguage, generateRound, dynamicPatientRoutines]);
+  }, [dynamicPatientRoutines.length, activePatient?.id, activePatient?._id, generateRound]);
 
   // Handle Card Tap
   const handleCardClick = (card) => {
@@ -834,8 +841,8 @@ export default function DailyRoutineSequencer() {
 
                         <div className="aspect-[4/3] rounded-xl overflow-hidden bg-stone-200 border border-emerald-200">
                           <img
-                            src={placedItem.image}
-                            alt={placedItem.title}
+                            src={placedItem?.image || 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&auto=format&fit=crop&q=80'}
+                            alt={placedItem?.title || 'Routine task'}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -921,8 +928,8 @@ export default function DailyRoutineSequencer() {
                         {/* Large Real Photograph */}
                         <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-stone-200 border-2 border-stone-200 relative group-hover:scale-102 transition-transform duration-300">
                           <img
-                            src={card.image}
-                            alt={card.title}
+                            src={card?.image || 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&auto=format&fit=crop&q=80'}
+                            alt={card?.title || 'Daily Routine Activity'}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.currentTarget.src = 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600&auto=format&fit=crop&q=80';

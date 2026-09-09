@@ -70,54 +70,26 @@ export const FAMILY_MEMBERS = [
     relation: 'Your Grandson',
     hindiRelation: 'आपका पोता (Grandson)',
     relationShort: 'Grandson',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
+    image: '/family/grandson_arjun.png',
     location: 'Guwahati Brahmaputra Riverfront',
     year: '2023',
-    memoryNote: 'Arjun was smiling after his Bihu dance performance by the river.',
+    memoryNote: 'Arjun holding the traditional Bihu Pepa instrument by the river.',
     affirmation: 'Yes! That is your grandson Arjun — he always brings you fresh jaggery sweets! 💛',
     color: 'from-amber-500 to-orange-500'
   },
   {
     id: 'fam-ananya',
-    name: 'Dr. Ananya Sharma',
-    hindiName: 'डॉ. अनन्या शर्मा',
+    name: 'Priya Sharma',
+    hindiName: 'प्रिया शर्मा',
     relation: 'Your Daughter',
     hindiRelation: 'आपकी बेटी (Daughter)',
     relationShort: 'Daughter',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop&q=80',
-    location: 'Gauhati Medical College',
-    year: '2018',
-    memoryNote: 'Dr. Ananya receiving her neurology gold medal. You were so proud that day.',
-    affirmation: 'Wonderful! That is your daughter Ananya, who checks in on your health routine.',
+    image: '/family/daughter_priya.jpg',
+    location: 'Jorhat Tea Estate',
+    year: '2023',
+    memoryNote: 'Priya wearing traditional Assamese Muga silk Mekhela Sador.',
+    affirmation: 'Wonderful! That is your daughter Priya smiling on the tea garden porch.',
     color: 'from-rose-500 to-pink-600'
-  },
-  {
-    id: 'fam-riya',
-    name: 'Riya Sharma',
-    hindiName: 'रिया शर्मा',
-    relation: 'Your Granddaughter',
-    hindiRelation: 'आपकी पोती (Granddaughter)',
-    relationShort: 'Granddaughter',
-    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80',
-    location: 'Home Verandah, Guwahati',
-    year: '2024',
-    memoryNote: 'Riya loves drawing tea gardens and reading folk stories with you.',
-    affirmation: 'Spot on! That is your sweet granddaughter Riya, who loves listening to your stories. 🌼',
-    color: 'from-emerald-500 to-teal-600'
-  },
-  {
-    id: 'fam-rahul',
-    name: 'Rahul Sharma',
-    hindiName: 'राहुल शर्मा',
-    relation: 'Your Son',
-    hindiRelation: 'आपका बेटा (Son)',
-    relationShort: 'Son',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
-    location: 'Jorhat Family Home',
-    year: '2022',
-    memoryNote: 'Rahul visited during Magh Bihu festival and helped set up the bonfire.',
-    affirmation: 'Correct! That is your devoted son Rahul, who calls you every evening after work. 🌿',
-    color: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'fam-sunita',
@@ -126,25 +98,39 @@ export const FAMILY_MEMBERS = [
     relation: 'Your Spouse (Wife)',
     hindiRelation: 'आपकी पत्नी (Spouse)',
     relationShort: 'Spouse',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop&q=80',
+    image: '/family/wife_sunita.png',
     location: 'Courtyard Garden',
     year: '2021',
-    memoryNote: 'Sunita enjoying morning tea and ringing the prayer bell in the courtyard.',
-    affirmation: 'Heartwarming! That is your loving companion Sunita, enjoying morning garden tea. 💛',
+    memoryNote: 'Sunita caring for blooming marigolds and orchids in traditional Mekhela Sador.',
+    affirmation: 'Heartwarming! That is your loving companion Sunita, tending fresh courtyard flowers. 💛',
     color: 'from-amber-400 to-yellow-600'
   },
   {
-    id: 'fam-biren',
-    name: 'Biren Das',
-    hindiName: 'बिरेन दास',
-    relation: 'Your Childhood Friend',
-    hindiRelation: 'आपके बचपन के मित्र (Friend)',
-    relationShort: 'Friend',
-    image: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=600&auto=format&fit=crop&q=80',
-    location: 'Jorhat Tea Estate',
-    year: '2020',
-    memoryNote: 'Biren and you reminiscing over Assam tea and old river journeys.',
-    affirmation: 'Splendid! That is your loyal lifelong companion Biren Das from Jorhat.',
+    id: 'fam-rahul',
+    name: 'Magh Bihu Celebration',
+    hindiName: 'माघ बिहू उत्सव',
+    relation: 'Harvest Festival',
+    hindiRelation: 'फसल का त्योहार (Festival)',
+    relationShort: 'Festival',
+    image: '/family/ramesh_bihu.png',
+    location: 'Assam Village',
+    year: '2022',
+    memoryNote: 'Ramesh standing proudly before the traditional Bhelaghar harvest celebration.',
+    affirmation: 'Correct! That is the joyous Magh Bihu harvest celebration with family. 🌿',
+    color: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'fam-shillong',
+    name: 'Shillong Family Trip',
+    hindiName: 'शिलांग पारिवारिक यात्रा',
+    relation: 'Family Vacation',
+    hindiRelation: 'पारिवारिक छुट्टी (Holiday)',
+    relationShort: 'Vacation',
+    image: '/family/family_umiam_lake.png',
+    location: 'Umiam Lake, Shillong',
+    year: '2022',
+    memoryNote: 'The whole family together enjoying the autumn breeze overlooking Umiam Lake.',
+    affirmation: 'Splendid! That is the wonderful family gathering at Umiam Lake in Shillong.',
     color: 'from-teal-500 to-emerald-600'
   }
 ];
@@ -265,7 +251,7 @@ export default function FacesFamilyRecall() {
     speakLocalized({
       text,
       langCode: currentLanguage?.code || 'en',
-      rate: 0.85,
+      rate: 1.0,
       pitch: 1.0,
       isAutoPlay,
       patientId: activePatient?.id || activePatient?._id,
@@ -336,10 +322,14 @@ export default function FacesFamilyRecall() {
     speakText(promptText, true);
   }, [speakText, currentLanguage, activeFamilyPool]);
 
-  // Start game on mount with ML adaptive calibration
+  const hasInitializedRef = useRef(false);
+
+  // Start game on mount with ML adaptive calibration (runs ONCE per game session)
   useEffect(() => {
     let isMounted = true;
     if (activeFamilyPool.length < 2) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     async function initAdaptiveStartingDifficulty() {
       try {
@@ -375,7 +365,7 @@ export default function FacesFamilyRecall() {
     gameStartTimeRef.current = Date.now();
     initAdaptiveStartingDifficulty();
     return () => { isMounted = false; };
-  }, [activePatient, currentLanguage, generateRound, activeFamilyPool]);
+  }, [activeFamilyPool.length, activePatient?.id, activePatient?._id, generateRound]);
 
   // Handle Option Tap
   const handleOptionClick = (option) => {
@@ -401,7 +391,9 @@ export default function FacesFamilyRecall() {
       });
 
       const isHindi = (currentLanguage?.code || '').startsWith('hi');
-      const affirmation = (isHindi && HINDI_PERSON_AFFIRMATIONS[currentPerson.id]) ? HINDI_PERSON_AFFIRMATIONS[currentPerson.id] : currentPerson.affirmation;
+      const affirmation = (isHindi && currentPerson?.id && HINDI_PERSON_AFFIRMATIONS[currentPerson.id]) 
+        ? HINDI_PERSON_AFFIRMATIONS[currentPerson.id] 
+        : (currentPerson?.affirmation || 'Correct! Well done! 💛');
       setFeedbackMessage(affirmation);
       speakText(affirmation, true);
 
@@ -430,8 +422,8 @@ export default function FacesFamilyRecall() {
       setRoundMistakes(prev => prev + 1);
 
       const gentleCorrection = questionMode === 'name'
-        ? `This is actually ${currentPerson.name} (${currentPerson.relation}) 💛`
-        : `This is actually ${currentPerson.relation} — ${currentPerson.name} 💛`;
+        ? `This is actually ${currentPerson?.name || 'your family member'} (${currentPerson?.relation || 'Family'}) 💛`
+        : `This is actually ${currentPerson?.relation || 'your family member'} — ${currentPerson?.name || ''} 💛`;
 
       setFeedbackMessage(gentleCorrection);
       speakText(gentleCorrection, true);
@@ -545,6 +537,7 @@ export default function FacesFamilyRecall() {
   };
 
   const handleRestart = () => {
+    stopSpeech();
     setCurrentLevel(1);
     setRunningScore(0);
     setRoundDetails([]);
@@ -612,6 +605,19 @@ export default function FacesFamilyRecall() {
               <span>{(currentLanguage?.code || '').startsWith('hi') ? 'अभ्यास मोड (डेमो परिवार के साथ)' : 'Practice with Demo Family Mode'}</span>
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentPerson && !isGameOver) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-8 border-2 border-stone-200/90 text-center space-y-3 shadow-md max-w-sm w-full">
+          <Users className="w-10 h-10 text-rose-600 mx-auto animate-pulse" />
+          <p className="text-sm font-black text-stone-800">
+            {(currentLanguage?.code || '').startsWith('hi') ? 'स्मृति दौर तैयार किया जा रहा है...' : 'Preparing Memory Round...'}
+          </p>
         </div>
       </div>
     );
@@ -765,8 +771,8 @@ export default function FacesFamilyRecall() {
               {/* Photo Frame */}
               <div className="w-full md:w-1/2 aspect-[4/3] rounded-3xl overflow-hidden bg-stone-200 border-3 border-amber-800/40 shadow-md relative group">
                 <img
-                  src={currentPerson.image}
-                  alt={currentPerson.name}
+                  src={currentPerson?.image || '/family/grandson_arjun.png'}
+                  alt={currentPerson?.name || 'Family member'}
                   className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                   onError={(e) => {
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';
@@ -775,7 +781,7 @@ export default function FacesFamilyRecall() {
                 
                 {/* Year & Location Pill */}
                 <div className="absolute top-3 left-3 bg-stone-950/80 backdrop-blur-xs text-white text-xs font-black px-3 py-1 rounded-full shadow-xs">
-                  {currentPerson.year} • {currentPerson.location}
+                  {currentPerson?.year || '2023'} • {currentPerson?.location || 'Home'}
                 </div>
               </div>
 
@@ -786,14 +792,14 @@ export default function FacesFamilyRecall() {
                     Memory Hint
                   </span>
                   <p className="text-sm sm:text-base font-semibold text-stone-800 leading-relaxed italic">
-                    "{currentPerson.memoryNote}"
+                    "{currentPerson?.memoryNote || 'A cherished family memory.'}"
                   </p>
                 </div>
 
                 {/* Voice Read Clue */}
                 <button
                   type="button"
-                  onClick={() => speakText(`Memory hint: ${currentPerson.memoryNote}`)}
+                  onClick={() => speakText(`Memory hint: ${currentPerson?.memoryNote || 'A cherished family memory.'}`)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold border border-stone-300 transition-colors cursor-pointer active:scale-95"
                 >
                   <Volume2 className="w-4 h-4 text-amber-800" />

@@ -233,7 +233,7 @@ export const setVoiceAutoPlaySetting = (enabled, patientId = null) => {
 export const speakLocalized = async ({
   text,
   langCode = 'en',
-  rate = 0.88,
+  rate = 1.0,
   pitch = 1.0,
   isAutoPlay = false,
   patientId = null,
@@ -371,6 +371,9 @@ export const speakLocalized = async ({
   };
 
   try {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
     window.speechSynthesis.speak(utterance);
   } catch (e) {
     console.warn('SpeechSynthesis speak failed:', e);

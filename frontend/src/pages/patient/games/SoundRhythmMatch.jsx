@@ -389,8 +389,8 @@ export default function SoundRhythmMatch() {
     speakLocalized({
       text,
       langCode: (currentLanguage?.code || 'en').startsWith('hi') ? 'hi-IN' : (currentLanguage?.code || 'en'),
-      rate: 0.88,
-      pitch: 1.05,
+      rate: 1.0,
+      pitch: 1.0,
       isAutoPlay,
       patientId: activePatientId || activePatient?.id
     });

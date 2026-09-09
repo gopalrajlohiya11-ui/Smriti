@@ -249,7 +249,7 @@ export default function OddOneOut() {
     speakLocalized({
       text,
       langCode: isHindi ? 'hi-IN' : (currentLanguage?.code || 'en'),
-      rate: 0.90,
+      rate: 1.0,
       isAutoPlay,
       patientId: activePatient?.id || activePatient?._id,
       onStart: () => setIsPlayingAudio(true),
@@ -303,9 +303,14 @@ export default function OddOneOut() {
     speakText(voicePrompt, true);
   }, [isHindi, speakText]);
 
-  // Start game on mount with ML adaptive difficulty calibration
+  const hasInitializedRef = useRef(false);
+
+  // Start game on mount with ML adaptive difficulty calibration (runs ONCE per session)
   useEffect(() => {
     let isMounted = true;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     async function initAdaptiveStartingDifficulty() {
       try {
         const pid = activePatient?.id || activePatient?._id;
@@ -337,7 +342,7 @@ export default function OddOneOut() {
     gameStartTimeRef.current = Date.now();
     initAdaptiveStartingDifficulty();
     return () => { isMounted = false; };
-  }, [activePatient, isHindi, generateRound]);
+  }, [activePatient?.id, activePatient?._id, isHindi, generateRound]);
 
   const handleCardClick = (card) => {
     if (feedbackState || isGameOver) return;
