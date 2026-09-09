@@ -27,3 +27,8 @@ Thumbs.db
 # Third-party tools & binaries
 ngrok/
 scratch/
+
+# Local poster & slide docs
+docs/Smriti_Technical_Architecture_*
+backend/scripts/generate_technical_architecture_poster.js
+frontend/dev-dist/
