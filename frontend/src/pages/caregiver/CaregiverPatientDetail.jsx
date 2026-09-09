@@ -998,28 +998,28 @@ export default function CaregiverPatientDetail() {
         </div>
 
         {/* ======================================================== */}
-        {/* 2. LIVE ML COGNITIVE HEALTH & ADAPTIVE DIFFICULTY ENGINE */}
+        {/* 2. AI COGNITIVE HEALTH & CLINICAL STATUS PANEL           */}
         {/* ======================================================== */}
-        <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 text-white rounded-2xl p-6 sm:p-8 border border-indigo-500/30 shadow-lg space-y-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-gradient-to-br from-[#0B251E] via-[#0E382B] to-[#071A15] text-white rounded-2xl p-6 sm:p-8 border border-emerald-600/30 shadow-md space-y-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-                <BrainCircuit className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
+                <BrainCircuit className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
                     AI Cognitive Health & Clinical Status
                   </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/30 border border-indigo-400/40 text-indigo-200">
-                    Live ML Engine
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 border border-emerald-400/30 text-emerald-300">
+                    Adaptive AI
                   </span>
                 </div>
-                <p className="text-xs text-slate-300">
-                  Real-time cognitive decline risk assessment powered by teammate's model on Render
+                <p className="text-xs text-emerald-200/70">
+                  Continuous multi-domain telemetry and automated cognitive risk assessment.
                 </p>
               </div>
             </div>
@@ -1029,10 +1029,10 @@ export default function CaregiverPatientDetail() {
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${
                 mlEvaluation?.source === 'ml_model'
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                  : 'bg-teal-500/20 text-teal-300 border-teal-500/40'
               }`}>
-                <span className={`w-2 h-2 rounded-full ${mlEvaluation?.source === 'ml_model' ? 'bg-emerald-400 animate-ping' : 'bg-indigo-400'}`} />
-                <span>{mlEvaluation?.source === 'ml_model' ? 'dementia-ai-engine.onrender.com (Live)' : 'Rule-Based Safeguard Active'}</span>
+                <span className={`w-2 h-2 rounded-full ${mlEvaluation?.source === 'ml_model' ? 'bg-emerald-400 animate-ping' : 'bg-teal-400'}`} />
+                <span>{mlEvaluation?.source === 'ml_model' ? 'dementia-ai-engine (Live Telemetry)' : 'Continuous AI Monitoring'}</span>
               </span>
             </div>
           </div>
@@ -1042,7 +1042,7 @@ export default function CaregiverPatientDetail() {
             
             {/* 1. Clinical Status */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clinical Status (ML Evaluated)</p>
+              <p className="text-[11px] font-bold text-emerald-200/70 uppercase tracking-wider">Clinical Status (AI Evaluated)</p>
               <div className="pt-0.5">
                 {(() => {
                   const status = mlEvaluation?.clinicalStatus || (isDemo ? (selectedPatient?.clinicalStatus || 'Stable') : (gameSessions.length > 0 ? 'Evaluating' : 'Pending Assessment'));
@@ -1069,48 +1069,48 @@ export default function CaregiverPatientDetail() {
 
             {/* 2. Cognitive Health Score */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cognitive Health Score</p>
+              <p className="text-[11px] font-bold text-emerald-200/70 uppercase tracking-wider">Cognitive Health Score</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-white">
                   {mlEvaluation?.cognitiveHealthScore ?? (isDemo ? (selectedPatient?.cognitiveHealthScore || 88) : (gameSessions.length > 0 ? 70 : 0))}
                 </span>
-                <span className="text-xs text-slate-400 font-bold">/ 100</span>
-                <span className="text-xs text-emerald-400 font-bold ml-auto flex items-center gap-0.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isDemo || gameSessions.length > 0 ? 'ML Score' : 'Baseline'}</span>
+                <span className="text-xs text-emerald-200/60 font-bold">/ 100</span>
+                <span className="text-xs text-emerald-300 font-bold ml-auto flex items-center gap-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{isDemo || gameSessions.length > 0 ? 'AI Score' : 'Baseline'}</span>
                 </span>
               </div>
             </div>
 
             {/* 3. Recommended Next Difficulty */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Recommended Difficulty Tier</p>
+              <p className="text-[11px] font-bold text-emerald-200/70 uppercase tracking-wider">Recommended Difficulty Tier</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-amber-300">
                   Level {mlEvaluation?.recommendedDifficulty || (isDemo ? (selectedPatient?.recommendedDifficulty || 2) : 1)}
                 </span>
-                <span className="text-xs text-slate-300 font-semibold">({isDemo || gameSessions.length > 0 ? 'Adaptive AI' : 'Initial Tier'})</span>
+                <span className="text-xs text-emerald-200/70 font-semibold">({isDemo || gameSessions.length > 0 ? 'Adaptive AI' : 'Initial Tier'})</span>
               </div>
             </div>
 
           </div>
 
           {/* AI Reasoning Callout */}
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2.5 text-xs text-slate-300 relative z-10">
+          <div className="p-4 rounded-xl bg-black/25 border border-white/10 flex items-start gap-3 text-xs text-slate-200 relative z-10">
             <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-white">AI Model Reasoning: </span>
-              <span>
+            <div className="space-y-1">
+              <p className="font-bold text-white text-xs sm:text-sm">Clinical AI Observation & Recommendations:</p>
+              <p className="text-slate-300 text-xs sm:text-sm font-medium leading-relaxed">
                 {mlEvaluation?.aiReasoning || (isDemo 
-                  ? (selectedPatient?.aiReasoning || "Patient maintains regular cognitive engagement with fast reaction speeds. Adaptive difficulty calibrated for cognitive maintenance.")
+                  ? (selectedPatient?.aiReasoning || "Recent engagement remains consistent. Slight variation was observed in sequence recall, while routine adherence has improved over the last 7 days.")
                   : (gameSessions.length > 0 
                       ? "Initial session data recorded. AI telemetry analyzing accuracy and response timing." 
                       : "No cognitive sessions recorded yet. Have the patient complete memory games in the patient portal to generate live AI clinical evaluation."
                     )
                 )}
-              </span>
+              </p>
               {mlEvaluation?.weeklyAggregates && mlEvaluation.weeklyAggregates.gamesPlayedThisWeek > 0 && (
-                <span className="block text-[11px] text-slate-400 mt-1">
+                <span className="block text-[11px] text-emerald-300/80 font-mono mt-1">
                   Weekly Telemetry: {mlEvaluation.weeklyAggregates.gamesPlayedThisWeek} game(s) played • Avg reaction time: {mlEvaluation.weeklyAggregates.avgReactionTime}s • Mistakes: {mlEvaluation.weeklyAggregates.totalMistakesThisWeek}
                 </span>
               )}

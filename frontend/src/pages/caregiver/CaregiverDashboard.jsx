@@ -477,85 +477,102 @@ export default function CaregiverDashboard() {
                 const completedCount = patient.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
                 const totalCount = patient.todayReminders?.length || 10;
                 const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                
+                // Determine clinical status
+                const hasOverdue = (patient.todayReminders || []).some(r => !r.status && !r.acknowledged && r.timeState === 'overdue');
+                let statusLabel = 'Stable';
+                let statusStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                if (hasOverdue) {
+                  statusLabel = 'Routine Overdue';
+                  statusStyle = 'bg-rose-50 text-rose-800 border-rose-200';
+                } else if (progressPct >= 70) {
+                  statusLabel = 'Stable';
+                  statusStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                } else if (progressPct > 0) {
+                  statusLabel = 'Active Today';
+                  statusStyle = 'bg-teal-50 text-teal-800 border-teal-200';
+                } else {
+                  statusLabel = 'Needs Attention';
+                  statusStyle = 'bg-amber-50 text-amber-900 border-amber-200';
+                }
 
                 return (
                   <div
                     key={patient.id}
                     onClick={() => navigate(`/caregiver/patient/${patient.id}`)}
-                    className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-lg hover:border-teal-600/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 sm:gap-5 group relative overflow-hidden"
+                    className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-lg hover:border-emerald-600/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 sm:gap-5 group relative overflow-hidden"
                   >
                     {/* Top Accent Line on Hover */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                    <div className="space-y-3 sm:space-y-4">
+                    <div className="space-y-3.5">
                       
                       {/* Patient Avatar & Title */}
-                      <div className="flex items-start gap-3.5 sm:gap-4">
-                        <div className="relative shrink-0">
-                          <img
-                            src={patient.avatar}
-                            alt={patient.name}
-                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover border border-slate-200 shadow-xs group-hover:scale-105 transition-transform duration-200"
-                          />
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-500 border-2 border-white" />
-                        </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="relative shrink-0">
+                            <img
+                              src={patient.avatar}
+                              alt={patient.name}
+                              className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl object-cover border border-slate-200 shadow-xs group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+                          </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-teal-900 transition-colors truncate">
+                          <div className="min-w-0">
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-emerald-900 transition-colors truncate">
                               {patient.name}
                             </h3>
-                            <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 shrink-0">
-                              <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-800" />
-                              <span>{patient.streakDays || 0}d</span>
-                            </span>
+                            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                              {patient.age} yrs • {patient.location.split(',')[0]}
+                            </p>
                           </div>
-                          <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-medium">
-                            {patient.age} yrs • {patient.location.split(',')[0]}
-                          </p>
                         </div>
+
+                        {/* Status Badge */}
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border shrink-0 ${statusStyle}`}>
+                          {statusLabel}
+                        </span>
                       </div>
 
                       {/* Clinical Badges Row */}
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
-                        <span className="text-[11px] sm:text-xs font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 bg-teal-50 text-teal-800 rounded-md border border-teal-200/80">
-                          {patient.cognitiveStage || 'Tier 1'}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+                          {patient.cognitiveStage || 'Early Memory Support'}
                         </span>
-                        <span className="text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-100 text-slate-600 rounded-md border border-slate-200">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-50 text-slate-600 rounded-md border border-slate-200">
                           {patient.nativeLanguage || 'Assamese'}
                         </span>
-                        {patient.hasBiometric && (
-                          <span className="text-[11px] sm:text-xs font-bold px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200 flex items-center gap-1">
-                            <Fingerprint className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600" />
-                            <span>Biometric</span>
-                          </span>
-                        )}
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          <Flame className="w-3 h-3 text-amber-700" />
+                          <span>{patient.streakDays || 0}d Streak</span>
+                        </span>
                       </div>
 
                     </div>
 
                     {/* Progress Bar & Footer */}
-                    <div className="pt-3 sm:pt-4 border-t border-slate-100 space-y-2.5 sm:space-y-3">
+                    <div className="pt-3.5 border-t border-slate-100 space-y-2.5">
                       
-                      <div className="flex items-center justify-between text-xs sm:text-sm font-semibold">
-                        <span className="text-slate-500">Today's Routines</span>
+                      <div className="flex items-center justify-between text-xs font-semibold">
+                        <span className="text-slate-500">Today's Routine Adherence</span>
                         <span className="text-slate-800 font-bold">
-                          {completedCount}/{totalCount} Done <span className="text-teal-800">({progressPct}%)</span>
+                          {completedCount}/{totalCount} <span className="text-emerald-700">({progressPct}%)</span>
                         </span>
                       </div>
 
-                      {/* Sleek Dual-Tone Gradient Progress Bar */}
-                      <div className="w-full bg-slate-100 h-2 sm:h-2.5 rounded-full overflow-hidden border border-slate-200/60">
+                      {/* Sleek Dual-Tone Progress Bar */}
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/60">
                         <div 
-                          className="bg-gradient-to-r from-teal-500 to-emerald-600 h-full rounded-full transition-all duration-500 shadow-xs" 
+                          className="bg-gradient-to-r from-emerald-600 to-teal-600 h-full rounded-full transition-all duration-500 shadow-xs" 
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
 
                       <div className="flex items-center justify-end pt-1">
-                        <span className="text-xs sm:text-sm font-bold text-teal-800 group-hover:text-teal-900 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                          <span>View Records</span>
-                          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="text-xs font-bold text-emerald-800 group-hover:text-emerald-950 inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                          <span>View Patient Records</span>
+                          <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
                         </span>
                       </div>
 

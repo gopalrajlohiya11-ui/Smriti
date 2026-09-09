@@ -73,14 +73,17 @@ export default function CaregiverNotifications() {
             redFlags.map((flag) => {
               const targetPatient = patients.find(p => p.id === flag.patientId) || patients[0];
               const phone = targetPatient?.phone || targetPatient?.emergencyContact || flag.actionPhone || '';
+              const severity = flag.severity || 'high'; // 'high' | 'medium' | 'low'
 
               return (
                 <div 
                   key={flag.id}
                   className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-rose-300 transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden"
                 >
-                  {/* Red Alert Left Accent Bar */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600" />
+                  {/* Left Alert Severity Bar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                    severity === 'high' ? 'bg-rose-500' : severity === 'medium' ? 'bg-amber-500' : 'bg-slate-400'
+                  }`} />
 
                   {/* Left: Patient Avatar + Alert Details */}
                   <div className="flex items-start gap-4">
@@ -101,8 +104,19 @@ export default function CaregiverNotifications() {
                           {targetPatient?.location || 'Assam'}
                         </span>
 
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-rose-600" />
+                        {/* Severity Badge */}
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          severity === 'high' 
+                            ? 'bg-rose-50 text-rose-800 border-rose-200' 
+                            : severity === 'medium'
+                            ? 'bg-amber-50 text-amber-900 border-amber-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
+                          {severity === 'high' ? 'High Severity' : severity === 'medium' ? 'Medium Severity' : 'Low Severity'}
+                        </span>
+
+                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
                           <span>{flag.time}</span>
                         </span>
                       </div>
@@ -114,6 +128,14 @@ export default function CaregiverNotifications() {
                       <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
                         {flag.description}
                       </p>
+
+                      {/* Suggested Clinical Action */}
+                      <div className="pt-1 flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Suggested Action:</span>
+                        <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {flag.suggestedAction || 'Contact primary caregiver or dispatch reminder via WhatsApp Companion'}
+                        </span>
+                      </div>
 
                     </div>
                   </div>
@@ -129,7 +151,7 @@ export default function CaregiverNotifications() {
                         title={`Call ${targetPatient?.name}`}
                       >
                         <Phone className="w-3.5 h-3.5 text-slate-600" />
-                        <span>Call Patient</span>
+                        <span>Call</span>
                       </a>
                     )}
 
@@ -140,18 +162,18 @@ export default function CaregiverNotifications() {
                       className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors cursor-pointer border border-slate-300"
                     >
                       <User className="w-3.5 h-3.5 text-slate-600" />
-                      <span>View File</span>
+                      <span>View Records</span>
                     </button>
 
                     {/* Dismiss Button */}
                     <button
                       type="button"
                       onClick={() => dismissRedFlag(flag.id)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
                       title="Mark this alert as acknowledged"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Dismiss</span>
+                      <span>Acknowledge</span>
                     </button>
 
                   </div>
