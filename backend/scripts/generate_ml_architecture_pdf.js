@@ -1,0 +1,536 @@
+const puppeteer = require('puppeteer-core');
+const fs = require('fs');
+const path = require('path');
+
+const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const OUTPUT_HTML = path.resolve(__dirname, '..', '..', 'docs', 'Smriti_ML_and_Bhashini_Architecture.html');
+const OUTPUT_PDF = path.resolve(__dirname, '..', '..', 'docs', 'Smriti_ML_and_Bhashini_Architecture.pdf');
+const ROOT_PDF = path.resolve(__dirname, '..', '..', 'Smriti_ML_and_Bhashini_Architecture.pdf');
+
+const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smriti - Machine Learning & Digital India Bhashini Architecture Dossier</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@700;800;900&display=swap');
+
+  @page {
+    size: A4;
+    margin: 12mm 12mm 12mm 12mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #0F172A;
+    background-color: #FFFFFF;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #B5502E 100%);
+    color: #FFFFFF;
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(30, 27, 75, 0.18);
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 16pt;
+    font-weight: 900;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.2px;
+  }
+
+  .header p {
+    margin: 0;
+    font-size: 8.5pt;
+    opacity: 0.95;
+    font-weight: 500;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 7.5pt;
+  }
+
+  .meta-grid div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .meta-grid span.label {
+    opacity: 0.75;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 6.5pt;
+  }
+
+  .meta-grid span.val {
+    font-weight: 800;
+  }
+
+  h2 {
+    font-size: 10.5pt;
+    font-weight: 800;
+    color: #1E1B4B;
+    border-bottom: 2px solid #6366F1;
+    padding-bottom: 4px;
+    margin: 14px 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 9pt;
+    font-weight: 800;
+    color: #1E293B;
+    margin: 10px 0 4px 0;
+    page-break-after: avoid;
+  }
+
+  p {
+    margin: 0 0 6px 0;
+    text-align: justify;
+  }
+
+  .code-block {
+    background: #F8FAFC;
+    border: 1px solid #CBD5E1;
+    border-left: 3.5px solid #6366F1;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.2pt;
+    line-height: 1.35;
+    margin: 6px 0 10px 0;
+    white-space: pre-wrap;
+    color: #0F172A;
+    page-break-inside: avoid;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    page-break-inside: avoid;
+  }
+
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+
+  .card-indigo {
+    background: #EEF2FF;
+    border: 1px solid #C7D2FE;
+    border-left: 3.5px solid #4F46E5;
+  }
+
+  .card-teal {
+    background: #F0FDFA;
+    border: 1px solid #99F6E4;
+    border-left: 3.5px solid #0D9488;
+  }
+
+  .card-rose {
+    background: #FFF1F2;
+    border: 1px solid #FECDD3;
+    border-left: 3.5px solid #E11D48;
+  }
+
+  .card-amber {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 3.5px solid #D97706;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6px 0 10px 0;
+    font-size: 7.5pt;
+    page-break-inside: avoid;
+  }
+
+  th {
+    background: #1E1B4B;
+    color: #FFFFFF;
+    text-align: left;
+    padding: 5px 8px;
+    font-weight: 700;
+    border: 1px solid #1E1B4B;
+  }
+
+  td {
+    padding: 4.5px 8px;
+    border: 1px solid #E2E8F0;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #F8FAFC;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 6.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .badge-indigo { background: #E0E7FF; color: #4338CA; }
+  .badge-teal { background: #CCFBF1; color: #0F766E; }
+  .badge-orange { background: #FFEDD5; color: #C2410C; }
+  .badge-green { background: #DCFCE7; color: #15803D; }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .footer {
+    margin-top: 14px;
+    padding-top: 6px;
+    border-top: 1px solid #E2E8F0;
+    font-size: 7pt;
+    color: #64748B;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================== -->
+<!-- PAGE 1: WHY ML & RENDER CLOUD MICROSERVICE ARCHITECTURE -->
+<!-- ======================================================== -->
+
+<div class="header">
+  <h1>🧠 Smriti Machine Learning & Bhashini AI Architecture</h1>
+  <p>Neurocognitive Rationale, Adaptive CST Calibration, Digital India Bhashini Speech Pipeline & Render Cloud Gateway</p>
+  <div class="meta-grid">
+    <div>
+      <span class="label">ML Cloud Microservice</span>
+      <span class="val">FastAPI on Render Cloud</span>
+    </div>
+    <div>
+      <span class="label">Speech Synthesis</span>
+      <span class="val">Digital India Bhashini TTS</span>
+    </div>
+    <div>
+      <span class="label">Cognitive Domains</span>
+      <span class="val">5 Clinical CST Domains</span>
+    </div>
+    <div>
+      <span class="label">Resilience Protocol</span>
+      <span class="val">6s Timeout + Heuristic Fallback</span>
+    </div>
+  </div>
+</div>
+
+<h2>🔬 1. The Core Scientific Rationale: Why Machine Learning in Dementia?</h2>
+<p>
+  Dementia is not a static condition; it is a progressive neurodegenerative syndrome with severe intra-day cognitive fluctuations (e.g., <i>Sundowning</i>, fatigue, and episodic lucidity). Static digital games fail dementia patients due to two catastrophic extremes:
+</p>
+
+<div class="grid-2">
+  <div class="card card-rose">
+    <span class="badge badge-orange">The Failure of Static Games</span>
+    <h3>The "Cognitive Wall" & Anxiety</h3>
+    <p>When difficulty is static and exceeds the patient's momentary cognitive reserve, patients experience severe frustration, agitation, and task abandonment, accelerating cognitive withdrawal.</p>
+  </div>
+  <div class="card card-indigo">
+    <span class="badge badge-indigo">The Clinical ML Solution</span>
+    <h3>Adaptive Flow & Neuroplasticity</h3>
+    <p>Smriti uses ML to continuously calibrate the cognitive envelope (Yerkes-Dodson Law of Arousal). Tasks remain in the optimal <i>"Zone of Proximal Development"</i> to maximize synaptic stimulation without distress.</p>
+  </div>
+</div>
+
+<h3>Key Clinical Objectives Solved by Smriti ML</h3>
+<ol style="margin:4px 0 8px 0; padding-left:16px; font-size:7.8pt;">
+  <li><strong>Real-Time Reaction Velocity Tracking (&Delta;t):</strong> Millisecond latency changes in visual/auditory recall serve as a sensitive digital biomarker of microvascular ischemia weeks before gross HMSE/MMSE score drops.</li>
+  <li><strong>Longitudinal Cognitive Index (S_cog in [0, 100]):</strong> Replaces subjective caregiver recollection with standardized, objective telemetry aggregated across 7-day CST playthroughs.</li>
+  <li><strong>Zero-Barrier Regional Voice Inclusivity:</strong> Digital India Bhashini TTS synthesizes native Assamese, Bodo, and Bengali speech in the cloud, removing reliance on missing local smartphone voice packs.</li>
+</ol>
+
+<h2>☁️ 2. Render Cloud Microservice Architecture (dementia-ai-engine.onrender.com)</h2>
+<p>
+  The ML microservice is deployed as an independent, high-throughput <b>Python FastAPI</b> service hosted on Render Cloud, decoupled from the Node.js business gateway to ensure zero CPU contention during mathematical evaluations.
+</p>
+
+<div class="code-block">
+                          RENDER CLOUD ML & BHASHINI GATEWAY TOPOLOGY
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  REACT 19 FRONTEND CLIENT (idbSync + speechUtils)                │
+└─────────────────────────────────┬──────────────────────────────┬─────────────────────────────────┘
+                                  │ (Primary API Calls)          │ (Direct Fallback Bridge)
+                                  ▼                              ▼
+┌──────────────────────────────────────────────────┐   ┌───────────────────────────────────────────┐
+│        EXPRESS.JS 5.X REST GATEWAY (PORT 5000)   │   │  DIRECT CLIENT RESILIENCE BRIDGE (OFFLINE)│
+│        - mlService.js • translationService.js    │   │  - 7000ms AbortController Client Fallback│
+│        - 6000ms Axios Timeout Wrapper            │   │  - Local Rule-Based Mathematical Heuristics│
+└─────────────────────────┬────────────────────────┘   └─────────────────────┬─────────────────────┘
+                          │ (Proxied Microservice Call)                      │
+                          ▼                                                  │
+┌────────────────────────────────────────────────────────────────────────────┴─────────────────────┐
+│                    LIVE PYTHON FASTAPI ML ENGINE (dementia-ai-engine.onrender.com)               │
+├────────────────────────────────┬────────────────────────────────┬────────────────────────────────┤
+│ 1. POST /get_next_difficulty   │ 2. POST /calculate_health_score│ 3. POST /synthesize_speech     │
+│ Adaptive Difficulty Algorithm  │ Longitudinal Clinical Index    │ Digital India Bhashini TTS WAV │
+├────────────────────────────────┴────────────────────────────────┴────────────────────────────────┤
+│ 4. POST /speak_regional_reminder: North-Eastern Regional Translation & Phrasing                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 2: BHASHINI PIPELINE & ALGORITHMIC FORMULATIONS -->
+<!-- ======================================================== -->
+<div class="page-break"></div>
+
+<h2>🎙️ 3. Digital India Bhashini Speech & Translation Pipeline</h2>
+<p>
+  The biggest barrier to digital healthcare in North-East India is the <b>linguistic deficit</b>: commercial OS platforms (Android/iOS) do not bundle native Text-to-Speech (TTS) voice models for Assamese, Bodo, Manipuri, or tribal dialects. Smriti solves this by integrating Government of India <b>Bhashini (ULCA)</b> speech pipelines directly in our Render ML engine.
+</p>
+
+<div class="grid-2">
+  <div class="card card-teal">
+    <span class="badge badge-teal">Cloud Synthesis</span>
+    <h3>Base64 WAV Audio Streaming</h3>
+    <p>The microservice converts text into high-fidelity 24kHz Base64-encoded WAV/MP3 audio buffers, returned in JSON payload for instantaneous HTML5 Audio playback in browser.</p>
+  </div>
+  <div class="card card-amber">
+    <span class="badge badge-orange">Dual-Engine Resilience</span>
+    <h3>Zero-Crash Fallback Protocol</h3>
+    <p>If the user is offline or the Bhashini API times out (>6s), the client smoothly fails over to local Web Speech API (English/Hindi) or displays the localized Assamese notice banner.</p>
+  </div>
+</div>
+
+<h3>Bhashini API Request & Response Specification</h3>
+<div class="code-block">
+// 1. INBOUND REQUEST: POST https://dementia-ai-engine.onrender.com/synthesize_speech
+{
+  "text_to_speak": "নমস্কাৰ ৰমেশ ডাঙৰীয়া, আপোনাৰ ৰাতিপুৱাৰ ঔষধ খোৱাৰ সময় হ'ল।",
+  "target_language": "as"   // Supported: 'as' (Assamese), 'hi' (Hindi), 'bn' (Bengali), 'brx' (Bodo)
+}
+
+// 2. OUTBOUND RESPONSE (JSON):
+{
+  "original_text": "নমস্কাৰ ৰমেশ ডাঙৰীয়া, আপোনাৰ ৰাতিপুৱাৰ ঔষধ খোৱাৰ সময় হ'ল।",
+  "target_language": "as",
+  "spoken_text": "নমস্কাৰ ৰমেশ ডাঙৰীয়া, আপোনাৰ ৰাতিপুৱাৰ ঔষধ খোৱাৰ সময় হ'ল।",
+  "audio_base64": "UklGRrZbBABXQVZFZm10IBIAAAADAAEAIlYAAIhYAQAEACAAAABkYXRh...", // WAV 24kHz Base64
+  "engine": "bhashini_tts_engine",
+  "source": "live_bhashini_api"
+}
+
+// 3. FRONTEND CONSUMPTION:
+const audio = new Audio("data:audio/wav;base64," + response.audio_base64);
+audio.play(); // Crystal clear native Assamese spoken playback on any device!
+</div>
+
+<h2>📐 4. Core Mathematical Models & Algorithmic Formulations</h2>
+
+<h3>Algorithm A: Dynamic CST Adaptive Difficulty (POST /get_next_difficulty)</h3>
+<p>
+  Calculates the next starting difficulty tier D_next in {1, 2, 3, 4, 5} at the end of each game level based on reaction latency Delta_t and cumulative mistake count M:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:25%;">Performance Metric</th>
+      <th style="width:30%;">Condition / Threshold</th>
+      <th style="width:20%;">Difficulty Scaling</th>
+      <th style="width:25%;">Clinical Rationale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>High Precision & Speed</strong></td>
+      <td>M = 0 AND Delta_t &lt; 3.5s</td>
+      <td>D_next = min(5, D_current + 1)</td>
+      <td>Elevates cognitive challenge to stimulate synaptic reserve.</td>
+    </tr>
+    <tr>
+      <td><strong>Cognitive Fatigue / Stress</strong></td>
+      <td>M &ge; 3 OR Delta_t &gt; 7.0s</td>
+      <td>D_next = max(1, D_current - 1)</td>
+      <td>De-escalates complexity to avoid anxiety and cognitive overload.</td>
+    </tr>
+    <tr>
+      <td><strong>Steady Performance</strong></td>
+      <td>1 &le; M &lt; 3 AND 3.5s &le; Delta_t &le; 7.0s</td>
+      <td>D_next = D_current</td>
+      <td>Reinforces neuroplastic stabilization in current tier.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Algorithm B: Longitudinal Cognitive Health Scoring (S_cog in [0, 100])</h3>
+<p>
+  Synthesizes a 7-day moving window of cognitive sessions (N_games), average reaction time (Delta_t_avg), and mistake count (M_total):
+</p>
+
+<div class="code-block">
+Cognitive Health Score Formulation:
+  S_raw = 80 + min(15, N_games * 3) - min(30, M_total * 2.5) - min(15, max(0, avg_reaction - 3.0) * 3)
+  S_cog = clamp(S_raw, 40, 100)
+
+Clinical Status Classification:
+  • S_cog >= 85 : "Stable" (Optimal CST Engagement)
+  • 70 <= S_cog < 85 : "Mild Decline - Monitor" (Requires Caregiver Attention)
+  • S_cog < 70 : "Significant Decline - Alert Doctor" (Triggers High-Priority Red Flag Alert)
+</div>
+
+<!-- ======================================================== -->
+<!-- PAGE 3: FULL DATA FLOW & RESILIENCE ARCHITECTURE -->
+<!-- ======================================================== -->
+<div class="page-break"></div>
+
+<h2>🔄 5. End-to-End ML Telemetry & Audio Synthesis Sequence Flow</h2>
+
+<div class="code-block">
+                         COMPLETE ML & BHASHINI SEQUENCE FLOW
+┌─────────────────┐             ┌─────────────────┐             ┌─────────────────┐             ┌─────────────────┐
+│  React Client   │             │  Node.js Gateway│             │ Render FastAPI  │             │ Bhashini ULCA   │
+│  (speechUtils)  │             │ (translation/ml)│             │ (dementia-ai)   │             │ (Govt of India) │
+└────────┬────────┘             └────────┬────────┘             └────────┬────────┘             └────────┬────────┘
+         │                               │                               │                               │
+         │ 1. Trigger Speech (Assamese)  │                               │                               │
+         ├──────────────────────────────►│ 2. POST /api/speech/synthesize│                               │
+         │                               ├──────────────────────────────►│ 3. Query Bhashini TTS         │
+         │                               │                               ├──────────────────────────────►│
+         │                               │                               │ 4. Return Synthesized Audio   │
+         │                               │                               │◄──────────────────────────────┤
+         │                               │ 5. Return Base64 WAV JSON     │                               │
+         │                               │◄──────────────────────────────┤                               │
+         │ 6. Base64 Audio Payload       │                               │                               │
+         │◄──────────────────────────────┤                               │                               │
+         │ 7. Play new Audio(data:wav)   │                               │                               │
+         │ [Native Assamese Spoken!]     │                               │                               │
+         │                               │                               │                               │
+         │ 8. Patient Completes CST Game │                               │                               │
+         ├──────────────────────────────►│ 9. POST /api/game-sessions    │                               │
+         │                               ├──────────────────────────────►│ 10. Run Adaptive Difficulty  │
+         │                               │                               │     & Clinical Health Scoring │
+         │                               │ 11. Return Level + Score      │                               │
+         │                               │◄──────────────────────────────┤                               │
+         │                               │ 12. Save to Mongo Atlas       │                               │
+         │ 13. Update UI Badge & Next Lvl│◄──────────────────────────────┘                               │
+         │◄──────────────────────────────┤                                                               │
+</div>
+
+<h2>🛡️ 6. 3-Layer Fault Tolerance & Offline Fallback Matrix</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:20%;">Failure Mode</th>
+      <th style="width:25%;">Primary Detector</th>
+      <th style="width:28%;">Immediate Automated Recovery</th>
+      <th style="width:27%;">User Experience Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Render ML Microservice Cold-Start / Latency</strong></td>
+      <td>Node.js 6000ms Axios Timeout</td>
+      <td>Executes in-memory heuristic math functions in <code>mlService.js</code>.</td>
+      <td>Instant response (&lt;5ms); difficulty and score calculated deterministically.</td>
+    </tr>
+    <tr>
+      <td><strong>Bhashini Speech API Down / Network Drop</strong></td>
+      <td>Frontend AbortController Timeout (7000ms)</td>
+      <td>Falls back to browser Web Speech API (English/Hindi) or Assamese banner.</td>
+      <td>Patient receives spoken voice in fallback language; no app lockup.</td>
+    </tr>
+    <tr>
+      <td><strong>Complete Offline Outage (No Internet in Rural NER)</strong></td>
+      <td>Service Worker + <code>navigator.onLine === false</code></td>
+      <td>IndexedDB (<code>idb</code>) stores telemetry; local heuristics compute difficulty.</td>
+      <td>100% full gameplay offline; telemetry auto-syncs when online.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <span><strong>🌸 Smriti ML & Bhashini Architecture Dossier</strong> • Smart India Hackathon (SIH26003)</span>
+  <span>Team Design Divas • Ministry of Development of North Eastern Region (MDoNER)</span>
+</div>
+
+</body>
+</html>
+`;
+
+async function generateMLPdf() {
+  console.log('📝 Writing ML Architecture HTML to:', OUTPUT_HTML);
+  fs.writeFileSync(OUTPUT_HTML, htmlContent, 'utf8');
+
+  console.log('🚀 Launching Chrome for PDF generation from:', CHROME_PATH);
+  const browser = await puppeteer.launch({
+    executablePath: CHROME_PATH,
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
+  });
+
+  const page = await browser.newPage();
+  await page.goto(`file://${OUTPUT_HTML}`, { waitUntil: 'networkidle0' });
+
+  console.log('🖨️ Generating ML & Bhashini PDF at:', OUTPUT_PDF);
+  await page.pdf({
+    path: OUTPUT_PDF,
+    format: 'A4',
+    printBackground: true,
+    margin: {
+      top: '12mm',
+      right: '12mm',
+      bottom: '12mm',
+      left: '12mm'
+    }
+  });
+
+  await browser.close();
+
+  // Copy to root directory for convenient user download
+  fs.copyFileSync(OUTPUT_PDF, ROOT_PDF);
+  console.log('✅ PDF also copied to root directory:', ROOT_PDF);
+  console.log('\n🎉 Dedicated ML & Bhashini Architecture PDF generated successfully!');
+}
+
+generateMLPdf().catch(err => {
+  console.error('Fatal error generating ML PDF:', err);
+  process.exit(1);
+});
