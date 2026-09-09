@@ -633,72 +633,88 @@ router.get('/:id/photos', optionalAuth, async (req, res) => {
     const patientId = await resolveMongoPatientId(req.params.id);
     let photos = await MemoryBankPhoto.find({ patientId }).sort({ createdAt: -1 });
     
-    // If no custom photos uploaded yet, seed default elderly-friendly family photos
-    if (photos.length === 0) {
-      const isMeera = (req.params.id === 'pat-2' || (typeof req.params.id === 'string' && req.params.id.toLowerCase().includes('meera')));
-      const defaultPhotos = isMeera ? [
-        {
-          patientId,
-          photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
-          title: 'Shillong Peak Viewpoint with Preeti',
-          taggedName: 'Preeti Baruah',
-          relation: 'Daughter',
-          year: '2022',
-          location: 'Shillong, Meghalaya',
-          description: 'A beautiful misty morning enjoying hot tea looking over Shillong valley.',
-          audioPrompt: 'Remember the misty morning view from Shillong Peak with Preeti.'
-        },
-        {
-          patientId,
-          photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
-          title: 'Cherrapunji Waterfalls Family Picnic',
-          taggedName: 'Family',
-          relation: 'Children & Grandchildren',
-          year: '2021',
-          location: 'Cherrapunji, Meghalaya',
-          description: 'Lively family picnic lunch near the waterfalls with fresh orange blossom honey.',
-          audioPrompt: 'The happy laughter during your Cherrapunji waterfall family picnic.'
+    // If no custom photos uploaded yet, seed ONLY for demo patients
+    if (photos.length === 0 && patientId) {
+      let isDemo = req.params.id === 'pat-1' || req.params.id === 'pat-2' || req.params.id === 'pat-3';
+      let isMeera = (req.params.id === 'pat-2' || (typeof req.params.id === 'string' && req.params.id.toLowerCase().includes('meera')));
+      
+      if (!isDemo && mongoose.Types.ObjectId.isValid(patientId)) {
+        const patDoc = await Patient.findById(patientId);
+        if (patDoc) {
+          isDemo = patDoc.isDemoSeed === true || ['pat-1', 'pat-2', 'pat-3'].includes(patDoc.id) || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patDoc.name);
+          if (patDoc.name?.toLowerCase()?.includes('meera')) isMeera = true;
         }
-      ] : [
-        {
-          patientId,
-          photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
-          title: 'Family Gathering at Kaziranga',
-          taggedName: 'Dr. Ananya & Family',
-          relation: 'Daughter & Grandchildren',
-          year: '2023',
-          location: 'Kaziranga, Assam',
-          description: 'A cheerful sunny afternoon enjoying traditional tea and family stories with the grandchildren.',
-          audioPrompt: 'This was taken during our memorable family holiday in Kaziranga National Park.'
-        },
-        {
-          patientId,
-          photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
-          title: 'Morning Garden Walk with Meera',
-          taggedName: 'Meera Baruah',
-          relation: 'Sister',
-          year: '2022',
-          location: 'Shillong, Meghalaya',
-          description: 'Walking past the fresh pine trees and morning orchids in Shillong.',
-          audioPrompt: 'Remember the fresh morning pine breeze and quiet laughter with Meera in Shillong.'
-        },
-        {
-          patientId,
-          photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
-          title: 'Biren & Old Friends Reunion',
-          taggedName: 'Biren Das',
-          relation: 'Lifelong Friend',
-          year: '2021',
-          location: 'Jorhat, Assam',
-          description: 'Annual cultural festival meetup sharing Assam tea and playing chess.',
-          audioPrompt: 'Your wonderful afternoon with Biren Das celebrating Bihu melodies in Jorhat.'
-        }
-      ];
+      }
 
-      photos = await MemoryBankPhoto.insertMany(defaultPhotos);
+      if (isDemo) {
+        const defaultPhotos = isMeera ? [
+          {
+            patientId,
+            photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+            title: 'Shillong Peak Viewpoint with Preeti',
+            taggedName: 'Preeti Baruah',
+            relation: 'Daughter',
+            year: '2022',
+            location: 'Shillong, Meghalaya',
+            description: 'A beautiful misty morning enjoying hot tea looking over Shillong valley.',
+            audioPrompt: 'Remember the misty morning view from Shillong Peak with Preeti.'
+          },
+          {
+            patientId,
+            photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
+            title: 'Cherrapunji Waterfalls Family Picnic',
+            taggedName: 'Family',
+            relation: 'Children & Grandchildren',
+            year: '2021',
+            location: 'Cherrapunji, Meghalaya',
+            description: 'Lively family picnic lunch near the waterfalls with fresh orange blossom honey.',
+            audioPrompt: 'The happy laughter during your Cherrapunji waterfall family picnic.'
+          }
+        ] : [
+          {
+            patientId,
+            photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
+            title: 'Family Gathering at Kaziranga',
+            taggedName: 'Dr. Ananya & Family',
+            relation: 'Daughter & Grandchildren',
+            year: '2023',
+            location: 'Kaziranga, Assam',
+            description: 'A cheerful sunny afternoon enjoying traditional tea and family stories with the grandchildren.',
+            audioPrompt: 'This was taken during our memorable family holiday in Kaziranga National Park.'
+          },
+          {
+            patientId,
+            photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
+            title: 'Morning Garden Walk with Meera',
+            taggedName: 'Meera Baruah',
+            relation: 'Sister',
+            year: '2022',
+            location: 'Shillong, Meghalaya',
+            description: 'Walking past the fresh pine trees and morning orchids in Shillong.',
+            audioPrompt: 'Remember the fresh morning pine breeze and quiet laughter with Meera in Shillong.'
+          },
+          {
+            patientId,
+            photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
+            title: 'Biren & Old Friends Reunion',
+            taggedName: 'Biren Das',
+            relation: 'Lifelong Friend',
+            year: '2021',
+            location: 'Jorhat, Assam',
+            description: 'Annual cultural festival meetup sharing Assam tea and playing chess.',
+            audioPrompt: 'Your wonderful afternoon with Biren Das celebrating Bihu melodies in Jorhat.'
+          }
+        ];
+
+        try {
+          photos = await MemoryBankPhoto.insertMany(defaultPhotos);
+        } catch (err) {
+          console.warn('Could not auto-seed demo photos:', err.message);
+        }
+      }
     }
 
-    res.json(photos);
+    res.json(photos || []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

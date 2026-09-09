@@ -520,85 +520,92 @@ router.get('/:patientId', async (req, res) => {
     let targetPatientId = filter.patientId;
     let sessions = await GameSession.find(filter).sort({ timestamp: -1 }).limit(50);
     
-    // If no sessions exist yet for this patient, seed a diverse set of all 4 cognitive games
+    // If no sessions exist yet for this patient, seed ONLY for demo patients
     if (sessions.length === 0 && targetPatientId && mongoose.Types.ObjectId.isValid(targetPatientId)) {
-      const now = Date.now();
-      const defaultSessions = [
-        {
-          patientId: targetPatientId,
-          gameType: 'market-day-basket',
-          title: 'Market Day Basket',
-          category: 'Pattern & Math Recall',
-          score: 95,
-          difficultyLevel: 'medium',
-          duration: '2 Mins',
-          timestamp: new Date(now - 25 * 60 * 1000),
-          roundDetails: [
-            { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 9 },
-            { level: 2, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
-            { level: 3, itemCount: 4, mode: 'categorization', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 12 },
-            { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
-            { level: 5, itemCount: 5, mode: 'categorization', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 15 }
-          ]
-        },
-        {
-          patientId: targetPatientId,
-          gameType: 'sound-rhythm-match',
-          title: 'Sound & Rhythm Match',
-          category: 'Auditory & Rhythm Recall',
-          score: 90,
-          difficultyLevel: 'medium',
-          duration: '2 Mins',
-          timestamp: new Date(now - 3 * 3600 * 1000),
-          roundDetails: [
-            { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 8 },
-            { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 9 },
-            { level: 3, itemCount: 4, mode: 'rhythm_pattern', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 12 },
-            { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 14 },
-            { level: 5, itemCount: 5, mode: 'rhythm_pattern', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 16 }
-          ]
-        },
-        {
-          patientId: targetPatientId,
-          gameType: 'faces-family-recall',
-          title: 'Faces & Family Recall',
-          category: 'Family & People Recall',
-          score: 98,
-          difficultyLevel: 'medium',
-          duration: '2 Mins',
-          timestamp: new Date(now - 8 * 3600 * 1000),
-          roundDetails: [
-            { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
-            { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
-            { level: 3, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 7 },
-            { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
-            { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 }
-          ]
-        },
-        {
-          patientId: targetPatientId,
-          gameType: 'daily-routine-sequencer',
-          title: 'Daily Routine Sequencer',
-          category: 'Sequence & Routine Recall',
-          score: 92,
-          difficultyLevel: 'medium',
-          duration: '3 Mins',
-          timestamp: new Date(now - 24 * 3600 * 1000),
-          roundDetails: [
-            { level: 1, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 14 },
-            { level: 2, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 16 },
-            { level: 3, itemCount: 4, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 22 },
-            { level: 4, itemCount: 5, mode: 'routine_ordering', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 15 },
-            { level: 5, itemCount: 5, mode: 'routine_ordering', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 19 }
-          ]
-        }
-      ];
+      const patDoc = await Patient.findById(targetPatientId);
+      const isDemo = patDoc?.isDemoSeed === true || 
+        ['pat-1', 'pat-2', 'pat-3'].includes(patDoc?.id) || 
+        ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(patDoc?.name);
+      
+      if (isDemo) {
+        const now = Date.now();
+        const defaultSessions = [
+          {
+            patientId: targetPatientId,
+            gameType: 'market-day-basket',
+            title: 'Market Day Basket',
+            category: 'Pattern & Math Recall',
+            score: 95,
+            difficultyLevel: 'medium',
+            duration: '2 Mins',
+            timestamp: new Date(now - 25 * 60 * 1000),
+            roundDetails: [
+              { level: 1, itemCount: 3, mode: 'categorization', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 9 },
+              { level: 2, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+              { level: 3, itemCount: 4, mode: 'categorization', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 12 },
+              { level: 4, itemCount: 4, mode: 'math', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+              { level: 5, itemCount: 5, mode: 'categorization', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 15 }
+            ]
+          },
+          {
+            patientId: targetPatientId,
+            gameType: 'sound-rhythm-match',
+            title: 'Sound & Rhythm Match',
+            category: 'Auditory & Rhythm Recall',
+            score: 90,
+            difficultyLevel: 'medium',
+            duration: '2 Mins',
+            timestamp: new Date(now - 3 * 3600 * 1000),
+            roundDetails: [
+              { level: 1, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 8 },
+              { level: 2, itemCount: 3, mode: 'rhythm_pattern', accuracy: 100, correctCount: 3, totalAttempts: 3, timeTakenSeconds: 9 },
+              { level: 3, itemCount: 4, mode: 'rhythm_pattern', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 12 },
+              { level: 4, itemCount: 4, mode: 'rhythm_pattern', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 14 },
+              { level: 5, itemCount: 5, mode: 'rhythm_pattern', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 16 }
+            ]
+          },
+          {
+            patientId: targetPatientId,
+            gameType: 'faces-family-recall',
+            title: 'Faces & Family Recall',
+            category: 'Family & People Recall',
+            score: 98,
+            difficultyLevel: 'medium',
+            duration: '2 Mins',
+            timestamp: new Date(now - 8 * 3600 * 1000),
+            roundDetails: [
+              { level: 1, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+              { level: 2, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 },
+              { level: 3, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 7 },
+              { level: 4, itemCount: 4, mode: 'family_relation', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 6 },
+              { level: 5, itemCount: 4, mode: 'family_name', accuracy: 100, correctCount: 1, totalAttempts: 1, timeTakenSeconds: 5 }
+            ]
+          },
+          {
+            patientId: targetPatientId,
+            gameType: 'daily-routine-sequencer',
+            title: 'Daily Routine Sequencer',
+            category: 'Sequence & Routine Recall',
+            score: 92,
+            difficultyLevel: 'medium',
+            duration: '3 Mins',
+            timestamp: new Date(now - 24 * 3600 * 1000),
+            roundDetails: [
+              { level: 1, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 14 },
+              { level: 2, itemCount: 4, mode: 'routine_ordering', accuracy: 100, correctCount: 4, totalAttempts: 4, timeTakenSeconds: 16 },
+              { level: 3, itemCount: 4, mode: 'routine_ordering', accuracy: 80, correctCount: 4, totalAttempts: 5, timeTakenSeconds: 22 },
+              { level: 4, itemCount: 5, mode: 'routine_ordering', accuracy: 100, correctCount: 5, totalAttempts: 5, timeTakenSeconds: 15 },
+              { level: 5, itemCount: 5, mode: 'routine_ordering', accuracy: 83, correctCount: 5, totalAttempts: 6, timeTakenSeconds: 19 }
+            ]
+          }
+        ];
 
-      try {
-        await GameSession.insertMany(defaultSessions);
-        sessions = await GameSession.find(filter).sort({ timestamp: -1 }).limit(50);
-      } catch (insertErr) {
-        console.warn('Could not auto-seed default game sessions:', insertErr.message);
+        try {
+          await GameSession.insertMany(defaultSessions);
+          sessions = await GameSession.find(filter).sort({ timestamp: -1 }).limit(50);
+        } catch (insertErr) {
+          console.warn('Could not auto-seed default game sessions:', insertErr.message);
+        }
       }
     }
 
