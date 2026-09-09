@@ -725,7 +725,8 @@ export default function CaregiverPatientDetail() {
     try {
       setIsDeleting(true);
       setDeleteErrorMsg('');
-      await deletePatient(selectedPatient.id);
+      const targetId = selectedPatient._id || selectedPatient.id || id;
+      await deletePatient(targetId);
       setShowDeleteModal(false);
       setDeleteConfirmName('');
       setIsDeleting(false);

@@ -756,7 +756,7 @@ export function AppProvider({ children }) {
   // 6. Delete Real Patient in MongoDB
   const deletePatient = async (patientId) => {
     try {
-      if (typeof patientId === 'string' && patientId.length === 24) {
+      if (patientId) {
         await deletePatientApi(patientId);
       }
       setPatients(prev => {
@@ -766,9 +766,9 @@ export function AppProvider({ children }) {
       });
       if (activePatientId === patientId) {
         const remaining = patients.filter(p => p.id !== patientId && p._id !== patientId);
-        setActivePatientId(remaining[0]?.id || '');
+        setActivePatientId(remaining[0]?.id || remaining[0]?._id || '');
       }
-      await loadRealData();
+      setTimeout(loadRealData, 400);
       return { success: true };
     } catch (err) {
       console.error('Delete patient error:', err.message);
