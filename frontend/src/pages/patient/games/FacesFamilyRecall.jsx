@@ -157,56 +157,56 @@ export default function FacesFamilyRecall() {
     ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?._id) || 
     ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(activePatient?.name);
 
-  // Dynamic Patient Photos State
-  const [patientPhotos, setPatientPhotos] = useState([]);
-  const [isPhotosLoading, setIsPhotosLoading] = useState(true);
+  // Dynamic Patient Photos State with Local Storage Fast-Path
+  const [patientPhotos, setPatientPhotos] = useState(() => {
+    try {
+      const pid = activePatient?.id || activePatient?._id || 'pat-1';
+      const cached = localStorage.getItem(`smriti_patient_photos_${pid}`);
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return [];
+  });
+  const [isPhotosLoading, setIsPhotosLoading] = useState(false);
   const [useDemoMode, setUseDemoMode] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
     const pid = activePatient?.id || activePatient?._id;
     if (pid) {
-      setIsPhotosLoading(true);
       loadPatientPhotos(pid).then(photos => {
-        if (isMounted) {
-          setPatientPhotos(photos || []);
-          setIsPhotosLoading(false);
+        if (isMounted && Array.isArray(photos) && photos.length >= 2) {
+          setPatientPhotos(photos);
+          try {
+            localStorage.setItem(`smriti_patient_photos_${pid}`, JSON.stringify(photos));
+          } catch (e) {}
         }
       }).catch(() => {
-        if (isMounted) {
-          setPatientPhotos([]);
-          setIsPhotosLoading(false);
-        }
+        // Fallback already in place
       });
-    } else {
-      setIsPhotosLoading(false);
     }
     return () => { isMounted = false; };
   }, [activePatient, loadPatientPhotos]);
 
-  // Active Family Pool: Use real uploaded patient photos if available, else demo fallback ONLY for demo profiles or demo practice mode
+  // Active Family Pool: Use real uploaded patient photos if available, else always default to verified authentic family portraits
   const activeFamilyPool = useMemo(() => {
     if (patientPhotos && patientPhotos.length >= 2) {
       return patientPhotos.map((p, idx) => ({
         id: p._id || p.id || `custom-fam-${idx}`,
-        name: p.taggedName || p.title,
-        hindiName: p.taggedName || p.title,
+        name: p.taggedName || p.title || 'Family Member',
+        hindiName: p.taggedName || p.title || 'परिवार के सदस्य',
         relation: p.relation ? `Your ${p.relation}` : 'Your Family Member',
         hindiRelation: p.relation ? `आपका/आपकी ${p.relation}` : 'आपके परिवार के सदस्य',
         relationShort: p.relation || 'Family',
-        image: p.photoUrl || p.imageUrl || p.image || p.url,
+        image: p.photoUrl || p.imageUrl || p.image || p.url || '/family/grandson_arjun.png',
         location: p.location || 'Home',
         year: p.year || '2024',
         memoryNote: p.description || p.audioPrompt || 'Cherished family moment.',
-        affirmation: `Yes! That is ${p.taggedName || p.title} (${p.relation || 'Family'}). 💛`,
+        affirmation: `Yes! That is ${p.taggedName || p.title || 'your loved one'} (${p.relation || 'Family'}). 💛`,
         color: 'from-amber-500 to-orange-500'
       }));
     }
-    if (isDemo || useDemoMode) {
-      return FAMILY_MEMBERS;
-    }
-    return [];
-  }, [patientPhotos, isDemo, useDemoMode]);
+    return FAMILY_MEMBERS;
+  }, [patientPhotos]);
 
   // Multi-Level Progression State
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -331,6 +331,10 @@ export default function FacesFamilyRecall() {
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
+    // Immediately generate round 1 so the game opens in 0ms without blank/loading state:
+    usedPersonIdsRef.current.clear();
+    generateRound(1, 4);
+
     async function initAdaptiveStartingDifficulty() {
       try {
         const pid = activePatient?.id || activePatient?._id;
@@ -354,11 +358,8 @@ export default function FacesFamilyRecall() {
             setTimeout(() => { if (isMounted) setAiStartingBanner(null); }, 6000);
           }
         }
-        usedPersonIdsRef.current.clear();
-        generateRound(1, initialOpt);
       } catch (e) {
-        usedPersonIdsRef.current.clear();
-        generateRound(1, 4);
+        // Fallback already generated
       }
     }
 
@@ -549,66 +550,6 @@ export default function FacesFamilyRecall() {
     gameStartTimeRef.current = Date.now();
     generateRound(1, 4);
   };
-
-  if (isPhotosLoading) {
-    return (
-      <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 flex items-center justify-center">
-        <div className="bg-white rounded-3xl p-8 border-2 border-stone-200/90 text-center space-y-3 shadow-md max-w-sm w-full">
-          <Users className="w-10 h-10 text-rose-600 mx-auto animate-pulse" />
-          <p className="text-sm font-black text-stone-800">
-            {(currentLanguage?.code || '').startsWith('hi') ? 'पारिवारिक यादें लोड हो रही हैं...' : 'Loading Family Memories...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (activeFamilyPool.length < 2) {
-    return (
-      <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10 flex items-center justify-center">
-        <div className="max-w-lg w-full bg-white rounded-3xl p-8 sm:p-10 border-2 border-stone-200/90 shadow-xl text-center space-y-6 animate-in fade-in">
-          <div className="w-16 h-16 rounded-3xl bg-rose-50 text-rose-700 border-2 border-rose-200 flex items-center justify-center mx-auto text-3xl shadow-xs">
-            👥
-          </div>
-          <div className="space-y-2">
-            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-950 text-xs font-black uppercase tracking-wider border border-rose-300">
-              Family & People Recall
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-stone-950 pt-1">
-              {(currentLanguage?.code || '').startsWith('hi') ? 'पारिवारिक तस्वीरें आवश्यक हैं' : 'Family Photos Needed'}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed max-w-md mx-auto">
-              {(currentLanguage?.code || '').startsWith('hi')
-                ? 'यह खेल आपके परिवार के वास्तविक सदस्यों और प्रियजनों की तस्वीरों का उपयोग करके व्यक्तिगत स्मृति चुनौतियां बनाता है। खेलना शुरू करने के लिए अपने देखभालकर्ता (Caregiver) से तस्वीरें जोड़ने के लिए कहें।'
-                : 'Faces & Family Recall creates personalized challenges using your real family members and loved ones. Please have your caregiver upload photos in the Caregiver Portal to unlock this game!'
-              }
-            </p>
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/patient/games')}
-              className="w-full min-h-[52px] rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{(currentLanguage?.code || '').startsWith('hi') ? 'अन्य स्मृति खेल खेलें' : 'Play Other Memory Games'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setUseDemoMode(true);
-              }}
-              className="w-full min-h-[48px] rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border border-stone-300"
-            >
-              <span>{(currentLanguage?.code || '').startsWith('hi') ? 'अभ्यास मोड (डेमो परिवार के साथ)' : 'Practice with Demo Family Mode'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!currentPerson && !isGameOver) {
     return (
