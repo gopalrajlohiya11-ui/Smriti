@@ -664,4 +664,71 @@ export async function fetchLastGameDifficulty(patientId, gameType = '') {
   }
 }
 
+// 14. Translate Speech / Regional Reminder Text (POST /api/speech/translate)
+export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' }) {
+  if (!textToSpeak) return { translated_text: '', original_text: '', source: 'empty' };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/speech/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ textToSpeak, targetLanguage }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(`HTTP error ${response.status}`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn('Backend translation route unreachable, trying direct teammate AI engine fallback:', err.message);
+
+    // Direct fallback to Teammate AI Engine on Render
+    try {
+      const directController = new AbortController();
+      const directTimeoutId = setTimeout(() => directController.abort(), 6000);
+      const isRegional = (targetLanguage || 'en').toLowerCase().startsWith('as') || (targetLanguage || 'en').toLowerCase().startsWith('hi');
+      const directEndpoint = isRegional 
+        ? 'https://dementia-ai-engine.onrender.com/speak_regional_reminder' 
+        : 'https://dementia-ai-engine.onrender.com/speak_reminder';
+
+      const directRes = await fetch(directEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text_to_speak: textToSpeak,
+          target_language: targetLanguage.split('-')[0].toLowerCase()
+        }),
+        signal: directController.signal
+      });
+      clearTimeout(directTimeoutId);
+
+      if (directRes.ok) {
+        const data = await directRes.json();
+        return {
+          translated_text: data.translated_text || data.spoken_text || textToSpeak,
+          original_text: textToSpeak,
+          target_language: targetLanguage,
+          source: 'direct_live_api'
+        };
+      }
+    } catch (directErr) {
+      console.warn('Direct live translation fallback error:', directErr.message);
+    }
+
+    // Ultimate safe fallback: Return original untranslated text
+    return {
+      translated_text: textToSpeak,
+      original_text: textToSpeak,
+      target_language: targetLanguage,
+      source: 'fallback_original'
+    };
+  }
+}
+
 

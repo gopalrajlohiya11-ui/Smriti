@@ -1,11 +1,15 @@
 /**
- * Centralized Web Speech API Utility for Smriti
- * Supports real English (en-IN/en-US) and Hindi (hi-IN) voice synthesis,
- * with graceful Voice Coming Soon notices for Assamese (as) and regional dialects.
+ * Centralized Web Speech API & Translation Utility for Smriti
+ * Supports real English (en-IN/en-US), Hindi (hi-IN), and live translated regional speech (Assamese/NER dialects),
+ * powered by Teammate's live AI engine on Render with graceful offline & client fallback.
  * 
- * Features asynchronous voice loading & retry to handle browsers where
- * speechSynthesis.getVoices() is empty on first call.
+ * Features:
+ * 1. Live translation & regional phrasing via Teammate AI Engine (POST /speak_regional_reminder)
+ * 2. Asynchronous browser voice loading & retry logic
+ * 3. Graceful fallback notice for Assamese when local browser lacks an installed Assamese TTS voice pack
  */
+
+import { translateSpeechApi } from '../services/api';
 
 export const ASSAMESE_VOICE_NOTICE = "অসমীয়া কণ্ঠস্বৰ শীঘ্ৰেই উপলব্ধ হ'ব (Assamese voice coming soon)";
 
@@ -94,9 +98,36 @@ export const getCleanSpeechText = (text) => {
 };
 
 /**
+ * Translates reminder or speech text via Teammate AI Engine.
+ * On failure or network timeout, gracefully returns original untranslated text.
+ * 
+ * @param {Object} params
+ * @param {string} params.textToSpeak
+ * @param {string} [params.targetLanguage='en']
+ * @returns {Promise<{ translated_text: string, original_text: string, source: string }>}
+ */
+export const getTranslatedSpeech = async ({ textToSpeak, targetLanguage = 'en' }) => {
+  if (!textToSpeak) {
+    return { translated_text: '', original_text: '', source: 'empty' };
+  }
+
+  try {
+    return await translateSpeechApi({ textToSpeak, targetLanguage });
+  } catch (err) {
+    console.warn('⚠️ [getTranslatedSpeech] Translation error, falling back to original:', err.message);
+    return {
+      translated_text: textToSpeak,
+      original_text: textToSpeak,
+      target_language: targetLanguage,
+      source: 'fallback_original'
+    };
+  }
+};
+
+/**
  * Finds the best matching voice for a given language code.
  * 
- * @param {string} langCode - e.g. 'hi', 'hi-IN', 'en', 'en-IN'
+ * @param {string} langCode - e.g. 'as', 'as-IN', 'hi', 'hi-IN', 'en', 'en-IN'
  * @param {SpeechSynthesisVoice[]} [customVoiceList] - Optional voice array
  * @returns {SpeechSynthesisVoice|null}
  */
@@ -111,7 +142,14 @@ export const getAvailableVoice = (langCode, customVoiceList = null) => {
   const code = (langCode || 'en').toLowerCase();
   let selectedVoice = null;
 
-  if (code.startsWith('hi')) {
+  if (code === 'as' || code.startsWith('as')) {
+    // 1. Exact or prefix match for Assamese
+    selectedVoice = 
+      voices.find(v => v.lang.toLowerCase() === 'as-in' || v.lang.toLowerCase() === 'as_in') ||
+      voices.find(v => v.lang.toLowerCase().startsWith('as')) ||
+      voices.find(v => v.name.toLowerCase().includes('assamese') || v.name.toLowerCase().includes('অসমীয়া')) ||
+      null;
+  } else if (code.startsWith('hi')) {
     // 1. Exact hi-IN match
     selectedVoice = voices.find(v => v.lang.toLowerCase() === 'hi-in' || v.lang.toLowerCase() === 'hi_in') ||
       // 2. Any hi- prefix
@@ -189,7 +227,8 @@ export const setVoiceAutoPlaySetting = (enabled, patientId = null) => {
 };
 
 /**
- * Main speech synthesis trigger with async voice loading, request tracking, and zero overlap.
+ * Main speech synthesis trigger with live translation integration, async voice loading,
+ * request tracking, and zero overlap.
  */
 export const speakLocalized = async ({
   text,
@@ -220,17 +259,47 @@ export const speakLocalized = async ({
   }
 
   const code = (langCode || 'en').toLowerCase();
+  let textToSynthesize = text;
 
-  // Assamese voice is not reliably supported in browser Web Speech API
-  if (code === 'as' || code.startsWith('as-')) {
-    if (onNotice) {
-      onNotice(ASSAMESE_VOICE_NOTICE);
+  // 1. For Assamese / Regional languages: call Live Translation API first
+  if (code === 'as' || code.startsWith('as-') || code.startsWith('as_')) {
+    try {
+      const transResult = await getTranslatedSpeech({ textToSpeak: text, targetLanguage: 'as' });
+      if (transResult && transResult.translated_text) {
+        textToSynthesize = transResult.translated_text;
+      }
+    } catch (transErr) {
+      console.warn('Translation retrieval notice:', transErr.message);
     }
-    if (onStart) onStart();
-    setTimeout(() => {
-      if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
-    }, 2500);
-    return;
+
+    // Check if another speech request was triggered while awaiting translation
+    if (thisRequestId !== activeSpeechRequestId) return;
+
+    // Check if speech synthesis is supported
+    if (!('speechSynthesis' in window)) {
+      if (onNotice) onNotice(ASSAMESE_VOICE_NOTICE);
+      if (onError) onError(new Error('Web Speech API not supported in this browser.'));
+      return;
+    }
+
+    // Ensure voices are loaded to check if this device has an Assamese voice installed
+    const loadedVoices = await ensureVoicesLoaded();
+    if (thisRequestId !== activeSpeechRequestId) return;
+
+    const asVoice = getAvailableVoice('as', loadedVoices);
+
+    // If device lacks an installed Assamese TTS voice pack, show fallback notice gracefully
+    if (!asVoice) {
+      console.info('ℹ️ [SpeechSynthesis] Translation ready, but no local Assamese voice pack is installed on this device. Displaying fallback notice.');
+      if (onNotice) {
+        onNotice(ASSAMESE_VOICE_NOTICE);
+      }
+      if (onStart) onStart();
+      setTimeout(() => {
+        if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
+      }, 2500);
+      return;
+    }
   }
 
   if (!('speechSynthesis' in window)) {
@@ -238,7 +307,7 @@ export const speakLocalized = async ({
     return;
   }
 
-  const clean = getCleanSpeechText(text);
+  const clean = getCleanSpeechText(textToSynthesize);
   if (!clean) {
     if (onEnd) onEnd();
     return;
@@ -261,7 +330,13 @@ export const speakLocalized = async ({
   utterance.rate = rate;
   utterance.pitch = pitch;
 
-  if (code.startsWith('hi')) {
+  if (code === 'as' || code.startsWith('as')) {
+    utterance.lang = 'as-IN';
+    const asVoice = getAvailableVoice('as', loadedVoices);
+    if (asVoice) {
+      utterance.voice = asVoice;
+    }
+  } else if (code.startsWith('hi')) {
     utterance.lang = 'hi-IN';
     const hiVoice = getAvailableVoice('hi', loadedVoices);
     if (hiVoice) {

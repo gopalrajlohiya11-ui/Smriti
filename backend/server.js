@@ -1,3 +1,5 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,66 +10,66 @@ app.use(cors());
 app.use(express.json());
 
 
-// Test route to confirm the server is alive
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+// Configure Mongoose connection event listeners for comprehensive log visibility on Render
+mongoose.connection.on('connected', () => {
+  console.log(`✅ [MongoDB Atlas] Connection established! Database: "${mongoose.connection.name}" | Host: ${mongoose.connection.host}`);
 });
 
-// Privacy Policy route for Meta App / Hackathon project
-app.get('/privacy-policy', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Privacy Policy - Cognitive Assistance App</title>
-      <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
-        h1 { color: #1a73e8; }
-        h2 { color: #202124; margin-top: 24px; }
-        .disclaimer { background: #f1f3f4; padding: 12px 16px; border-radius: 8px; font-style: italic; }
-      </style>
-    </head>
-    <body>
-      <h1>Privacy Policy</h1>
-      <p class="disclaimer">This is a prototype privacy policy for a Hackathon Cognitive Assistance project.</p>
-      
-      <h2>1. Information We Collect</h2>
-      <p>In order to provide cognitive assistance services, we collect:</p>
-      <ul>
-        <li><strong>WhatsApp Messages:</strong> Inbound and outbound messages sent to and from our automated WhatsApp assistant.</li>
-        <li><strong>Health Reminder Data:</strong> Schedules, dosage reminders, and patient routine notifications.</li>
-        <li><strong>Game Scores & Cognitive Metrics:</strong> Scores and activity logs from cognitive puzzle games.</li>
-      </ul>
-
-      <h2>2. How We Use Information</h2>
-      <p>The collected information is used solely for the purpose of operating, maintaining, and delivering cognitive assistance features to patients and caregivers. We do not sell, rent, or share personal data with third parties.</p>
-
-      <h2>3. Data Retention & Security</h2>
-      <p>Data is stored securely in our database and accessed only as necessary to provide service functionality.</p>
-
-      <h2>4. Contact Us</h2>
-      <p>If you have any questions regarding this privacy policy or your data, please contact us at: <a href="mailto:support@example.com">support@example.com</a></p>
-    </body>
-    </html>
-  `);
+mongoose.connection.on('error', (err) => {
+  console.error(`❌ [MongoDB Atlas] Connection error: ${err.message}`);
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+mongoose.connection.on('disconnected', () => {
+  console.warn(`⚠️ [MongoDB Atlas] Disconnected from MongoDB Atlas. Auto-reconnection in progress...`);
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log(`🔄 [MongoDB Atlas] Reconnected successfully to MongoDB Atlas!`);
+});
+
+// Robust health check endpoint for uptime monitoring & Render diagnostics
+const getHealthStatus = (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const stateMap = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+
+  const isHealthy = dbState === 1;
+  const status = isHealthy ? 'ok' : 'degraded';
+
+  res.status(isHealthy ? 200 : 503).json({
+    status,
+    server: 'online',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.round(process.uptime()),
+    database: {
+      status: stateMap[dbState] || 'unknown',
+      readyState: dbState,
+      name: mongoose.connection.name || null,
+      host: mongoose.connection.host || null,
+      isConfigured: Boolean(process.env.MONGO_URI)
+    }
+  });
+};
+
+app.get('/health', getHealthStatus);
+app.get('/api/health', getHealthStatus);
 
 // Import routes
 const caregiverRoutes = require('./routes/caregiverRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
 const gameRoutes = require('./routes/gameRoutes');
+const translationRoutes = require('./routes/translationRoutes');
 app.use('/api/caregivers', caregiverRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/game-sessions', gameRoutes);
+app.use('/api/translation', translationRoutes);
+app.use('/api/speech', translationRoutes);
 
 const whatsappWebhook = require('./routes/whatsappWebhook');
 app.use('/api/whatsapp', whatsappWebhook);
@@ -166,6 +168,42 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+
+async function startServer() {
+  const mongoUri = process.env.MONGO_URI;
+  
+  if (!mongoUri) {
+    console.error('❌ [FATAL ERROR] MONGO_URI environment variable is missing or undefined! Please set MONGO_URI in your Render environment settings.');
+  } else {
+    // Sanitize and mask password for safe log output on Render
+    const maskedUri = mongoUri.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@');
+    console.log(`🔌 [Boot] Connecting to MongoDB Atlas (${maskedUri})...`);
+
+    try {
+      const startTime = Date.now();
+      await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 30000, // 30 seconds wait before server selection timeout (handles cold starts)
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        retryWrites: true,
+        w: 'majority'
+      });
+      const elapsed = Date.now() - startTime;
+      console.log(`✅ [Boot] MongoDB Atlas connection established in ${elapsed}ms. Ready State: ${mongoose.connection.readyState}`);
+    } catch (err) {
+      console.error('❌ [Boot] Initial MongoDB Atlas connection failed:', err.message);
+      console.error('💡 [Diagnosis]: If running on Render, ensure:');
+      console.error('   1. MONGO_URI is configured correctly in Render Dashboard -> Environment.');
+      console.error('   2. MongoDB Atlas Network Access has 0.0.0.0/0 enabled (Allow access from anywhere).');
+      console.error('   3. Database user credentials and database name are valid.');
+    }
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Smriti Backend Server is listening on port ${PORT}`);
+    console.log(`📡 Health check URL: http://localhost:${PORT}/health or /api/health`);
+  });
+}
+
+startServer();

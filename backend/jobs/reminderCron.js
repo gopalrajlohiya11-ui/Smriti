@@ -4,6 +4,7 @@ const Patient = require('../models/patient');
 const Reminder = require('../models/Reminder');
 const { getPatientGameUrl } = require('../utils/token');
 const { saveChatMessage } = require('../services/aiService');
+const { getTranslatedSpeech } = require('../services/translationService');
 require('dotenv').config();
 
 // 5+ Template variations for combined reminder messages
@@ -83,10 +84,22 @@ async function sendDailyPatientReminders() {
         gameLink: {}
       };
 
+      const patientLang = patient.language || 'en';
+
       // 1. Process Combined Reminder Message
       if (pendingReminders.length > 0) {
         const reminderLabels = pendingReminders.map(r => getReminderLabel(r.type));
-        const combinedMessage = getCombinedReminderMessage(firstName, reminderLabels);
+        let combinedMessage = getCombinedReminderMessage(firstName, reminderLabels);
+
+        // Translate reminder message if patient has a non-English regional preference
+        try {
+          const trans = await getTranslatedSpeech({ textToSpeak: combinedMessage, targetLanguage: patientLang });
+          if (trans && trans.translated_text) {
+            combinedMessage = trans.translated_text;
+          }
+        } catch (e) {
+          console.warn('⚠️ [Reminder Cron] Translation error, sending original template:', e.message);
+        }
 
         console.log(`📨 Sending 1 combined reminder message (${pendingReminders.length} items) to ${patient.name} (${patient.phoneNumber})`);
         await sendWhatsAppMessage(patient.phoneNumber, combinedMessage);
@@ -120,7 +133,16 @@ async function sendDailyPatientReminders() {
 
       if (!alreadySentGameToday) {
         const gameUrl = getPatientGameUrl(patient._id.toString());
-        const gameMessage = getSeparateGameMessage(firstName, gameUrl);
+        let gameMessage = getSeparateGameMessage(firstName, gameUrl);
+
+        try {
+          const transGame = await getTranslatedSpeech({ textToSpeak: gameMessage, targetLanguage: patientLang });
+          if (transGame && transGame.translated_text) {
+            gameMessage = transGame.translated_text;
+          }
+        } catch (e) {
+          console.warn('⚠️ [Reminder Cron] Game message translation error:', e.message);
+        }
 
         console.log(`🧩 Sending separate daily game link message to ${patient.name} (${patient.phoneNumber})`);
         await sendWhatsAppMessage(patient.phoneNumber, gameMessage);
