@@ -30,7 +30,12 @@
 
 ## 📑 Table of Contents
 
-1. [🔬 Clinical Research Dossier & Neurological Foundation](#-clinical-research-dossier--neurological-foundation)
+1. [📸 Visual Walkthrough & Interface Gallery](#-visual-walkthrough--interface-gallery)
+   - [Senior Patient Experience & Regional Themes](#-senior-patient-experience--regional-themes)
+   - [Culturally Attuned Cognitive Games Suite (5 Clinical CST Domains)](#-culturally-attuned-cognitive-games-suite-5-clinical-cst-domains)
+   - [Clinical Caregiver & Neurologist Command Hub](#-clinical-caregiver--neurologist-command-hub)
+   - [Security, Privacy & DPDP Compliance](#-security-privacy--dpdp-compliance)
+2. [🔬 Clinical Research Dossier & Neurological Foundation](#-clinical-research-dossier--neurological-foundation)
    - [What Actually Happens in Dementia?](#what-actually-happens-in-dementia)
    - [5 Core Cognitive Domains & Smriti Game Mapping](#5-core-cognitive-domains--smriti-game-mapping)
    - [Raw Epidemiological Data & Demographic Statistics](#raw-epidemiological-data--demographic-statistics)
@@ -38,7 +43,7 @@
    - [Major NGOs, Clinical Institutions & Government Initiatives in India](#major-ngos-clinical-institutions--government-initiatives-in-india)
    - [Existing Commercial Apps vs. Smriti](#existing-commercial-apps-vs-smriti)
    - [Verified Open-Source Repositories & Academic Research Papers](#verified-open-source-repositories--academic-research-papers)
-2. [🌸 The Smriti Solution: Complete Architecture & Core Pillars](#-the-smriti-solution-complete-architecture--core-pillars)
+3. [🌸 The Smriti Solution: Complete Architecture & Core Pillars](#-the-smriti-solution-complete-architecture--core-pillars)
    - [1. Senior-Centric Patient Portal & Horizon Routines](#1-senior-centric-patient-portal--horizon-routines)
    - [2. Culturally Attuned Cognitive Games Suite](#2-culturally-attuned-cognitive-games-suite)
    - [3. Multimodal Voice Guidance & Google Gemini AI Assistant](#3-multimodal-voice-guidance--google-gemini-ai-assistant)
@@ -47,15 +52,81 @@
    - [6. Live Machine Learning Microservice (`dementia-ai-engine.onrender.com`)](#6-live-machine-learning-microservice)
    - [7. 100% Offline-First PWA Architecture (Workbox + IndexedDB)](#7-100-offline-first-pwa-architecture)
    - [8. Hardware-Level WebAuthn FIDO2 Biometrics & DPDP Act 2023 Compliance](#8-hardware-level-webauthn-fido2-biometrics--dpdp-act-2023-compliance)
-3. [🏛️ High-Level System Architecture](#️-high-level-system-architecture)
-4. [💻 Complete Technology Stack](#-complete-technology-stack)
-5. [🚀 Quick Start & Local Setup](#-quick-start--local-setup)
-6. [☁️ Cloud Deployment Guide (Vercel & Render)](#️-cloud-deployment-guide-vercel--render)
-7. [🔗 Complete REST API Reference](#-complete-rest-api-reference)
-8. [📱 Meta WhatsApp Cloud API Setup](#-meta-whatsapp-cloud-api-setup)
-9. [🔮 Future Scope & Long-Term Product Roadmap](#-future-scope--long-term-product-roadmap)
-10. [🛡️ Privacy, Ethics & DPDP 2023 Compliance](#️-privacy-ethics--dpdp-2023-compliance)
-11. [👥 Team & Acknowledgements](#-team--acknowledgements)
+4. [🏛️ High-Level System Architecture](#️-high-level-system-architecture)
+5. [💻 Complete Technology Stack](#-complete-technology-stack)
+6. [🚀 Quick Start & Local Setup](#-quick-start--local-setup)
+7. [☁️ Cloud Deployment Guide (Vercel & Render)](#️-cloud-deployment-guide-vercel--render)
+8. [🔗 Complete REST API Reference](#-complete-rest-api-reference)
+9. [📱 Meta WhatsApp Cloud API Setup](#-meta-whatsapp-cloud-api-setup)
+10. [🔮 Future Scope & Long-Term Product Roadmap](#-future-scope--long-term-product-roadmap)
+11. [🛡️ Privacy, Ethics & DPDP 2023 Compliance](#️-privacy-ethics--dpdp-2023-compliance)
+12. [👥 Team & Acknowledgements](#-team--acknowledgements)
+
+---
+
+## 📸 Visual Walkthrough & Interface Gallery
+
+### 👴 Senior Patient Experience & Regional Themes
+Designed for elderly accessibility with warm, soothing tones (`#FAF7F2`), high-contrast typography, large touch targets (min 56px), and personalized North-Eastern Indian state heritage.
+
+| **Tactile PIN & Biometric Login** | **Horizon Dashboard & State Horizon** |
+|:---:|:---:|
+| <img src="docs/screenshots/01_patient_login.png" alt="Patient Login" width="100%"/> | <img src="docs/screenshots/02_patient_dashboard.png" alt="Patient Dashboard" width="100%"/> |
+| *Tactile 4-digit PIN with audio feedback and WebAuthn FIDO2 biometrics* | *Time-aware greeting, regional state horizon banner, and spotlight routine* |
+
+| **Chronological Routine Schedule** | **Family Reminiscence Memory Vault** |
+|:---:|:---:|
+| <img src="docs/screenshots/03_patient_reminders.png" alt="Patient Reminders" width="100%"/> | <img src="docs/screenshots/10_patient_family_vault.png" alt="Memory Bank" width="100%"/> |
+| *Morning-to-night care schedule with audio read-aloud and 1-tap checks* | *Photo reminiscence gallery for facial recall and kinship memory preservation* |
+
+---
+
+### 🎮 Culturally Attuned Cognitive Games Suite (5 Clinical CST Domains)
+Evidence-based digital Cognitive Stimulation Therapy (CST) targeting specific neuroanatomical pathways using authentic North-Eastern Indian cultural assets.
+
+| **Cognitive Games Suite Hub** | **Market Day Basket (বজাৰৰ পাচি)** |
+|:---:|:---:|
+| <img src="docs/screenshots/04_patient_games_suite.png" alt="Games Suite Hub" width="100%"/> | <img src="docs/screenshots/05_game_market_day_basket.png" alt="Market Day Basket" width="100%"/> |
+| *Central game launcher with streak tracking and dynamic difficulty badges* | *Working memory recall of regional produce (Kaji Nemu, Bhut Jolokia, Bamboo Shoot)* |
+
+| **Daily Routine Sequencer (दैनिक दिनचर्या)** | **Faces & Family Recall (चेहरे और यादें)** |
+|:---:|:---:|
+| <img src="docs/screenshots/06_game_daily_routine_sequencer.png" alt="Routine Sequencer" width="100%"/> | <img src="docs/screenshots/07_game_faces_family_recall.png" alt="Faces Recall" width="100%"/> |
+| *Executive function training sequencing familiar morning-to-night routines* | *Fusiform gyrus stimulation matching real family photos and kin relationships* |
+
+| **Sound & Rhythm Match (ध्वनि और लय)** | **Odd One Out (अलग पहचानें)** |
+|:---:|:---:|
+| <img src="docs/screenshots/08_game_sound_rhythm_match.png" alt="Sound Match" width="100%"/> | <img src="docs/screenshots/09_game_odd_one_out.png" alt="Odd One Out" width="100%"/> |
+| *Auditory attention recognizing indigenous instruments (Dhol, Pepa, Shankha)* | *Semantic categorization identifying botanical and culinary anomalies* |
+
+---
+
+### 🩺 Clinical Caregiver & Neurologist Command Hub
+Professional, data-dense healthcare SaaS interface tailored for clinical rigor, adherence monitoring, and AI cognitive telemetry.
+
+| **Clinical Caregiver Authentication** | **Command Center & Patient Roster** |
+|:---:|:---:|
+| <img src="docs/screenshots/12_caregiver_login.png" alt="Caregiver Login" width="100%"/> | <img src="docs/screenshots/13_caregiver_dashboard.png" alt="Caregiver Dashboard" width="100%"/> |
+| *Secure email/password, Google OAuth, and WebAuthn clinician biometric login* | *Real-time patient roster with clinical status tags and adherence metrics* |
+
+| **Patient Clinical Dossier & Telemetry** | **Dedicated Granular Game Telemetry** |
+|:---:|:---:|
+| <img src="docs/screenshots/14_caregiver_patient_detail.png" alt="Patient Clinical Dossier" width="100%"/> | <img src="docs/screenshots/15_caregiver_cognitive_games.png" alt="Game Telemetry" width="100%"/> |
+| *AI Cognitive Health scoring, 7-day adherence charts, and top-3 routine overview* | *Round-by-round precision, reaction time distributions, and level history* |
+
+| **Clinical Red Flag Alerts & Action Center** | **Caregiver Settings & DPDP Governance** |
+|:---:|:---:|
+| <img src="docs/screenshots/16_caregiver_notifications.png" alt="Caregiver Notifications" width="100%"/> | <img src="docs/screenshots/17_caregiver_profile.png" alt="Caregiver Profile" width="100%"/> |
+| *Real-time alerts for missed critical medications with 1-tap telephone dialer* | *Profile management, notification preferences, and 30-day data erasure controls* |
+
+---
+
+### 🛡️ Security, Privacy & DPDP Compliance
+
+| **Patient Emergency Vitals & Profile** | **DPDP Act 2023 Audited Privacy Policy** |
+|:---:|:---:|
+| <img src="docs/screenshots/11_patient_profile.png" alt="Patient Profile" width="100%"/> | <img src="docs/screenshots/18_privacy_policy.png" alt="Privacy Policy" width="100%"/> |
+| *Emergency doctor/caregiver dialers, blood group, and regional language toggles* | *Comprehensive legal compliance with DPDP Act 2023, consent trails, and rights* |
 
 ---
 
