@@ -1,3 +1,4 @@
+const systemPort = process.env.PORT; // Preserve Render port if set in environment
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
@@ -8,6 +9,15 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Root health & welcome route
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Smriti Backend API',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'connecting'
+  });
+});
 
 
 // Configure Mongoose connection event listeners for comprehensive log visibility on Render
@@ -167,7 +177,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = systemPort || process.env.PORT || 5000;
 
 async function startServer() {
   const mongoUri = process.env.MONGO_URI;
@@ -200,8 +210,8 @@ async function startServer() {
     }
   }
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Smriti Backend Server is listening on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Smriti Backend Server is listening on port ${PORT} (host: 0.0.0.0)`);
     console.log(`📡 Health check URL: http://localhost:${PORT}/health or /api/health`);
   });
 }
