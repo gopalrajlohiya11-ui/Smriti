@@ -190,17 +190,24 @@ export default function CaregiverPatientDetail() {
     deleteReminder,
     applyStandardReminders,
     clearAllPatientReminders,
-    loginPatient,
     caregiverUser,
     loadPatientPhotos,
     addPatientPhoto,
-    deletePatientPhoto
+    deletePatientPhoto,
+    setActivePatientId
   } = useApp();
 
   const selectedPatient = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, id)) : null) || 
     initialPatients.find(p => matchPatientHelper(p, id)) || 
     patients[0] || 
     initialPatients[0];
+
+  const switchToPatientView = (patient) => {
+    if (patient) {
+      setActivePatientId(patient._id || patient.id);
+    }
+    navigate('/patient');
+  };
 
   // Photos Vault State
   const [patientPhotosList, setPatientPhotosList] = useState([]);
@@ -706,10 +713,6 @@ export default function CaregiverPatientDetail() {
     }
   };
 
-  const switchToPatientView = (patient) => {
-    loginPatient(patient.name, patient.age, '1234', true);
-    navigate('/patient');
-  };
 
   const handleConfirmDelete = async () => {
     if (!selectedPatient) return;

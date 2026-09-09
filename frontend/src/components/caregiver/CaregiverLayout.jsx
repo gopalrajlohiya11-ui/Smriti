@@ -33,7 +33,7 @@ export default function CaregiverLayout({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { caregiverUser, redFlags, logoutCaregiver, patients } = useApp();
+  const { caregiverUser, redFlags, logoutCaregiver, patients, setActivePatientId } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -170,9 +170,15 @@ export default function CaregiverLayout({
               <span className="text-xs text-slate-400 group-hover:text-slate-300">→</span>
             </Link>
 
-            <Link
-              to="/patient"
-              className="flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors group"
+            <button
+              type="button"
+              onClick={() => {
+                if (patients && patients.length > 0) {
+                  setActivePatientId(patients[0]._id || patients[0].id);
+                }
+                navigate('/patient');
+              }}
+              className="flex items-center justify-between w-full px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors group text-left cursor-pointer"
               title="Preview the elderly-friendly patient portal experience"
             >
               <div className="flex items-center gap-3">
@@ -180,7 +186,7 @@ export default function CaregiverLayout({
                 <span>Patient Portal Preview</span>
               </div>
               <span className="text-xs text-slate-400 group-hover:text-slate-300">↗</span>
-            </Link>
+            </button>
           </div>
 
         </div>
@@ -300,6 +306,20 @@ export default function CaregiverLayout({
               + Enroll New Patient
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              if (patients && patients.length > 0) {
+                setActivePatientId(patients[0]._id || patients[0].id);
+              }
+              navigate('/patient');
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-between"
+          >
+            <span>Patient Portal Preview</span>
+            <span className="text-slate-400">↗</span>
+          </button>
           <button
             onClick={() => {
               logoutCaregiver();
