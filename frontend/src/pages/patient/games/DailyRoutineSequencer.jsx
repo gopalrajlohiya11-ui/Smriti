@@ -170,10 +170,91 @@ function shuffleArray(array) {
   return arr;
 }
 
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return 720;
+  const str = String(timeStr).trim().toUpperCase();
+  const match = str.match(/(\d+):(\d+)\s*(AM|PM)?/);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    const meridiem = match[3];
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + mins;
+  }
+  const simpleMatch = str.match(/(\d+)\s*(AM|PM)/);
+  if (simpleMatch) {
+    let hours = parseInt(simpleMatch[1], 10);
+    const meridiem = simpleMatch[2];
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+    return hours * 60;
+  }
+  return 720;
+}
+
 export default function DailyRoutineSequencer() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { activePatient, currentLanguage, isOnline } = useApp();
+
+  const isDemo = activePatient?.isDemoSeed === true || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?.id) || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?._id) || 
+    ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(activePatient?.name);
+
+  const [useDemoMode, setUseDemoMode] = useState(false);
+
+  // Dynamic Patient Routines: Use real scheduled reminders if available, else demo fallback ONLY for demo profiles or demo practice mode
+  const dynamicPatientRoutines = useMemo(() => {
+    const reminders = activePatient?.todayReminders || [];
+    if (reminders.length >= 2) {
+      return reminders.map((r, idx) => {
+        const minutes = parseTimeToMinutes(r.time || r.scheduledTime);
+        const title = r.title || r.task || r.activity || r.name || `Routine #${idx + 1}`;
+        const type = (r.type || r.category || '').toLowerCase();
+        
+        let emoji = '⏰';
+        let themeColor = 'from-blue-500 to-indigo-600';
+        if (type.includes('med') || title.toLowerCase().includes('med')) {
+          emoji = '💊';
+          themeColor = 'from-rose-500 to-pink-600';
+        } else if (type.includes('meal') || type.includes('food') || title.toLowerCase().includes('breakfast') || title.toLowerCase().includes('lunch') || title.toLowerCase().includes('dinner')) {
+          emoji = '🥣';
+          themeColor = 'from-emerald-500 to-teal-600';
+        } else if (type.includes('walk') || title.toLowerCase().includes('walk') || title.toLowerCase().includes('exercise')) {
+          emoji = '🚶‍♂️';
+          themeColor = 'from-amber-500 to-orange-600';
+        } else if (type.includes('tea') || title.toLowerCase().includes('tea')) {
+          emoji = '☕';
+          themeColor = 'from-amber-400 to-yellow-600';
+        } else if (type.includes('sleep') || type.includes('night') || title.toLowerCase().includes('bed')) {
+          emoji = '🌙';
+          themeColor = 'from-indigo-600 to-slate-800';
+        } else if (type.includes('water') || title.toLowerCase().includes('water') || title.toLowerCase().includes('hydration')) {
+          emoji = '💧';
+          themeColor = 'from-cyan-500 to-blue-600';
+        }
+
+        return {
+          id: r.id || r._id || `dynamic-rem-${idx}`,
+          orderRank: minutes,
+          title: title,
+          hindiTitle: r.hindiTitle || title,
+          localTitle: title,
+          timeHint: r.time || (minutes ? `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}` : ''),
+          emoji: emoji,
+          category: minutes < 720 ? 'morning' : minutes < 1020 ? 'afternoon' : minutes < 1260 ? 'evening' : 'night',
+          themeColor: themeColor,
+          description: r.description || r.notes || `Scheduled for ${r.time || 'today'}`
+        };
+      });
+    }
+    if (isDemo || useDemoMode) {
+      return ROUTINE_ACTIVITIES;
+    }
+    return [];
+  }, [activePatient?.todayReminders, isDemo, useDemoMode]);
 
   // Multi-Level Progression State
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -238,9 +319,12 @@ export default function DailyRoutineSequencer() {
 
   // Generate round cards based on sequence length
   const generateRound = useCallback((levelNum, length) => {
-    // Pick `length` distinct items from the 8 routine activities, ensuring good variety
-    const shuffledPool = shuffleArray(ROUTINE_ACTIVITIES);
-    const chosen = shuffledPool.slice(0, length);
+    if (!dynamicPatientRoutines || dynamicPatientRoutines.length === 0) return;
+
+    // Pick `length` distinct items (capped at dynamicPatientRoutines.length)
+    const effectiveLength = Math.min(dynamicPatientRoutines.length, Math.max(2, length));
+    const shuffledPool = shuffleArray(dynamicPatientRoutines);
+    const chosen = shuffledPool.slice(0, effectiveLength);
 
     // Sort by orderRank to establish ground-truth chronological order
     const sortedChronological = [...chosen].sort((a, b) => a.orderRank - b.orderRank);
@@ -259,11 +343,13 @@ export default function DailyRoutineSequencer() {
     // Voice instruction for round start (Automatic speech trigger -> isAutoPlay: true)
     const introMsg = `Level ${levelNum}. Tap the activities in the order you do them during the day, from morning to night.`;
     speakText(introMsg, true);
-  }, [speakText]);
+  }, [speakText, dynamicPatientRoutines]);
 
   // Start game on mount with ML adaptive calibration
   useEffect(() => {
     let isMounted = true;
+    if (dynamicPatientRoutines.length < 2) return;
+
     async function initAdaptiveStartingDifficulty() {
       try {
         const pid = activePatient?.id || activePatient?._id;
@@ -296,7 +382,7 @@ export default function DailyRoutineSequencer() {
     gameStartTimeRef.current = Date.now();
     initAdaptiveStartingDifficulty();
     return () => { isMounted = false; };
-  }, [activePatient, currentLanguage, generateRound]);
+  }, [activePatient, currentLanguage, generateRound, dynamicPatientRoutines]);
 
   // Handle Card Tap
   const handleCardClick = (card) => {
@@ -512,6 +598,53 @@ export default function DailyRoutineSequencer() {
       default: return <Clock className="w-4 h-4 text-stone-500" />;
     }
   };
+
+  if (dynamicPatientRoutines.length < 2) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10 flex items-center justify-center">
+        <div className="max-w-lg w-full bg-white rounded-3xl p-8 sm:p-10 border-2 border-stone-200/90 shadow-xl text-center space-y-6 animate-in fade-in">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-800 border-2 border-amber-200 flex items-center justify-center mx-auto text-3xl shadow-xs">
+            ⏰
+          </div>
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-950 text-xs font-black uppercase tracking-wider border border-amber-300">
+              Sequence & Routine Recall
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-stone-950 pt-1">
+              {(currentLanguage?.code || '').startsWith('hi') ? 'दैनिक दिनचर्या आवश्यक है' : 'Daily Routines Needed'}
+            </h2>
+            <p className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed max-w-md mx-auto">
+              {(currentLanguage?.code || '').startsWith('hi')
+                ? 'यह खेल आपकी वास्तविक दिनचर्या और दवा कार्यक्रम के अनुसार व्यक्तिगत कालानुक्रमिक चुनौतियां बनाता है। खेलना शुरू करने के लिए अपने देखभालकर्ता (Caregiver) से दिनचर्या अनुसूची जोड़ने के लिए कहें।'
+                : 'Daily Routine Sequencer creates personalized chronological challenges using your real scheduled routines and medication timings. Please have your caregiver schedule reminders in the Caregiver Portal to play!'
+              }
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              type="button"
+              onClick={() => navigate('/patient/games')}
+              className="w-full min-h-[52px] rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-98"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{(currentLanguage?.code || '').startsWith('hi') ? 'अन्य स्मृति खेल खेलें' : 'Play Other Memory Games'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUseDemoMode(true);
+              }}
+              className="w-full min-h-[48px] rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border border-stone-300"
+            >
+              <span>{(currentLanguage?.code || '').startsWith('hi') ? 'अभ्यास मोड (डेमो दिनचर्या के साथ)' : 'Practice with Demo Routines Mode'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FAF7F2] pb-24 pt-6 px-4 sm:px-6 lg:px-8 xl:px-10">
