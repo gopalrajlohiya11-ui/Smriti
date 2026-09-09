@@ -29,10 +29,16 @@ export default function PatientFamily() {
   const { t } = useTranslation();
   const { activePatient, loadPatientPhotos, currentLanguage } = useApp();
 
+  const isDemo = activePatient?.isDemoSeed === true || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?.id) || 
+    ['pat-1', 'pat-2', 'pat-3'].includes(activePatient?._id) || 
+    ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(activePatient?.name);
+
   const isMeera = (activePatient?.name || '').toLowerCase().includes('meera');
-  const defaultPhotos = isMeera ? meeraFamilyPhotos : familyPhotos;
+  const defaultPhotos = isDemo ? (isMeera ? meeraFamilyPhotos : familyPhotos) : [];
   
   const [vaultPhotos, setVaultPhotos] = useState(defaultPhotos);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,19 +46,34 @@ export default function PatientFamily() {
 
   useEffect(() => {
     let isMounted = true;
-    setVaultPhotos(isMeera ? meeraFamilyPhotos : familyPhotos);
+    setIsLoadingPhotos(true);
     if (activePatient?.id || activePatient?._id) {
       loadPatientPhotos(activePatient.id || activePatient._id).then(dbPhotos => {
-        if (isMounted && dbPhotos && Array.isArray(dbPhotos) && dbPhotos.length > 0) {
-          setVaultPhotos(dbPhotos);
+        if (isMounted) {
+          if (Array.isArray(dbPhotos) && dbPhotos.length > 0) {
+            setVaultPhotos(dbPhotos);
+          } else if (isDemo) {
+            setVaultPhotos(isMeera ? meeraFamilyPhotos : familyPhotos);
+          } else {
+            setVaultPhotos([]);
+          }
+          setIsLoadingPhotos(false);
+        }
+      }).catch(() => {
+        if (isMounted) {
+          setVaultPhotos(isDemo ? (isMeera ? meeraFamilyPhotos : familyPhotos) : []);
+          setIsLoadingPhotos(false);
         }
       });
+    } else {
+      setVaultPhotos(isDemo ? (isMeera ? meeraFamilyPhotos : familyPhotos) : []);
+      setIsLoadingPhotos(false);
     }
     return () => { 
       isMounted = false; 
       stopSpeech();
     };
-  }, [activePatient, isMeera, loadPatientPhotos]);
+  }, [activePatient, isDemo, isMeera, loadPatientPhotos]);
 
   const speakText = (text) => {
     speakLocalized({
@@ -103,8 +124,8 @@ export default function PatientFamily() {
               </div>
               <div>
                 <h2 className="text-2xl sm:text-3xl font-black text-[#2B2B2B]">
-    {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
-  </h2>
+                  {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
+                </h2>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                   {isHindi ? "पारिवारिक यादें सुनने के लिए किसी भी तस्वीर को स्पर्श करें" : "Tap any photo to listen to family stories"}
                 </p>
@@ -112,98 +133,125 @@ export default function PatientFamily() {
             </div>
 
             {/* Read Page Audio */}
-            <button
-              type="button"
-              onClick={() => speakText("This is your family memory album. Tap any picture below to listen to its story and recall happy moments together.")}
-              className="min-h-[48px] px-5 py-2.5 rounded-2xl bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white border border-[#2C5AA0]/30 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer self-start sm:self-center shrink-0 active:scale-95"
-            >
-              <Volume2 className="w-4 h-4" />
-              <span>{isHindi ? "सारांश सुनें" : "Listen to Summary"}</span>
-            </button>
+            {filteredPhotos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => speakText("This is your family memory album. Tap any picture below to listen to its story and recall happy moments together.")}
+                className="min-h-[48px] px-5 py-2.5 rounded-2xl bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white border border-[#2C5AA0]/30 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer self-start sm:self-center shrink-0 active:scale-95"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>{isHindi ? "सारांश सुनें" : "Listen to Summary"}</span>
+              </button>
+            )}
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pt-2 pb-1 scrollbar-none">
-            {filterTabs.map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setSelectedFilter(tab.id)}
-                className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer shrink-0 ${
-                  selectedFilter === tab.id
-                    ? 'bg-[#B5502E] text-white border-[#B5502E] shadow-xs'
-                    : 'bg-[#FAF7F2] text-[#2B2B2B] hover:bg-stone-100 border-[#E5E0D8]'
-                }`}
+          {filteredPhotos.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pt-2 pb-1 scrollbar-none">
+              {filterTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedFilter(tab.id)}
+                  className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer shrink-0 ${
+                    selectedFilter === tab.id
+                      ? 'bg-[#B5502E] text-white border-[#B5502E] shadow-xs'
+                      : 'bg-[#FAF7F2] text-[#2B2B2B] hover:bg-stone-100 border-[#E5E0D8]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Photos Grid or Empty State */}
+        {isLoadingPhotos ? (
+          <div className="bg-white rounded-3xl p-12 border border-[#E5E0D8] text-center text-xs font-bold text-slate-500 shadow-2xs">
+            Loading family memories...
+          </div>
+        ) : filteredPhotos.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#E5E0D8] text-center space-y-4 shadow-2xs">
+            <div className="w-16 h-16 rounded-3xl bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 flex items-center justify-center mx-auto text-2xl shadow-xs">
+              🖼️
+            </div>
+            <div className="space-y-2 max-w-md mx-auto">
+              <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
+                {isHindi ? "कोई पारिवारिक तस्वीर नहीं मिली" : "No Family Photos Uploaded Yet"}
+              </h3>
+              <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium leading-relaxed">
+                {isHindi 
+                  ? "आपकी देखभाल करने वाले (Caregiver) पोर्टल में आपके परिवार और प्रियजनों की तस्वीरें जोड़ सकते हैं।"
+                  : "Your caregiver can add cherished family photos and loved ones' memories in the Caregiver Portal to display them here."
+                }
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+            {filteredPhotos.map((photo) => (
+              <div
+                key={photo._id || photo.id}
+                className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E0D8] shadow-2xs hover:shadow-md hover:border-[#B5502E]/40 transition-all flex flex-col justify-between gap-4 group"
               >
-                {tab.label}
-              </button>
+                <div 
+                  onClick={() => setSelectedPhoto(photo)}
+                  className="cursor-pointer space-y-3"
+                >
+                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-[#E5E0D8]">
+                    <img
+                      src={photo.photoUrl || photo.imageUrl || photo.image || photo.url || 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80'}
+                      alt={photo.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80';
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {photo.relation && (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-[#B5502E] border border-[#B5502E]/20 text-xs font-black px-3 py-1 rounded-full shadow-xs">
+                        {photo.relation}
+                      </span>
+                    )}
+                    {photo.year && (
+                      <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
+                        {photo.year}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-[#2B2B2B] group-hover:text-[#B5502E] transition-colors">
+                      {photo.title}
+                    </h3>
+                    <p className="text-xs font-semibold text-[#6B6B6B] flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#B5502E]" />
+                      <span>{photo.location || 'Assam, India'}</span>
+                    </p>
+                    <p className="text-xs text-[#6B6B6B] line-clamp-2 mt-1">
+                      {photo.description || photo.audioPrompt || photo.audioNote}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const isHindi = (currentLanguage?.code || '').startsWith('hi');
+                    const msg = isHindi && HINDI_PHOTO_AUDIO[photo.id] ? HINDI_PHOTO_AUDIO[photo.id] : `${photo.title}. ${photo.audioPrompt || photo.audioNote || photo.description}`;
+                    speakText(msg);
+                  }}
+                  className="w-full min-h-[52px] px-5 py-3 rounded-2xl bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white border border-[#2C5AA0]/30 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-2xs"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  <span>{isHindi ? "कहानी सुनें 🔊" : "Listen to Story 🔊"}</span>
+                </button>
+              </div>
             ))}
           </div>
-        </div>
-
-        {/* Photos Grid: 2 Columns on Tablet/Desktop, 1 on Mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-          {filteredPhotos.map((photo) => (
-            <div
-              key={photo._id || photo.id}
-              className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E0D8] shadow-2xs hover:shadow-md hover:border-[#B5502E]/40 transition-all flex flex-col justify-between gap-4 group"
-            >
-              <div 
-                onClick={() => setSelectedPhoto(photo)}
-                className="cursor-pointer space-y-3"
-              >
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-stone-100 border border-[#E5E0D8]">
-                  <img
-                    src={photo.photoUrl || photo.imageUrl || photo.image || photo.url || 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80'}
-                    alt={photo.title}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80';
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  {photo.relation && (
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-[#B5502E] border border-[#B5502E]/20 text-xs font-black px-3 py-1 rounded-full shadow-xs">
-                      {photo.relation}
-                    </span>
-                  )}
-                  {photo.year && (
-                    <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-                      {photo.year}
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="text-xl font-black text-[#2B2B2B] group-hover:text-[#B5502E] transition-colors">
-                    {photo.title}
-                  </h3>
-                  <p className="text-xs font-semibold text-[#6B6B6B] flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#B5502E]" />
-                    <span>{photo.location || 'Assam, India'}</span>
-                  </p>
-                  <p className="text-xs text-[#6B6B6B] line-clamp-2 mt-1">
-                    {photo.description || photo.audioPrompt || photo.audioNote}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isHindi = (currentLanguage?.code || '').startsWith('hi');
-                  const msg = isHindi && HINDI_PHOTO_AUDIO[photo.id] ? HINDI_PHOTO_AUDIO[photo.id] : `${photo.title}. ${photo.audioPrompt || photo.audioNote || photo.description}`;
-                  speakText(msg);
-                }}
-                className="w-full min-h-[52px] px-5 py-3 rounded-2xl bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white border border-[#2C5AA0]/30 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-2xs"
-              >
-                <Volume2 className="w-4 h-4" />
-                <span>{isHindi ? "कहानी सुनें 🔊" : "Listen to Story 🔊"}</span>
-              </button>
-            </div>
-          ))}
-        </div>
+        )}
 
       </div>
 
