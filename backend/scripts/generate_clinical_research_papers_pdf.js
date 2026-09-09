@@ -154,15 +154,55 @@ const htmlContent = `<!DOCTYPE html>
     margin-top: 2px;
   }
 
+  a {
+    color: #0D9488;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .paper-links-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px dashed #E2E8F0;
+  }
+
   .paper-link {
     font-family: 'JetBrains Mono', monospace;
     font-size: 7pt;
-    color: #0F766E;
+    color: #0F766E !important;
     background: #CCFBF1;
-    padding: 2px 6px;
+    padding: 2.5px 8px;
     border-radius: 4px;
-    text-decoration: none;
+    text-decoration: underline !important;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .paper-link:hover {
+    background: #99F6E4;
+  }
+
+  .paper-link-gold {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7pt;
+    color: #92400E !important;
+    background: #FEF3C7;
+    padding: 2.5px 8px;
+    border-radius: 4px;
+    text-decoration: underline !important;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .paper-link-gold:hover {
+    background: #FDE68A;
   }
 
   .code-block {
@@ -296,7 +336,13 @@ const htmlContent = `<!DOCTYPE html>
       <div class="paper-title">1. Longitudinal Aging Study in India – Diagnostic Assessment of Dementia (LASI-DAD)</div>
       <div class="paper-meta">
         <strong>Published In:</strong> <i>The Lancet Public Health</i> (2023) • <strong>Lead Investigators:</strong> Dr. Jinkook Lee, Dr. P. Arokiasamy, AIIMS & NIMHANS Collaboration<br/>
-        <strong>DOI Reference:</strong> <code>10.1016/S2468-2667(22)00301-7</code> • <strong>Official Clinical Portal:</strong> <span class="paper-link">https://lasi-dad.org</span>
+        <strong>Clinical Focus:</strong> Nationally representative diagnostic study of 4,000+ Indian elders aged ≥60 across 18 states.
+      </div>
+      <div class="paper-links-container">
+        <a href="https://doi.org/10.1016/S2468-2667(22)00301-7" class="paper-link" target="_blank">🔗 DOI: 10.1016/S2468-2667(22)00301-7</a>
+        <a href="https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(23)00155-7/fulltext" class="paper-link" target="_blank">📄 The Lancet Full Paper</a>
+        <a href="https://lasi-dad.org" class="paper-link" target="_blank">🌐 LASI-DAD Official Portal</a>
+        <a href="https://pubmed.ncbi.nlm.nih.gov/36828005/" class="paper-link" target="_blank">📚 PubMed Index (36828005)</a>
       </div>
     </div>
     <span class="badge badge-teal">Epidemiological Benchmark</span>
@@ -361,8 +407,14 @@ const htmlContent = `<!DOCTYPE html>
       <div class="paper-title">2. NICE Clinical Guidelines (CG42/NG97) & Evidence-Based Cognitive Stimulation Therapy (CST)</div>
       <div class="paper-meta">
         <strong>Institutional Bodies:</strong> National Institute for Health and Care Excellence (NICE, UK) • World Alzheimer Report (ADI)<br/>
-        <strong>Landmark RCT Papers:</strong> Spector et al. (<i>British Journal of Psychiatry</i>, 2003) • Woods et al. (<i>Cochrane Database of Systematic Reviews</i>, 2012)<br/>
-        <strong>Official Guidelines Portal:</strong> <span class="paper-link">https://www.nice.org.uk/guidance/cg42</span>
+        <strong>Landmark RCT Papers:</strong> Spector et al. (<i>British Journal of Psychiatry</i>, 2003) • Woods et al. (<i>Cochrane Database of Systematic Reviews</i>, 2012)
+      </div>
+      <div class="paper-links-container">
+        <a href="https://www.nice.org.uk/guidance/cg42" class="paper-link-gold" target="_blank">🔗 NICE Guideline CG42 Portal</a>
+        <a href="https://www.nice.org.uk/guidance/ng97" class="paper-link-gold" target="_blank">📋 NICE NG97 Dementia Guideline</a>
+        <a href="https://doi.org/10.1192/bjp.183.3.248" class="paper-link-gold" target="_blank">📄 Spector RCT Paper (BJP)</a>
+        <a href="https://doi.org/10.1002/14651858.CD005562.pub2" class="paper-link-gold" target="_blank">📊 Cochrane CST Review</a>
+        <a href="https://www.alzint.org/resource/world-alzheimer-report-2022/" class="paper-link-gold" target="_blank">🌍 ADI World Alzheimer Report</a>
       </div>
     </div>
     <span class="badge badge-gold">Clinical Gold Standard</span>
