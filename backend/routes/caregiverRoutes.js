@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const Caregiver = require('../models/Caregiver');
 const Patient = require('../models/patient');
+const Reminder = require('../models/Reminder');
+const GameSession = require('../models/GameSession');
+const MemoryBankPhoto = require('../models/MemoryBankPhoto');
 const { JWT_SECRET, authenticateCaregiver, rateLimitLogin } = require('../middleware/auth');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '413068962989-pv637gaki6ekg1vk9javkb21njg96g4m.apps.googleusercontent.com';
@@ -438,6 +441,37 @@ router.post('/biometric-login', rateLimitLogin, async (req, res) => {
         hasPassword: true,
         hasBiometric: true
       }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 10. Delete Caregiver Profile & Cascade Associated Data: DELETE /api/caregivers/me
+router.delete('/me', authenticateCaregiver, async (req, res) => {
+  try {
+    const caregiverId = req.caregiver._id;
+
+    // Find all patients owned by this caregiver
+    const patients = await Patient.find({ caregiverId: caregiverId }).lean();
+    const patientIds = (patients || []).map(p => p._id);
+
+    if (patientIds.length > 0) {
+      // Cascade delete reminders, game sessions, memory photos, and patient docs
+      await Promise.all([
+        Reminder.deleteMany({ patientId: { $in: patientIds } }),
+        GameSession.deleteMany({ patientId: { $in: patientIds } }),
+        MemoryBankPhoto.deleteMany({ patientId: { $in: patientIds } }),
+        Patient.deleteMany({ _id: { $in: patientIds } })
+      ]);
+    }
+
+    // Delete the caregiver account
+    await Caregiver.findByIdAndDelete(caregiverId);
+
+    res.json({
+      status: 'ok',
+      message: 'Caregiver profile and all associated patient records have been permanently deleted.'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

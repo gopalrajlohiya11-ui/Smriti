@@ -160,13 +160,10 @@ router.get('/public/:id', async (req, res) => {
       patient = await Patient.findOne({ name: /Biren/i });
     }
     if (!patient && (id === 'pat-1' || id === 'default')) {
-      patient = await Patient.findOne({ name: /Ramesh Sharma/i });
-    }
-    if (!patient) {
-      patient = await Patient.findOne({ name: new RegExp(id.trim(), 'i') });
-    }
-    if (!patient) {
       patient = await Patient.findOne({ name: /Ramesh Sharma/i }) || await Patient.findOne();
+    }
+    if (!patient && !mongoose.Types.ObjectId.isValid(id)) {
+      patient = await Patient.findOne({ name: new RegExp(`^${id.trim()}$`, 'i') });
     }
     if (!patient) {
       return res.status(404).json({ error: 'Patient profile not found' });
@@ -250,7 +247,7 @@ router.get('/', optionalAuth, async (req, res) => {
       };
 
       patients = await Patient.find(query).sort({ createdAt: 1 }).lean();
-      if ((!patients || patients.length === 0) && (caregiver.role === 'clinician' || caregiver.email === 'dr.ananya@smriti.in')) {
+      if ((!patients || patients.length === 0) && caregiver.email === 'dr.ananya@smriti.in') {
         patients = await Patient.find({}).sort({ createdAt: 1 }).lean();
       }
     } else {
@@ -316,8 +313,12 @@ router.post('/', authenticateCaregiver, async (req, res) => {
     const rawPhone = phoneNumber || phone || '919435012345';
     const cleanPhone = rawPhone.replace(/\D/g, '');
 
-    // Hash PIN (default 1234 if not provided)
-    const pinToHash = (pin && pin.toString().length === 4) ? pin.toString() : '1234';
+    // Hash PIN (validate 4 digits if provided, default 1234)
+    const pinStr = pin ? pin.toString().trim() : '';
+    if (pinStr && !/^\d{4}$/.test(pinStr)) {
+      return res.status(400).json({ error: 'PIN must be exactly 4 numeric digits.' });
+    }
+    const pinToHash = pinStr || '1234';
     const hashedPin = await bcrypt.hash(pinToHash, 10);
 
     const patient = new Patient({
@@ -332,8 +333,8 @@ router.post('/', authenticateCaregiver, async (req, res) => {
       cognitiveStage: cognitiveStage || 'Early Memory Support',
       primaryCaregiver: primaryCaregiver || req.caregiver.name,
       emergencyContact: emergencyContact || cleanPhone,
-      notes: notes || 'Enjoys morning walks and daily memory routines.',
-      medicalNotes: medicalNotes || 'Prescribed daily memory vitamins. BP stable.',
+      notes: notes || '',
+      medicalNotes: medicalNotes || '',
       avatar: avatar || 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=400&auto=format&fit=crop&q=80',
       caregiverId: req.caregiver._id,
       webAuthnCredentialId: webAuthnCredentialId || undefined,
@@ -348,24 +349,7 @@ router.post('/', authenticateCaregiver, async (req, res) => {
       $addToSet: { patientIds: patient._id }
     });
 
-    // Auto-seed today's 10 standard daily reminders for this patient
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    const d = now.getDate();
-
-    await Reminder.insertMany([
-      { patientId: patient._id, type: 'meal', title: 'Morning Breakfast & Tea', detail: 'Healthy breakfast with warm tea', scheduledTime: new Date(y, m, d, 8, 0, 0), acknowledged: false },
-      { patientId: patient._id, type: 'medicine', title: 'Morning Prescription', detail: 'Donepezil 5mg & blood pressure tablets', scheduledTime: new Date(y, m, d, 8, 45, 0), acknowledged: false },
-      { patientId: patient._id, type: 'hydration', title: 'Mid-Morning Hydration', detail: 'Drink 1 full glass of water', scheduledTime: new Date(y, m, d, 10, 30, 0), acknowledged: false },
-      { patientId: patient._id, type: 'game', title: 'Memory Game of the Day', detail: '10-minute memory match activity', scheduledTime: new Date(y, m, d, 11, 30, 0), acknowledged: false },
-      { patientId: patient._id, type: 'meal', title: 'Nutritious Lunch', detail: 'Warm meal with vegetables & lentils', scheduledTime: new Date(y, m, d, 13, 0, 0), acknowledged: false },
-      { patientId: patient._id, type: 'hydration', title: 'Afternoon Hydration', detail: 'Glass of water or herbal tea', scheduledTime: new Date(y, m, d, 14, 30, 0), acknowledged: false },
-      { patientId: patient._id, type: 'activity', title: 'Evening Garden Walk', detail: '15 mins light stretching or walking', scheduledTime: new Date(y, m, d, 16, 30, 0), acknowledged: false },
-      { patientId: patient._id, type: 'appointment', title: 'Evening Caregiver Check-in', detail: 'Daily routine review with caregiver', scheduledTime: new Date(y, m, d, 18, 30, 0), acknowledged: false },
-      { patientId: patient._id, type: 'meal', title: 'Light Dinner', detail: 'Easily digestible dinner', scheduledTime: new Date(y, m, d, 19, 45, 0), acknowledged: false },
-      { patientId: patient._id, type: 'medicine', title: 'Night Medicine & Wind Down', detail: 'Bedtime prescription & rest', scheduledTime: new Date(y, m, d, 20, 30, 0), acknowledged: false }
-    ]);
+    // New patient starts completely clean with 0 auto-seeded reminders
 
     res.status(201).json(patient);
   } catch (err) {

@@ -438,7 +438,7 @@ export async function fetchPatientGameSessions(patientId) {
 
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         return data;
       }
     }
@@ -449,19 +449,27 @@ export async function fetchPatientGameSessions(patientId) {
     }, 2000);
     if (fallbackRes.ok) {
       const fallbackData = await fallbackRes.json();
-      if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+      if (Array.isArray(fallbackData)) {
         return fallbackData;
       }
     }
 
-    // Offline / demo fallback by patient ID
-    const key = cleanId.toLowerCase().includes('meera') || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc9' ? 'pat-2' : 'pat-1';
-    return defaultGameSessionsByPatient[key] || defaultGameSessionsByPatient['pat-1'] || [];
+    // Offline / demo fallback ONLY for demo IDs
+    const isDemoId = cleanId === 'pat-1' || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc8' || cleanId === '6a9e533f65c0817eb2016cc9' || cleanId.toLowerCase().includes('ramesh') || cleanId.toLowerCase().includes('meera');
+    if (isDemoId) {
+      const key = cleanId.toLowerCase().includes('meera') || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc9' ? 'pat-2' : 'pat-1';
+      return defaultGameSessionsByPatient[key] || defaultGameSessionsByPatient['pat-1'] || [];
+    }
+    return [];
   } catch (err) {
     clearTimeout(timeoutId);
     console.warn(`⚠️ Offline fallback for patient ${cleanId}:`, err.message);
-    const key = cleanId.toLowerCase().includes('meera') || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc9' ? 'pat-2' : 'pat-1';
-    return defaultGameSessionsByPatient[key] || defaultGameSessionsByPatient['pat-1'] || [];
+    const isDemoId = cleanId === 'pat-1' || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc8' || cleanId === '6a9e533f65c0817eb2016cc9' || cleanId.toLowerCase().includes('ramesh') || cleanId.toLowerCase().includes('meera');
+    if (isDemoId) {
+      const key = cleanId.toLowerCase().includes('meera') || cleanId === 'pat-2' || cleanId === '6a9e533f65c0817eb2016cc9' ? 'pat-2' : 'pat-1';
+      return defaultGameSessionsByPatient[key] || defaultGameSessionsByPatient['pat-1'] || [];
+    }
+    return [];
   }
 }
 
@@ -729,6 +737,25 @@ export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' })
       source: 'fallback_original'
     };
   }
+}
+
+// 18. Delete Caregiver Account & Cascade All Associated Patient Records: DELETE /api/caregivers/me
+export async function deleteCaregiverAccountApi() {
+  const token = localStorage.getItem('smriti_caregiver_token');
+  const response = await fetch(`${API_BASE_URL}/caregivers/me`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    }
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to delete caregiver account');
+  }
+
+  return await response.json();
 }
 
 

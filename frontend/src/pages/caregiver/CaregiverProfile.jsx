@@ -15,17 +15,27 @@ import {
   Fingerprint,
   CheckCircle2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Trash2,
+  AlertTriangle,
+  Loader2,
+  X
 } from 'lucide-react';
 import { updateCaregiverProfileApi } from '../../services/api';
 
 export default function CaregiverProfile() {
   const navigate = useNavigate();
-  const { caregiverUser, setCaregiverPassword, registerCaregiverBiometric, logoutCaregiver, patients } = useApp();
+  const { caregiverUser, setCaregiverPassword, registerCaregiverBiometric, logoutCaregiver, deleteCaregiverAccount, patients } = useApp();
 
   const [backupPassword, setBackupPassword] = useState('');
   const [settingsStatus, setSettingsStatus] = useState(''); // 'saving' | 'saved' | 'error' | ''
   const [settingsMsg, setSettingsMsg] = useState('');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState('idle'); // 'idle' | 'deleting' | 'error'
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('');
 
   // Biometric enrollment state
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
@@ -135,6 +145,23 @@ export default function CaregiverProfile() {
     } catch (err) {
       setSettingsStatus('error');
       setSettingsMsg(err.message || 'Failed to update password');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
+      setDeleteErrorMsg('Please type DELETE in capital letters to confirm.');
+      return;
+    }
+
+    try {
+      setDeleteStatus('deleting');
+      setDeleteErrorMsg('');
+      await deleteCaregiverAccount();
+      navigate('/caregiver/login', { replace: true });
+    } catch (err) {
+      setDeleteStatus('error');
+      setDeleteErrorMsg(err.message || 'Failed to delete account. Please try again.');
     }
   };
 
@@ -481,7 +508,142 @@ export default function CaregiverProfile() {
           </div>
         </div>
 
+        {/* ======================================================== */}
+        {/* 5. DANGER ZONE: DELETE CARETAKER ACCOUNT & PROFILE        */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-rose-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="p-3 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-700" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-rose-950">
+                    Delete Caretaker Account
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                    Irreversible
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 max-w-xl">
+                  Permanently delete your caretaker profile and all associated patient accounts, daily routines, game history, and photo vaults. Once deleted, this clinical data cannot be recovered.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeleteConfirmText('');
+                setDeleteErrorMsg('');
+                setDeleteStatus('idle');
+              }}
+              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete My Account</span>
+            </button>
+          </div>
+        </div>
+
       </div>
+
+      {/* ======================================================== */}
+      {/* MODAL: DELETE ACCOUNT CONFIRMATION DIALOG                */}
+      {/* ======================================================== */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-rose-200 shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5 relative">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-200 shrink-0">
+                <AlertTriangle className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900">
+                  Delete Caretaker Account?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  This action is permanent and cannot be undone
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/70 border border-rose-200/90 rounded-2xl p-4 text-xs text-rose-900 space-y-2 leading-relaxed">
+              <p className="font-semibold">
+                By deleting your account ({caregiverUser?.email || 'this account'}), the following will be permanently erased:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-rose-800">
+                <li>Your caregiver profile, login credentials & biometric keys</li>
+                <li>All {patients.length} patient profile(s) assigned to you</li>
+                <li>All scheduled reminders, medication logs & alerts</li>
+                <li>All cognitive memory bank photos & game session history</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <label className="block font-bold text-slate-800">
+                Type <span className="font-black text-rose-700">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => {
+                  setDeleteConfirmText(e.target.value);
+                  if (deleteErrorMsg) setDeleteErrorMsg('');
+                }}
+                placeholder="Type DELETE"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-rose-600 focus:bg-white text-slate-900 font-bold tracking-widest text-center text-sm shadow-inner"
+              />
+            </div>
+
+            {deleteErrorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-300 text-rose-900 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{deleteErrorMsg}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteStatus === 'deleting'}
+                className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText.trim().toUpperCase() !== 'DELETE' || deleteStatus === 'deleting'}
+                className="px-6 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-95"
+              >
+                {deleteStatus === 'deleting' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Permanently Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </CaregiverLayout>
   );
 }

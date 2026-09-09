@@ -40,8 +40,8 @@ export default function PatientLogin({ defaultRole }) {
     currentLanguage 
   } = useApp();
 
-  // Fallback demo patients for login shortcut buttons if unauthenticated context is empty
-  const displayPatients = (patients && patients.length > 0) ? patients : initialPatients;
+  // Dedicated demo patients for quick demo shortcut buttons
+  const displayPatients = initialPatients;
 
   // Auto-redirect if already authenticated with a valid stored session
   useEffect(() => {
@@ -76,13 +76,13 @@ export default function PatientLogin({ defaultRole }) {
   });
 
   // Patient Form States
-  const [patientName, setPatientName] = useState('Ramesh Sharma');
-  const [patientAge, setPatientAge] = useState('74');
+  const [patientName, setPatientName] = useState('');
+  const [patientAge, setPatientAge] = useState('');
   const [pin, setPin] = useState('');
 
   // Admin Form States (Login & Signup)
   const [isCaregiverSignup, setIsCaregiverSignup] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('dr.ananya@smriti.in');
+  const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('caregiver123');
   const [signupName, setSignupName] = useState('');
   const [signupRole, setSignupRole] = useState('clinician');

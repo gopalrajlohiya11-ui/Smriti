@@ -18,7 +18,8 @@ import {
   Clock, 
   Calendar, 
   ArrowUpRight, 
-  Check 
+  Check,
+  Trash2
 } from 'lucide-react';
 
 export default function CaregiverDashboard() {
@@ -53,10 +54,12 @@ export default function CaregiverDashboard() {
   const [createdPatientData, setCreatedPatientData] = useState(null);
   const [patientBioRegStatus, setPatientBioRegStatus] = useState('idle'); // 'idle' | 'registering' | 'success' | 'error'
   const [patientBioRegMsg, setPatientBioRegMsg] = useState('');
+  const [pinError, setPinError] = useState('');
   const [newPatientForm, setNewPatientForm] = useState({
     name: '',
     age: '',
     phone: '',
+    pin: '',
     gender: 'Male',
     location: 'Guwahati, Assam',
     nativeLanguage: 'Assamese',
@@ -236,8 +239,16 @@ export default function CaregiverDashboard() {
     e.preventDefault();
     if (!newPatientForm.name || !newPatientForm.age) return;
 
+    const cleanPin = (newPatientForm.pin || '').trim();
+    if (!cleanPin || !/^\d{4}$/.test(cleanPin)) {
+      setPinError('Please enter a 4-digit numeric PIN for the patient (e.g. 1234).');
+      return;
+    }
+    setPinError('');
+
     const created = await addPatient({
       ...newPatientForm,
+      pin: cleanPin,
       age: parseInt(newPatientForm.age, 10),
       avatar: newPatientForm.gender === 'Female' 
         ? 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400&auto=format&fit=crop&q=80'
@@ -308,10 +319,12 @@ export default function CaregiverDashboard() {
     setCreatedPatientData(null);
     setPatientBioRegStatus('idle');
     setPatientBioRegMsg('');
+    setPinError('');
     setNewPatientForm({
       name: '',
       age: '',
       phone: '',
+      pin: '',
       gender: 'Male',
       location: 'Guwahati, Assam',
       nativeLanguage: 'Assamese',
@@ -684,6 +697,21 @@ export default function CaregiverDashboard() {
                   {settingsStatus === 'saving' ? 'Saving...' : 'Save Password'}
                 </button>
               </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 font-medium">Caretaker Account Management</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSettingsModal(false);
+                    navigate('/caregiver/profile');
+                  }}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Caretaker Profile</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -813,6 +841,29 @@ export default function CaregiverDashboard() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                      <label className="block font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                        <span>4-Digit Login PIN <span className="text-red-500">*</span></span>
+                        <span className="text-[11px] text-teal-800 font-semibold bg-teal-50 px-2 py-0.5 rounded-md">Required</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={4}
+                        pattern="\d{4}"
+                        placeholder="e.g. 1234"
+                        value={newPatientForm.pin}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                          setNewPatientForm({ ...newPatientForm, pin: val });
+                          if (pinError) setPinError('');
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-bold transition-all shadow-inner tracking-widest text-center"
+                      />
+                      <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                        Patient uses this PIN on their keypad
+                      </p>
+                    </div>
+                    <div>
                       <label className="block font-bold text-slate-800 mb-1.5">Phone Number (WhatsApp)</label>
                       <input
                         type="text"
@@ -821,7 +872,13 @@ export default function CaregiverDashboard() {
                         onChange={(e) => setNewPatientForm({ ...newPatientForm, phone: e.target.value })}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                       />
+                      <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                        For WhatsApp alerts & routines
+                      </p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block font-bold text-slate-800 mb-1.5">Gender</label>
                       <select
@@ -834,9 +891,6 @@ export default function CaregiverDashboard() {
                         <option value="Other">Other</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block font-bold text-slate-800 mb-1.5">Location / City</label>
                       <input
@@ -847,6 +901,9 @@ export default function CaregiverDashboard() {
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all shadow-inner"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block font-bold text-slate-800 mb-1.5">Cognitive Care Tier</label>
                       <select
@@ -859,23 +916,29 @@ export default function CaregiverDashboard() {
                         <option value="Advanced Care">Advanced Care (Tier 3)</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1.5">Preferred Regional Language</label>
+                      <select
+                        value={newPatientForm.nativeLanguage}
+                        onChange={(e) => setNewPatientForm({ ...newPatientForm, nativeLanguage: e.target.value })}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all"
+                      >
+                        <option value="Assamese">অসমীয়া (Assamese)</option>
+                        <option value="Hindi">हिन्दी (Hindi)</option>
+                        <option value="Khasi">Khasi (Meghalaya)</option>
+                        <option value="Mizo">Mizo (Mizoram)</option>
+                        <option value="Bengali">বাংলা (Bengali)</option>
+                        <option value="English">English</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1.5">Preferred Regional Language</label>
-                    <select
-                      value={newPatientForm.nativeLanguage}
-                      onChange={(e) => setNewPatientForm({ ...newPatientForm, nativeLanguage: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:border-teal-700 focus:bg-white text-slate-900 text-sm sm:text-base font-medium transition-all"
-                    >
-                      <option value="Assamese">অসমীয়া (Assamese)</option>
-                      <option value="Hindi">हिन्दी (Hindi)</option>
-                      <option value="Khasi">Khasi (Meghalaya)</option>
-                      <option value="Mizo">Mizo (Mizoram)</option>
-                      <option value="Bengali">বাংলা (Bengali)</option>
-                      <option value="English">English</option>
-                    </select>
-                  </div>
+                  {pinError && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>{pinError}</span>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-end gap-3 pt-5 border-t border-slate-200">
                     <button
