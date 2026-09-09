@@ -135,8 +135,87 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
   }
 }
 
+/**
+ * Synthesizes text into base64 audio via Bhashini / ML TTS microservice on Render.
+ * Calls POST /synthesize_speech with 6-second timeout and robust fallbacks.
+ * 
+ * @param {Object} params
+ * @param {string} params.textToSpeak - Raw text to synthesize and translate
+ * @param {string} [params.targetLanguage='en'] - Target language ('as', 'hi', 'en', 'brx', 'mni', etc.)
+ * @returns {Promise<{ audio_base64: string|null, spoken_text: string, translated_text: string, original_text: string, target_language: string, engine?: string, source: string, error?: string }>}
+ */
+async function getSynthesizedSpeech({ textToSpeak, targetLanguage = 'en' }) {
+  if (!textToSpeak || typeof textToSpeak !== 'string') {
+    return {
+      audio_base64: null,
+      spoken_text: textToSpeak || '',
+      translated_text: textToSpeak || '',
+      original_text: textToSpeak || '',
+      target_language: targetLanguage || 'en',
+      source: 'fallback_empty'
+    };
+  }
+
+  const rawText = textToSpeak.trim();
+  const normalizedLang = normalizeLanguageCode(targetLanguage);
+  const baseUrl = getBaseUrl();
+  const timeoutMs = getTimeout();
+
+  try {
+    const startTime = Date.now();
+    const payload = {
+      text_to_speak: rawText,
+      target_language: normalizedLang
+    };
+
+    console.log(`🎙️ [Bhashini Synthesis Service] POST /synthesize_speech (lang="${normalizedLang}", timeout=${timeoutMs}ms)...`);
+    const response = await axios.post(`${baseUrl}/synthesize_speech`, payload, {
+      timeout: timeoutMs,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response && response.data && response.data.audio_base64) {
+      const elapsed = Date.now() - startTime;
+      const spokenText = response.data.spoken_text || response.data.translated_text || rawText;
+      console.log(`✅ [Bhashini Synthesis Service] Audio generated in ${elapsed}ms [${normalizedLang}] (size: ${response.data.audio_base64.length} chars)`);
+
+      return {
+        audio_base64: response.data.audio_base64,
+        spoken_text: spokenText,
+        translated_text: spokenText,
+        original_text: response.data.original_text || rawText,
+        target_language: normalizedLang,
+        engine: response.data.engine || 'bhashini_tts_engine',
+        source: 'live_bhashini_api'
+      };
+    }
+
+    console.warn('⚠️ [Bhashini Synthesis Service] No audio_base64 returned from microservice.');
+    return {
+      audio_base64: null,
+      spoken_text: rawText,
+      translated_text: rawText,
+      original_text: rawText,
+      target_language: normalizedLang,
+      source: 'fallback_no_audio'
+    };
+  } catch (err) {
+    console.warn(`⚠️ [Bhashini Synthesis Service] Error (${err.message}). Gracefully returning null audio for Web Speech fallback.`);
+    return {
+      audio_base64: null,
+      spoken_text: rawText,
+      translated_text: rawText,
+      original_text: rawText,
+      target_language: normalizedLang,
+      source: 'fallback_error',
+      error: err.message
+    };
+  }
+}
+
 module.exports = {
   getTranslatedSpeech,
+  getSynthesizedSpeech,
   normalizeLanguageCode,
   REGIONAL_LANGUAGES,
   getBaseUrl

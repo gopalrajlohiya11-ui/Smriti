@@ -827,6 +827,75 @@ export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' })
   }
 }
 
+// 14b. Synthesize Speech with Bhashini Base64 Audio (POST /api/speech/synthesize)
+export async function synthesizeSpeechApi({ textToSpeak, targetLanguage = 'en' }) {
+  if (!textToSpeak) return { audio_base64: null, spoken_text: '', translated_text: '', source: 'empty' };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/speech/synthesize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ textToSpeak, targetLanguage }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return await response.json();
+    }
+    throw new Error(`HTTP error ${response.status}`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.warn('Backend synthesis route unreachable, attempting direct microservice fallback:', err.message);
+
+    // Direct fallback to ML microservice on Render
+    try {
+      const directController = new AbortController();
+      const directTimeoutId = setTimeout(() => directController.abort(), 7000);
+      const cleanLang = (targetLanguage || 'en').split('-')[0].split('_')[0].toLowerCase();
+
+      const directRes = await fetch('https://dementia-ai-engine.onrender.com/synthesize_speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text_to_speak: textToSpeak,
+          target_language: cleanLang
+        }),
+        signal: directController.signal
+      });
+      clearTimeout(directTimeoutId);
+
+      if (directRes.ok) {
+        const data = await directRes.json();
+        return {
+          audio_base64: data.audio_base64 || null,
+          spoken_text: data.spoken_text || data.translated_text || textToSpeak,
+          translated_text: data.spoken_text || data.translated_text || textToSpeak,
+          original_text: textToSpeak,
+          target_language: targetLanguage,
+          engine: data.engine || 'direct_bhashini_fallback',
+          source: 'direct_microservice'
+        };
+      }
+    } catch (directErr) {
+      console.warn('Direct live synthesis fallback error:', directErr.message);
+    }
+
+    return {
+      audio_base64: null,
+      spoken_text: textToSpeak,
+      translated_text: textToSpeak,
+      original_text: textToSpeak,
+      target_language: targetLanguage,
+      source: 'fallback_error',
+      error: err.message
+    };
+  }
+}
+
 // 18. Delete Caregiver Account & Cascade All Associated Patient Records: DELETE /api/caregivers/me
 export async function deleteCaregiverAccountApi() {
   const token = localStorage.getItem('smriti_caregiver_token');

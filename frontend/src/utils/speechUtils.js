@@ -9,7 +9,7 @@
  * 3. Graceful fallback notice for Assamese when local browser lacks an installed Assamese TTS voice pack
  */
 
-import { translateSpeechApi } from '../services/api';
+import { translateSpeechApi, synthesizeSpeechApi } from '../services/api';
 
 export const ASSAMESE_VOICE_NOTICE = "অসমীয়া কণ্ঠস্বৰ শীঘ্ৰেই উপলব্ধ হ'ব (Assamese voice coming soon)";
 
@@ -178,9 +178,27 @@ export const getAvailableVoice = (langCode, customVoiceList = null) => {
 };
 
 let activeSpeechRequestId = 0;
+let activeAudioElement = null;
 
+/**
+ * Immediately cancels any playing audio, whether synthesized via HTML5 Audio or browser SpeechSynthesis.
+ */
 export const stopSpeech = () => {
   activeSpeechRequestId++;
+
+  // 1. Cancel HTML5 Audio playback if active
+  if (activeAudioElement) {
+    try {
+      activeAudioElement.pause();
+      activeAudioElement.currentTime = 0;
+      activeAudioElement.src = '';
+      activeAudioElement = null;
+    } catch (e) {
+      console.warn('HTML5 Audio cancellation warning:', e);
+    }
+  }
+
+  // 2. Cancel Web Speech Synthesis
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel();
@@ -227,8 +245,8 @@ export const setVoiceAutoPlaySetting = (enabled, patientId = null) => {
 };
 
 /**
- * Main speech synthesis trigger with live translation integration, async voice loading,
- * request tracking, and zero overlap.
+ * Main speech synthesis trigger with Bhashini Base64 Audio synthesis,
+ * async fallback to browser Web Speech API, request tracking, and zero overlap.
  */
 export const speakLocalized = async ({
   text,
@@ -244,7 +262,7 @@ export const speakLocalized = async ({
 }) => {
   if (typeof window === 'undefined') return;
 
-  // Immediately cancel any previous speech
+  // Immediately cancel any previous speech (HTML5 audio and Web Speech)
   stopSpeech();
   const thisRequestId = activeSpeechRequestId;
 
@@ -258,126 +276,143 @@ export const speakLocalized = async ({
     }
   }
 
+  const cleanText = getCleanSpeechText(text);
+  if (!cleanText) {
+    if (onEnd) onEnd();
+    return;
+  }
+
   const code = (langCode || 'en').toLowerCase();
-  let textToSynthesize = text;
 
-  // 1. For Assamese / Regional languages: call Live Translation API first
-  if (code === 'as' || code.startsWith('as-') || code.startsWith('as_')) {
-    try {
-      const transResult = await getTranslatedSpeech({ textToSpeak: text, targetLanguage: 'as' });
-      if (transResult && transResult.translated_text) {
-        textToSynthesize = transResult.translated_text;
-      }
-    } catch (transErr) {
-      console.warn('Translation retrieval notice:', transErr.message);
-    }
-
-    // Check if another speech request was triggered while awaiting translation
+  // Helper for Web Speech Fallback when Bhashini API is unavailable or offline
+  const fallbackToWebSpeech = async (textToSpeak) => {
     if (thisRequestId !== activeSpeechRequestId) return;
 
-    // Check if speech synthesis is supported
     if (!('speechSynthesis' in window)) {
-      if (onNotice) onNotice(ASSAMESE_VOICE_NOTICE);
+      if (code === 'as' || code.startsWith('as')) {
+        if (onNotice) onNotice(ASSAMESE_VOICE_NOTICE);
+      }
       if (onError) onError(new Error('Web Speech API not supported in this browser.'));
+      if (onEnd) onEnd();
       return;
     }
 
-    // Ensure voices are loaded to check if this device has an Assamese voice installed
     const loadedVoices = await ensureVoicesLoaded();
     if (thisRequestId !== activeSpeechRequestId) return;
 
-    const asVoice = getAvailableVoice('as', loadedVoices);
+    const matchedVoice = getAvailableVoice(code, loadedVoices);
 
-    // If device lacks an installed Assamese TTS voice pack, show fallback notice gracefully
-    if (!asVoice) {
-      console.info('ℹ️ [SpeechSynthesis] Translation ready, but no local Assamese voice pack is installed on this device. Displaying fallback notice.');
-      if (onNotice) {
-        onNotice(ASSAMESE_VOICE_NOTICE);
-      }
+    // If Assamese and no local voice installed, show notice gracefully
+    if ((code === 'as' || code.startsWith('as')) && !matchedVoice) {
+      console.info('ℹ️ [SpeechSynthesis] No local Assamese voice pack installed on this device.');
+      if (onNotice) onNotice(ASSAMESE_VOICE_NOTICE);
       if (onStart) onStart();
       setTimeout(() => {
         if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
       }, 2500);
       return;
     }
-  }
 
-  if (!('speechSynthesis' in window)) {
-    if (onError) onError(new Error('Web Speech API not supported in this browser.'));
-    return;
-  }
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
 
-  const clean = getCleanSpeechText(textToSynthesize);
-  if (!clean) {
-    if (onEnd) onEnd();
-    return;
-  }
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = rate;
+    utterance.pitch = pitch;
 
-  // Ensure voices are loaded asynchronously before voice selection
-  const loadedVoices = await ensureVoicesLoaded();
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+      utterance.lang = matchedVoice.lang || code;
+    } else {
+      utterance.lang = code.startsWith('hi') ? 'hi-IN' : code.startsWith('as') ? 'as-IN' : 'en-IN';
+    }
 
-  // If a newer speech request started while voices were loading, abandon this one immediately!
-  if (thisRequestId !== activeSpeechRequestId) {
-    return;
-  }
+    utterance.onstart = () => {
+      if (thisRequestId === activeSpeechRequestId && onStart) onStart();
+    };
 
-  // Final cancel right before queuing the new utterance
+    utterance.onend = () => {
+      if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
+    };
+
+    utterance.onerror = (err) => {
+      if (thisRequestId === activeSpeechRequestId) {
+        console.warn('SpeechSynthesis error event:', err);
+        if (onError) onError(err);
+        if (onEnd) onEnd();
+      }
+    };
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('SpeechSynthesis speak failed:', err);
+      if (thisRequestId === activeSpeechRequestId && onError) onError(err);
+      if (thisRequestId === activeSpeechRequestId && onEnd) onEnd();
+    }
+  };
+
+  // =========================================================================
+  // 1. PRIMARY PIPELINE: Bhashini TTS Base64 Audio Synthesis via Backend
+  // =========================================================================
   try {
-    window.speechSynthesis.cancel();
-  } catch (e) {}
+    console.log(`🎙️ [Bhashini Pipeline] Requesting synthesis for [${code}]: "${cleanText.slice(0, 40)}..."`);
+    const synthResult = await synthesizeSpeechApi({
+      textToSpeak: cleanText,
+      targetLanguage: code
+    });
 
-  const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.rate = rate;
-  utterance.pitch = pitch;
+    if (thisRequestId !== activeSpeechRequestId) return;
 
-  if (code === 'as' || code.startsWith('as')) {
-    utterance.lang = 'as-IN';
-    const asVoice = getAvailableVoice('as', loadedVoices);
-    if (asVoice) {
-      utterance.voice = asVoice;
+    if (synthResult && synthResult.audio_base64) {
+      console.log(`🔊 [Bhashini Pipeline] Playing native synthesized Base64 audio for [${code}] (engine: ${synthResult.engine || 'Bhashini'})`);
+      const base64Data = synthResult.audio_base64;
+      const audioSrc = base64Data.startsWith('data:') 
+        ? base64Data 
+        : `data:audio/wav;base64,${base64Data}`;
+
+      const audio = new Audio(audioSrc);
+      audio.playbackRate = rate || 1.0;
+      activeAudioElement = audio;
+
+      audio.onplay = () => {
+        if (thisRequestId === activeSpeechRequestId && onStart) onStart();
+      };
+
+      audio.onended = () => {
+        if (thisRequestId === activeSpeechRequestId) {
+          activeAudioElement = null;
+          if (onEnd) onEnd();
+        }
+      };
+
+      audio.onerror = (audioErr) => {
+        console.warn('⚠️ [Bhashini Pipeline] HTML5 Audio playback error, falling back to Web Speech:', audioErr);
+        activeAudioElement = null;
+        fallbackToWebSpeech(synthResult.spoken_text || synthResult.translated_text || cleanText);
+      };
+
+      try {
+        await audio.play();
+        return; // Successfully started Bhashini audio playback!
+      } catch (playErr) {
+        console.warn('⚠️ [Bhashini Pipeline] audio.play() promise rejected, falling back to Web Speech:', playErr);
+        activeAudioElement = null;
+        await fallbackToWebSpeech(synthResult.spoken_text || synthResult.translated_text || cleanText);
+        return;
+      }
     }
-  } else if (code.startsWith('hi')) {
-    utterance.lang = 'hi-IN';
-    const hiVoice = getAvailableVoice('hi', loadedVoices);
-    if (hiVoice) {
-      utterance.voice = hiVoice;
-    }
-  } else {
-    utterance.lang = 'en-IN';
-    const enVoice = getAvailableVoice('en', loadedVoices);
-    if (enVoice) {
-      utterance.voice = enVoice;
-    }
+  } catch (synthErr) {
+    console.warn('⚠️ [Bhashini Pipeline] Synthesis call failed, falling back to Web Speech:', synthErr.message);
   }
 
-  utterance.onstart = () => {
-    if (thisRequestId === activeSpeechRequestId && onStart) {
-      onStart();
-    }
-  };
-
-  utterance.onend = () => {
-    if (thisRequestId === activeSpeechRequestId && onEnd) {
-      onEnd();
-    }
-  };
-
-  utterance.onerror = (err) => {
-    if (thisRequestId === activeSpeechRequestId) {
-      console.warn('SpeechSynthesis error event:', err);
-      if (onError) onError(err);
-      if (onEnd) onEnd();
-    }
-  };
-
-  try {
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.warn('SpeechSynthesis speak failed:', e);
-    if (onError) onError(e);
-    if (onEnd) onEnd();
-  }
+  // =========================================================================
+  // 2. RESILIENT FALLBACK: Web Speech API & Assamese Notice
+  // =========================================================================
+  console.log(`🔄 [Bhashini Pipeline] Executing fallback to Web Speech for [${code}]`);
+  await fallbackToWebSpeech(cleanText);
 };
