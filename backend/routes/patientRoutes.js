@@ -676,36 +676,58 @@ router.get('/:id/photos', optionalAuth, async (req, res) => {
         ] : [
           {
             patientId,
-            photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
-            title: 'Family Gathering at Kaziranga',
-            taggedName: 'Dr. Ananya & Family',
-            relation: 'Daughter & Grandchildren',
+            photoUrl: '/family/daughter_priya.jpg',
+            title: 'Your daughter Priya',
+            taggedName: 'Priya Sharma',
+            relation: 'Daughter',
             year: '2023',
-            location: 'Kaziranga, Assam',
-            description: 'A cheerful sunny afternoon enjoying traditional tea and family stories with the grandchildren.',
-            audioPrompt: 'This was taken during our memorable family holiday in Kaziranga National Park.'
-          },
-          {
-            patientId,
-            photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
-            title: 'Morning Garden Walk with Meera',
-            taggedName: 'Meera Baruah',
-            relation: 'Sister',
-            year: '2022',
-            location: 'Shillong, Meghalaya',
-            description: 'Walking past the fresh pine trees and morning orchids in Shillong.',
-            audioPrompt: 'Remember the fresh morning pine breeze and quiet laughter with Meera in Shillong.'
-          },
-          {
-            patientId,
-            photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
-            title: 'Biren & Old Friends Reunion',
-            taggedName: 'Biren Das',
-            relation: 'Lifelong Friend',
-            year: '2021',
             location: 'Jorhat, Assam',
-            description: 'Annual cultural festival meetup sharing Assam tea and playing chess.',
-            audioPrompt: 'Your wonderful afternoon with Biren Das celebrating Bihu melodies in Jorhat.'
+            description: 'Priya wearing traditional Assamese Muga silk Mekhela Sador on the tea garden porch.',
+            audioPrompt: 'This is your daughter Priya smiling warmly on the tea garden porch in Jorhat.'
+          },
+          {
+            patientId,
+            photoUrl: '/family/grandson_arjun.png',
+            title: 'Your grandson Arjun',
+            taggedName: 'Arjun Sharma',
+            relation: 'Grandson',
+            year: '2023',
+            location: 'Guwahati, Assam',
+            description: 'Arjun holding the traditional Bihu Pepa instrument by the Brahmaputra river.',
+            audioPrompt: 'This is your grandson Arjun holding the traditional Bihu Pepa at Guwahati riverfront.'
+          },
+          {
+            patientId,
+            photoUrl: '/family/wife_sunita.png',
+            title: 'Wife Sunita tending Garden',
+            taggedName: 'Sunita Sharma',
+            relation: 'Wife',
+            year: '2021',
+            location: 'Guwahati, Assam',
+            description: 'Sunita caring for blooming marigolds and orchids in traditional Mekhela Sador.',
+            audioPrompt: 'This is your beloved wife Sunita tending fresh flowers in your home courtyard.'
+          },
+          {
+            patientId,
+            photoUrl: '/family/ramesh_bihu.png',
+            title: 'Magh Bihu Celebration',
+            taggedName: 'Ramesh Sharma',
+            relation: 'Festival Memory',
+            year: '2022',
+            location: 'Rural Assam Village',
+            description: 'Ramesh standing proudly before the traditional Bhelaghar harvest celebration in Assam.',
+            audioPrompt: 'This is the festive Magh Bihu morning beside the harvest Bhelaghar.'
+          },
+          {
+            patientId,
+            photoUrl: '/family/family_umiam_lake.png',
+            title: 'Shillong Family Trip at Umiam Lake',
+            taggedName: 'Family Vacation',
+            relation: 'Family Holiday',
+            year: '2022',
+            location: 'Umiam Lake Viewpoint, Shillong',
+            description: 'The entire family together enjoying the autumn breeze overlooking Umiam Lake.',
+            audioPrompt: 'Here is the whole family gathered at the Umiam Lake viewpoint in Shillong.'
           }
         ];
 

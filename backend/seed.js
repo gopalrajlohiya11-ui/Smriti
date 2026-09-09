@@ -424,47 +424,58 @@ async function seedCleanDemoData() {
     const rameshPhotos = [
       {
         patientId: patientRamesh._id,
-        title: 'Grandson Arjun at Brahmaputra Ghat',
+        title: 'Your daughter Priya',
+        taggedName: 'Priya Sharma',
+        relation: 'Daughter (बेटी)',
+        year: '2023',
+        location: 'Jorhat, Assam',
+        photoUrl: '/family/daughter_priya.jpg',
+        description: 'Priya wearing traditional Assamese Muga silk Mekhela Sador on the tea garden porch.',
+        audioPrompt: 'This is your daughter Priya smiling warmly on the tea garden porch in Jorhat.'
+      },
+      {
+        patientId: patientRamesh._id,
+        title: 'Grandson Arjun with Bihu Pepa',
         taggedName: 'Arjun Sharma',
         relation: 'Grandson (पोता)',
         year: '2023',
         location: 'Guwahati, Assam',
-        photoUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80',
-        description: 'Arjun smiling after performing the Bihu folk dance on the banks of Brahmaputra River.',
-        audioPrompt: 'This is your grandson Arjun smiling after his Bihu dance performance by the river in Guwahati.'
+        photoUrl: '/family/grandson_arjun.png',
+        description: 'Arjun holding the traditional Bihu Pepa instrument on the banks of Brahmaputra River.',
+        audioPrompt: 'This is your grandson Arjun holding the traditional Bihu Pepa at Guwahati riverfront.'
       },
       {
         patientId: patientRamesh._id,
-        title: 'Dr. Ananya GMC Graduation',
-        taggedName: 'Dr. Ananya Sharma',
-        relation: 'Daughter & Caregiver (बेटी)',
-        year: '2018',
-        location: 'Gauhati Medical College',
-        photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80',
-        description: 'Your proud daughter Ananya receiving her gold medal in medicine.',
-        audioPrompt: 'This is your daughter Dr. Ananya receiving her medical degree gold medal.'
-      },
-      {
-        patientId: patientRamesh._id,
-        title: 'Ancestral Tea Garden Home',
-        taggedName: 'Jorhat Estate',
-        relation: 'Family Home (पैतृक घर)',
-        year: '2020',
-        location: 'Jorhat, Assam',
-        photoUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
-        description: 'The green veranda where you enjoyed morning Assam tea for 40 years.',
-        audioPrompt: 'This is your beloved home in Jorhat where the family spent decades together.'
-      },
-      {
-        patientId: patientRamesh._id,
-        title: 'Bihu Festival Celebration',
-        taggedName: 'Family Feast',
-        relation: 'Family Gathering (परिवार)',
-        year: '2022',
+        title: 'Wife Sunita tending Garden',
+        taggedName: 'Sunita Sharma',
+        relation: 'Wife (पत्नी)',
+        year: '2021',
         location: 'Guwahati, Assam',
-        photoUrl: 'https://images.unsplash.com/photo-1609234656388-0ff363383899?w=600&auto=format&fit=crop&q=80',
-        description: 'Celebrating Rongali Bihu with pitha, laru, and family blessings.',
-        audioPrompt: 'This is the happy Bihu feast celebration with the entire family together.'
+        photoUrl: '/family/wife_sunita.png',
+        description: 'Sunita caring for blooming marigolds and orchids in traditional Mekhela Sador.',
+        audioPrompt: 'This is your beloved wife Sunita tending fresh flowers in your home courtyard.'
+      },
+      {
+        patientId: patientRamesh._id,
+        title: 'Magh Bihu Harvest Celebration',
+        taggedName: 'Ramesh Sharma',
+        relation: 'Festival Memory (उत्सव)',
+        year: '2022',
+        location: 'Rural Assam Village',
+        photoUrl: '/family/ramesh_bihu.png',
+        description: 'Ramesh standing proudly before the traditional Bhelaghar harvest celebration in Assam.',
+        audioPrompt: 'This is the festive Magh Bihu morning beside the harvest Bhelaghar.'
+      },
+      {
+        patientId: patientRamesh._id,
+        title: 'Shillong Family Trip at Umiam Lake',
+        taggedName: 'Family Vacation',
+        relation: 'Family Holiday (परिवार)',
+        year: '2022',
+        location: 'Umiam Lake, Shillong',
+        photoUrl: '/family/family_umiam_lake.png',
+        description: 'The entire family together enjoying the autumn breeze overlooking Umiam Lake.',
+        audioPrompt: 'Here is the whole family gathered at the Umiam Lake viewpoint in Shillong.'
       }
     ];
 
