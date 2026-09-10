@@ -216,41 +216,52 @@ async function startServer() {
 
     // ─────────────────────────────────────────────────────────────────────────
     // KEEP-ALIVE SELF-PING
-    // Prevents Render free-tier from sleeping (spins down after 15 min idle).
-    // Pings our own /api/health every 14 minutes when deployed.
+    // Prevents ALL Render free-tier services from sleeping (spin-down at 15 min).
+    // Pings: 1) this backend  2) the ML engine (dementia-ai-engine.onrender.com)
     // Auto-disabled on localhost — no env variable changes needed for local dev.
     // ─────────────────────────────────────────────────────────────────────────
     const PING_INTERVAL_MS = 14 * 60 * 1000; // 14 minutes in milliseconds
+
+    // Helper: fire a single GET ping with timeout, log result
+    const pingUrl = async (label, url) => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 s hard timeout
+        const response = await fetch(url, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: { 'User-Agent': 'SmritiKeepAlive/1.0' }
+        });
+        clearTimeout(timeoutId);
+        const ts = new Date().toISOString();
+        console.log(`💓 [Keep-Alive][${label}] Ping ${response.ok ? 'OK' : 'WARN'} (HTTP ${response.status}) at ${ts}`);
+      } catch (err) {
+        const reason = err.name === 'AbortError' ? 'timed out after 10 s' : err.message;
+        console.warn(`⚠️  [Keep-Alive][${label}] Ping failed: ${reason}`);
+      }
+    };
 
     // Render injects RENDER_EXTERNAL_URL automatically on their platform.
     // Fallback: you can set BACKEND_URL manually in Render Environment Variables.
     const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || null;
     const isLocalDev = !selfUrl || selfUrl.includes('localhost') || selfUrl.includes('127.0.0.1');
 
+    // ML engine public URL — hardcoded since it never changes, no env var needed
+    const ML_ENGINE_PING_URL = (process.env.ML_SERVICE_URL || 'https://dementia-ai-engine.onrender.com') + '/docs';
+
     if (isLocalDev) {
       console.log('🔕 [Keep-Alive] Self-ping disabled (localhost / no RENDER_EXTERNAL_URL set).');
+      console.log(`🧠 [Keep-Alive] ML engine ping still ACTIVE → ${ML_ENGINE_PING_URL} every 14 min`);
+      // Still ping the ML engine even from local — it's a remote service that can sleep
+      setInterval(() => pingUrl('ML-Engine', ML_ENGINE_PING_URL), PING_INTERVAL_MS);
     } else {
-      const pingTarget = `${selfUrl.replace(/\/$/, '')}/api/health`;
-      console.log(`💓 [Keep-Alive] Self-ping ACTIVE → ${pingTarget} every 14 min`);
+      const backendPingUrl = `${selfUrl.replace(/\/$/, '')}/api/health`;
+      console.log(`💓 [Keep-Alive] Backend self-ping ACTIVE → ${backendPingUrl} every 14 min`);
+      console.log(`🧠 [Keep-Alive] ML engine ping ACTIVE → ${ML_ENGINE_PING_URL} every 14 min`);
 
-      setInterval(async () => {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 s hard timeout
-
-          const response = await fetch(pingTarget, {
-            method: 'GET',
-            signal: controller.signal,
-            headers: { 'User-Agent': 'SmritiKeepAlive/1.0' }
-          });
-          clearTimeout(timeoutId);
-
-          const ts = new Date().toISOString();
-          console.log(`💓 [Keep-Alive] Ping ${response.ok ? 'OK' : 'WARN'} (HTTP ${response.status}) at ${ts}`);
-        } catch (err) {
-          const reason = err.name === 'AbortError' ? 'timed out after 10 s' : err.message;
-          console.warn(`⚠️  [Keep-Alive] Ping failed: ${reason}`);
-        }
+      setInterval(() => {
+        pingUrl('Backend', backendPingUrl);
+        pingUrl('ML-Engine', ML_ENGINE_PING_URL);
       }, PING_INTERVAL_MS);
     }
     // ─────────────────────────────────────────────────────────────────────────
