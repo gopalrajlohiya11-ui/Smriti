@@ -33,7 +33,7 @@ export default function CaregiverLayout({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { caregiverUser, redFlags, logoutCaregiver, patients, setActivePatientId } = useApp();
+  const { caregiverUser, redFlags, logoutCaregiver, patients, activePatient, setActivePatientId, setDirectPatientSession } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -174,8 +174,9 @@ export default function CaregiverLayout({
             <button
               type="button"
               onClick={() => {
-                if (patients && patients.length > 0) {
-                  setActivePatientId(patients[0]._id || patients[0].id);
+                const targetPatient = activePatient || (patients && patients.length > 0 ? patients[0] : null);
+                if (targetPatient && setDirectPatientSession) {
+                  setDirectPatientSession(targetPatient);
                 }
                 navigate('/patient');
               }}
@@ -318,8 +319,9 @@ export default function CaregiverLayout({
             type="button"
             onClick={() => {
               setMobileMenuOpen(false);
-              if (patients && patients.length > 0) {
-                setActivePatientId(patients[0]._id || patients[0].id);
+              const targetPatient = activePatient || (patients && patients.length > 0 ? patients[0] : null);
+              if (targetPatient && setDirectPatientSession) {
+                setDirectPatientSession(targetPatient);
               }
               navigate('/patient');
             }}

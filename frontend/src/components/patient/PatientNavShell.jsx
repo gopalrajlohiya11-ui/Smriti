@@ -69,6 +69,33 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
   const currentRegion = getRegionById(selectedStateId);
 
   useEffect(() => {
+    if (activePatient?.location || activePatient?.nativeLanguage) {
+      const loc = (activePatient.location || '').toLowerCase();
+      const lang = (activePatient.nativeLanguage || '').toLowerCase();
+      let targetState = 'assam';
+      if (loc.includes('meghalaya') || loc.includes('shillong') || lang.includes('khasi') || lang.includes('garo')) {
+        targetState = 'meghalaya';
+      } else if (loc.includes('assam') || loc.includes('guwahati') || lang.includes('assamese') || lang.includes('bodo')) {
+        targetState = 'assam';
+      } else if (loc.includes('manipur') || loc.includes('imphal') || lang.includes('manipuri') || lang.includes('meitei')) {
+        targetState = 'manipur';
+      } else if (loc.includes('mizoram') || loc.includes('aizawl') || lang.includes('mizo')) {
+        targetState = 'mizoram';
+      } else if (loc.includes('nagaland') || loc.includes('kohima') || lang.includes('nagamese') || lang.includes('ao')) {
+        targetState = 'nagaland';
+      } else if (loc.includes('tripura') || loc.includes('agartala') || lang.includes('kokborok')) {
+        targetState = 'tripura';
+      } else if (loc.includes('arunachal') || loc.includes('itanagar')) {
+        targetState = 'arunachal';
+      } else if (loc.includes('sikkim') || loc.includes('gangtok') || lang.includes('nepali')) {
+        targetState = 'sikkim';
+      }
+      setSelectedStateId(targetState);
+      localStorage.setItem('smriti_patient_state', targetState);
+    }
+  }, [activePatient]);
+
+  useEffect(() => {
     const handleStateChange = () => {
       const stored = localStorage.getItem('smriti_patient_state');
       if (stored && stored !== selectedStateId) {

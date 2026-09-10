@@ -194,7 +194,8 @@ export default function CaregiverPatientDetail() {
     loadPatientPhotos,
     addPatientPhoto,
     deletePatientPhoto,
-    setActivePatientId
+    setActivePatientId,
+    setDirectPatientSession
   } = useApp();
 
   const selectedPatient = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, id)) : null) || 
@@ -203,8 +204,8 @@ export default function CaregiverPatientDetail() {
     initialPatients[0];
 
   const switchToPatientView = (patient) => {
-    if (patient) {
-      setActivePatientId(patient._id || patient.id);
+    if (patient && setDirectPatientSession) {
+      setDirectPatientSession(patient);
     }
     navigate('/patient');
   };
