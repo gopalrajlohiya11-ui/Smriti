@@ -128,21 +128,50 @@ export function AppProvider({ children }) {
 
   // Patients Data Store
   const [patients, setPatients] = useState(() => {
+    const session = getStoredCaregiverSession();
+    const isCaregiverAuth = session.isValid;
+    const email = (session.user?.email || '').toLowerCase();
+    const isDemo = !isCaregiverAuth || email === 'dr.ananya@smriti.in' || email.includes('demo');
     const saved = localStorage.getItem('smriti_patients');
-    return saved ? JSON.parse(saved) : initialPatients;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // If authenticated as non-demo caregiver and saved records contain demo patients, purge them
+          if (isCaregiverAuth && !isDemo) {
+            const hasDemoSeeds = parsed.some(p => p.isDemoSeed || ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(p.name) || p.id === 'pat-1' || p.id === 'pat-2');
+            if (hasDemoSeeds) {
+              const realOnly = parsed.filter(p => !p.isDemoSeed && !['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(p.name) && p.id !== 'pat-1' && p.id !== 'pat-2');
+              localStorage.setItem('smriti_patients', JSON.stringify(realOnly));
+              return realOnly;
+            }
+          }
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    if (isCaregiverAuth && !isDemo) {
+      return [];
+    }
+    return initialPatients;
   });
 
   // Red Flags Alert Store (Scoped to logged-in user)
   const [redFlags, setRedFlags] = useState(() => {
-    const isCaregiverAuth = !!localStorage.getItem('smriti_caregiver_token');
-    const isPatientAuth = !!localStorage.getItem('smriti_patient_token');
+    const session = getStoredCaregiverSession();
+    const isCaregiverAuth = session.isValid;
+    const email = (session.user?.email || '').toLowerCase();
+    const isDemo = !isCaregiverAuth || email === 'dr.ananya@smriti.in' || email.includes('demo');
     const saved = localStorage.getItem('smriti_red_flags');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {}
     }
-    return (!isCaregiverAuth && !isPatientAuth) ? initialRedFlags : [];
+    if (isCaregiverAuth && !isDemo) {
+      return [];
+    }
+    return (!isCaregiverAuth && !session.isValid) ? initialRedFlags : [];
   });
 
   // Update pending sync actions count
@@ -213,6 +242,11 @@ export function AppProvider({ children }) {
     if (isFetchingDataRef.current) return;
     isFetchingDataRef.current = true;
 
+    const session = getStoredCaregiverSession();
+    const isAuthCaregiver = session.isValid;
+    const caregiverEmail = (caregiverUser?.email || session.user?.email || '').toLowerCase();
+    const isDemoCaregiver = !isAuthCaregiver || caregiverEmail === 'dr.ananya@smriti.in' || caregiverEmail.includes('demo');
+
     // If device is offline, load from cached IndexedDB snapshot
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
@@ -233,15 +267,26 @@ export function AppProvider({ children }) {
       ]);
 
       let backendPatients = backendPatientsRes;
-      if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
-        backendPatients = [...initialPatients];
+
+      if (isDemoCaregiver) {
+        // DEMO / PUBLIC MODE: Fallback to initialPatients if database has none, or ensure demo profiles exist
+        if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
+          backendPatients = [...initialPatients];
+        } else {
+          // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain available
+          initialPatients.forEach(ip => {
+            if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id) || matchPatientHelper(bp, ip._id))) {
+              backendPatients.push(ip);
+            }
+          });
+        }
       } else {
-        // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain available
-        initialPatients.forEach(ip => {
-          if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id) || matchPatientHelper(bp, ip._id))) {
-            backendPatients.push(ip);
-          }
-        });
+        // AUTHENTICATED REAL CAREGIVER MODE:
+        // Strictly show only patients belonging to this caregiver from the database.
+        // Never inject demo profiles into a new or custom email account.
+        if (!backendPatients || !Array.isArray(backendPatients)) {
+          backendPatients = [];
+        }
       }
 
       // 2. Format reminders for each backend patient without N+1 network requests
@@ -332,20 +377,16 @@ export function AppProvider({ children }) {
       const storedPatientId = localStorage.getItem('smriti_patient_id');
       const currentTargetId = activePatientId || storedPatientId;
 
-      if (currentTargetId) {
+      if (currentTargetId && enrichedPatients.length > 0) {
         const isMeeraTarget = String(currentTargetId).toLowerCase().includes('meera') || currentTargetId === 'pat-2' || currentTargetId === '6a9e533f65c0817eb2016cc9';
-        const found = enrichedPatients.find(p => isMeeraTarget ? (matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : matchPatientHelper(p, currentTargetId)) ||
-                      initialPatients.find(p => isMeeraTarget ? (matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : matchPatientHelper(p, currentTargetId));
+        const found = enrichedPatients.find(p => isMeeraTarget ? (matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : matchPatientHelper(p, currentTargetId));
         if (found) {
           const resolvedId = isMeeraTarget ? 'pat-2' : (found.id || found._id);
           setActivePatientId(resolvedId);
           localStorage.setItem('smriti_patient_id', resolvedId);
-        } else if (enrichedPatients.length > 0) {
+        } else {
           setActivePatientId(enrichedPatients[0].id);
           localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
-        } else {
-          setActivePatientId(null);
-          localStorage.removeItem('smriti_patient_id');
         }
       } else if (enrichedPatients.length > 0) {
         setActivePatientId(enrichedPatients[0].id);
@@ -358,21 +399,23 @@ export function AppProvider({ children }) {
       // 4. Update direct database-synchronized active alerts
       if (realDbAlerts && Array.isArray(realDbAlerts)) {
         setRedFlags(realDbAlerts);
-      } else if (isCaregiverAuth && enrichedPatients.length === 0) {
+      } else if (!isDemoCaregiver || enrichedPatients.length === 0) {
         setRedFlags([]);
       }
     } catch (err) {
       console.warn('Failed to fetch patient data online, attempting cached fallback:', err.message);
-      const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
-      const cached = await getCachedPatientData(targetId);
-      if (cached) {
-        setPatients(prev => prev.length > 0 ? prev : [cached]);
-        setActivePatientId(cached.id);
+      if (isDemoCaregiver) {
+        const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+        const cached = await getCachedPatientData(targetId);
+        if (cached) {
+          setPatients(prev => prev.length > 0 ? prev : [cached]);
+          setActivePatientId(cached.id);
+        }
       }
     } finally {
       isFetchingDataRef.current = false;
     }
-  }, [activePatientId]);
+  }, [activePatientId, caregiverUser]);
 
   // Initial load on mount
   useEffect(() => {
@@ -448,7 +491,18 @@ export function AppProvider({ children }) {
       localStorage.setItem('smriti_caregiver_token', data.token);
       localStorage.setItem('smriti_caregiver_user', JSON.stringify(data.caregiver));
       localStorage.setItem('smriti_caregiver_auth', 'true');
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
+
+      const isDemo = (email || '').toLowerCase() === 'dr.ananya@smriti.in' || (email || '').toLowerCase().includes('demo');
+      if (!isDemo) {
+        localStorage.removeItem('smriti_patients');
+        localStorage.removeItem('smriti_red_flags');
+        localStorage.removeItem('smriti_patient_id');
+        setPatients([]);
+        setRedFlags([]);
+        setActivePatientId(null);
+      }
+
+      await loadRealData();
       return { success: true, caregiver: data.caregiver };
     } catch (err) {
       console.warn('Caregiver API login error, checking demo credentials fallback:', err.message);
@@ -467,7 +521,7 @@ export function AppProvider({ children }) {
         localStorage.setItem('smriti_caregiver_token', dummyJwt);
         localStorage.setItem('smriti_caregiver_user', JSON.stringify(dummyCaregiver));
         localStorage.setItem('smriti_caregiver_auth', 'true');
-        loadRealData().catch(e => console.warn('Background sync:', e.message));
+        await loadRealData();
         return { success: true, caregiver: dummyCaregiver };
       }
       throw err;
@@ -483,7 +537,18 @@ export function AppProvider({ children }) {
       localStorage.setItem('smriti_caregiver_token', data.token);
       localStorage.setItem('smriti_caregiver_user', JSON.stringify(data.caregiver));
       localStorage.setItem('smriti_caregiver_auth', 'true');
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
+
+      const isDemo = (data.caregiver?.email || '').toLowerCase() === 'dr.ananya@smriti.in' || (data.caregiver?.email || '').toLowerCase().includes('demo');
+      if (!isDemo) {
+        localStorage.removeItem('smriti_patients');
+        localStorage.removeItem('smriti_red_flags');
+        localStorage.removeItem('smriti_patient_id');
+        setPatients([]);
+        setRedFlags([]);
+        setActivePatientId(null);
+      }
+
+      await loadRealData();
       return { success: true, caregiver: data.caregiver };
     } catch (err) {
       console.error('Google OAuth login error:', err.message);
@@ -520,7 +585,7 @@ export function AppProvider({ children }) {
       setPatients([]);
       setRedFlags([]);
       setActivePatientId(null);
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
+      await loadRealData();
       return { success: true, caregiver: data.caregiver };
     } catch (err) {
       throw err;
@@ -549,7 +614,18 @@ export function AppProvider({ children }) {
       localStorage.setItem('smriti_caregiver_token', data.token);
       localStorage.setItem('smriti_caregiver_user', JSON.stringify(data.caregiver));
       localStorage.setItem('smriti_caregiver_auth', 'true');
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
+
+      const isDemo = (data.caregiver?.email || email || '').toLowerCase() === 'dr.ananya@smriti.in' || (data.caregiver?.email || email || '').toLowerCase().includes('demo');
+      if (!isDemo) {
+        localStorage.removeItem('smriti_patients');
+        localStorage.removeItem('smriti_red_flags');
+        localStorage.removeItem('smriti_patient_id');
+        setPatients([]);
+        setRedFlags([]);
+        setActivePatientId(null);
+      }
+
+      await loadRealData();
       return { success: true, caregiver: data.caregiver };
     } catch (err) {
       console.error('Caregiver biometric login error:', err.message);
@@ -563,8 +639,9 @@ export function AppProvider({ children }) {
     clearCaregiverSession();
     localStorage.removeItem('smriti_patients');
     localStorage.removeItem('smriti_red_flags');
-    setPatients([]);
-    setRedFlags([]);
+    localStorage.removeItem('smriti_patient_id');
+    setPatients(initialPatients);
+    setRedFlags(initialRedFlags);
   };
 
   const deleteCaregiverAccount = async () => {
