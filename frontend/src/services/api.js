@@ -11,7 +11,7 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 // Helper for fast-aborting network requests with timeout
-export async function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
+export async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -47,7 +47,7 @@ export async function loginCaregiverApi(email, password) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    }, 2000);
+    }, 8000);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Invalid email or password');
     return data;
@@ -183,7 +183,7 @@ export async function loginPatientApi(name, age, pin, phoneNumber) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, age, pin, phoneNumber })
-    }, 2000);
+    }, 8000);
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Patient login failed');
     return data;

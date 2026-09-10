@@ -41,6 +41,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
     setCurrentLanguage, 
     regionalLanguages, 
     activePatient, 
+    patients,
     logoutPatient,
     voiceAutoPlay,
     toggleVoiceAutoPlay,
@@ -319,22 +320,26 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 <span className="truncate">{currentRegion.prominentCity.split(',')[0]}</span>
               </p>
             </div>
-            {/* Quick Toggle between Ramesh & Meera */}
-            <button
-              type="button"
-              onClick={() => {
-                const isCurrentlyMeera = (activePatient?.name || '').toLowerCase().includes('meera') || activePatient?.id === 'pat-2' || localStorage.getItem('smriti_patient_id') === 'pat-2';
-                const targetPatient = isCurrentlyMeera ? initialPatients[0] : initialPatients[1];
-                if (setDirectPatientSession) {
-                  setDirectPatientSession(targetPatient);
-                }
-              }}
-              title="Switch profile (Ramesh / Meera)"
-              className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0 text-xs font-black flex items-center gap-1.5 border border-white/20 active:scale-95 shadow-2xs"
-            >
-              <span className="text-sm">⇄</span>
-              <span className="hidden xl:inline text-[10px]">Switch</span>
-            </button>
+            {/* Quick Toggle if Caregiver preview or multiple demo patients */}
+            {(isCaregiverAuth && patients && patients.length > 1) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const list = (patients && patients.length > 0) ? patients : initialPatients;
+                  const currentIndex = list.findIndex(p => (p._id || p.id) === (activePatient?._id || activePatient?.id) || p.name === activePatient?.name);
+                  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % list.length : 0;
+                  const targetPatient = list[nextIndex];
+                  if (setDirectPatientSession && targetPatient) {
+                    setDirectPatientSession(targetPatient);
+                  }
+                }}
+                title="Switch patient preview"
+                className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0 text-xs font-black flex items-center gap-1.5 border border-white/20 active:scale-95 shadow-2xs"
+              >
+                <span className="text-sm">⇄</span>
+                <span className="hidden xl:inline text-[10px]">Switch</span>
+              </button>
+            )}
           </div>
 
           {isCaregiverAuth ? (
@@ -385,20 +390,24 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 Simulating view for <strong className="text-white">{activePatient?.name || 'Patient'}</strong>
               </span>
               {/* Quick switch between patients directly from banner */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isMeera = (activePatient?.name || '').toLowerCase().includes('meera');
-                  const targetPatient = isMeera ? initialPatients[0] : initialPatients[1];
-                  if (setDirectPatientSession) {
-                    setDirectPatientSession(targetPatient);
-                  }
-                }}
-                className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-teal-300 hover:text-white transition-colors cursor-pointer text-[10px] font-bold border border-white/20"
-                title="Switch preview between Ramesh Sharma and Meera Baruah"
-              >
-                ⇄ Switch to {(activePatient?.name || '').toLowerCase().includes('meera') ? 'Ramesh' : 'Meera'}
-              </button>
+              {patients && patients.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const list = (patients && patients.length > 0) ? patients : initialPatients;
+                    const currentIndex = list.findIndex(p => (p._id || p.id) === (activePatient?._id || activePatient?.id) || p.name === activePatient?.name);
+                    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % list.length : 0;
+                    const targetPatient = list[nextIndex];
+                    if (setDirectPatientSession && targetPatient) {
+                      setDirectPatientSession(targetPatient);
+                    }
+                  }}
+                  className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-teal-300 hover:text-white transition-colors cursor-pointer text-[10px] font-bold border border-white/20"
+                  title="Switch preview to next patient"
+                >
+                  ⇄ Switch Patient
+                </button>
+              )}
             </div>
             <button
               type="button"
