@@ -176,7 +176,10 @@ export default function PatientAllGames() {
     { id: 'Pattern', label: isHindi ? 'पैटर्न और गणित' : 'Pattern & Math' },
     { id: 'Sequence', label: isHindi ? 'दिनचर्या और क्रम' : 'Routines & Sequence' },
     { id: 'Family', label: isHindi ? 'चेहरे और परिवार' : 'Faces & Family' },
-    { id: 'Auditory', label: isHindi ? 'ध्वनि और ताल' : 'Sound & Rhythm' }
+    { id: 'Auditory', label: isHindi ? 'ध्वनि और ताल' : 'Sound & Rhythm' },
+    { id: 'Spatial', label: isHindi ? 'स्थानिक और दिशा' : 'Spatial & Navigation' },
+    { id: 'Language', label: isHindi ? 'भाषा और स्मृति' : 'Language & Memory' },
+    { id: 'Visual', label: isHindi ? 'दृश्य एकाग्रता' : 'Visual Discrimination' }
   ], [isHindi]);
 
   const filteredGames = useMemo(() => {
@@ -305,44 +308,84 @@ export default function PatientAllGames() {
 
           {/* Games Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGames.map((game) => (
-              <div
-                key={game.id}
-                className="bg-white rounded-3xl p-6 sm:p-7 border border-[#E5E0D8] hover:border-[#2C5AA0] shadow-2xs hover:shadow-md transition-all flex flex-col justify-between gap-5 group"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="w-14 h-14 rounded-2xl bg-[#FAF7F2] border border-[#E5E0D8] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-                      <GameIcon icon={game.icon} className="w-8 h-8 text-[#2C5AA0]" />
-                    </div>
-                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#FAF7F2] text-[#6B6B6B] border border-[#E5E0D8]">
-                      {isHindi ? (game.hindiCategory || game.category) : game.category}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B] group-hover:text-[#2C5AA0] transition-colors">
-                      {isHindi ? (game.hindiTitle || game.title) : game.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium line-clamp-2">
-                      {isHindi ? (game.hindiDescription || game.description) : game.description}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = game.path || game.route;
-                    if (target) navigate(target);
-                  }}
-                  className="w-full min-h-[56px] px-6 py-3.5 rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
+            {filteredGames.map((game) => {
+              const isComingSoon = Boolean(game.isComingSoon);
+              return (
+                <div
+                  key={game.id}
+                  className={`bg-white rounded-3xl p-6 sm:p-7 border transition-all flex flex-col justify-between gap-5 group relative overflow-hidden ${
+                    isComingSoon
+                      ? 'opacity-80 border-slate-200 bg-slate-50/50 shadow-xs'
+                      : 'border-[#E5E0D8] hover:border-[#2C5AA0] shadow-2xs hover:shadow-md'
+                  }`}
                 >
-                  <Play className="w-5 h-5 fill-current" />
-                  <span>{isHindi ? "खेल शुरू करें" : "Play Game"}</span>
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center shadow-2xs transition-transform ${
+                        isComingSoon
+                          ? 'bg-slate-100 border-slate-200 text-slate-500'
+                          : 'bg-[#FAF7F2] border-[#E5E0D8] group-hover:scale-105 text-[#2C5AA0]'
+                      }`}>
+                        <GameIcon icon={game.icon} className={`w-8 h-8 ${isComingSoon ? 'text-slate-500' : 'text-[#2C5AA0]'}`} />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                        {isComingSoon ? (
+                          <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 shadow-2xs">
+                            <span>Coming Soon ⏳</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#FAF7F2] text-[#6B6B6B] border border-[#E5E0D8]">
+                            {isHindi ? (game.hindiCategory || game.category) : game.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h3 className={`text-xl sm:text-2xl font-black transition-colors ${
+                        isComingSoon
+                          ? 'text-slate-800'
+                          : 'text-[#2B2B2B] group-hover:text-[#2C5AA0]'
+                      }`}>
+                        {isHindi ? (game.hindiTitle || game.title) : game.title}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium line-clamp-2">
+                        {isHindi ? (game.hindiDescription || game.description) : game.description}
+                      </p>
+                      {isComingSoon && (
+                        <p className="text-[11px] text-amber-700 font-semibold pt-1">
+                          {isHindi ? (game.hindiCategory || game.category) : game.category} • Roadmap Therapy
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {isComingSoon ? (
+                    <button
+                      type="button"
+                      disabled={true}
+                      className="w-full min-h-[56px] px-6 py-3.5 rounded-2xl bg-slate-100 text-slate-400 border border-slate-200 font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-not-allowed select-none"
+                    >
+                      <Clock className="w-5 h-5 text-slate-400" />
+                      <span>{isHindi ? "जल्द आ रहा है (Coming Soon)" : "Coming Soon"}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = game.path || game.route;
+                        if (target) navigate(target);
+                      }}
+                      className="w-full min-h-[56px] px-6 py-3.5 rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xs transition-all active:scale-98 cursor-pointer"
+                    >
+                      <Play className="w-5 h-5 fill-current" />
+                      <span>{isHindi ? "खेल शुरू करें" : "Play Game"}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

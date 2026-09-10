@@ -13,7 +13,16 @@ import {
   Smile,
   Heart,
   HelpCircle,
-  Gamepad2
+  Gamepad2,
+  Navigation,
+  Compass,
+  MapPin,
+  Utensils,
+  BookOpen,
+  Calendar,
+  Palette,
+  Layers,
+  Leaf
 } from 'lucide-react';
 
 export const GAME_ICON_MAP = {
@@ -29,7 +38,16 @@ export const GAME_ICON_MAP = {
   Grid,
   Smile,
   Heart,
-  Gamepad2
+  Gamepad2,
+  Navigation,
+  Compass,
+  MapPin,
+  Utensils,
+  BookOpen,
+  Calendar,
+  Palette,
+  Layers,
+  Leaf
 };
 
 export default function GameIcon({ icon, className = "w-7 h-7 text-[#2C5AA0]", size = 28 }) {

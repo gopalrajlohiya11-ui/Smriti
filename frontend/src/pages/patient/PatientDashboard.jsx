@@ -276,14 +276,15 @@ export default function PatientDashboard() {
 
     // Deterministic daily game pick based on day-of-year (same all day, changes tomorrow)
   const dailyFeaturedGame = useMemo(() => {
-    if (!cognitiveGames || cognitiveGames.length === 0) return null;
+    const activePlayableGames = (cognitiveGames || []).filter(g => !g.isComingSoon);
+    if (activePlayableGames.length === 0) return null;
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 0);
     const diff = now - startOfYear;
     const oneDay = 1000 * 60 * 60 * 24;
     const dayOfYear = Math.floor(diff / oneDay);
-    const gameIndex = dayOfYear % cognitiveGames.length;
-    return cognitiveGames[gameIndex];
+    const gameIndex = dayOfYear % activePlayableGames.length;
+    return activePlayableGames[gameIndex];
   }, []);
 
   const completedCount = useMemo(() => {
