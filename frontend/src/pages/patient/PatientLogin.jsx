@@ -23,7 +23,7 @@ import FoxtailOrchidIcon from '../../components/FoxtailOrchidIcon';
 import { speakLocalized, stopSpeech } from '../../utils/speechUtils';
 import { requestCaregiverPasswordResetApi } from '../../services/api';
 import { initialPatients } from '../../data/mockData';
-import { getStoredCaregiverSession, getStoredPatientSession } from '../../utils/authUtils';
+import { getStoredCaregiverSession, getStoredPatientSession, clearPatientSession } from '../../utils/authUtils';
 
 export default function PatientLogin({ defaultRole }) {
   const navigate = useNavigate();
@@ -361,8 +361,10 @@ export default function PatientLogin({ defaultRole }) {
 
 
   const handleQuickSelectPatient = (p) => {
+    clearPatientSession();
+    localStorage.removeItem('smriti_patient_state');
     setPatientName(p.name);
-    setPatientAge((p.age || 74).toString());
+    setPatientAge((p.age || (p.name.includes('Meera') ? 68 : 74)).toString());
     setPin('1234');
     setErrorMsg('');
     setDirectPatientSession(p);
@@ -601,22 +603,37 @@ export default function PatientLogin({ defaultRole }) {
                   Demo Profiles
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {displayPatients.slice(0, 2).map((p) => (
-                    <button
-                      key={p.id || p._id || p.name}
-                      type="button"
-                      onClick={() => handleQuickSelectPatient(p)}
-                      className="p-3 rounded-2xl bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-center transition-all cursor-pointer group shadow-2xs"
-                    >
-                      <img
-                        src={p.avatar}
-                        alt={p.name}
-                        className="w-11 h-11 rounded-full mx-auto object-cover mb-1.5 border border-stone-300 group-hover:scale-105 transition-transform"
-                      />
-                      <p className="text-xs font-bold text-stone-900 truncate">{p.name}</p>
-                      <p className="text-[11px] text-stone-500 font-medium">{p.age} yrs • PIN: 1234</p>
-                    </button>
-                  ))}
+                  {/* Ramesh Sharma Demo Button */}
+                  <button
+                    key="ramesh-demo-profile"
+                    type="button"
+                    onClick={() => handleQuickSelectPatient(initialPatients[0])}
+                    className="p-3 rounded-2xl bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-center transition-all cursor-pointer group shadow-2xs"
+                  >
+                    <img
+                      src={initialPatients[0].avatar}
+                      alt={initialPatients[0].name}
+                      className="w-11 h-11 rounded-full mx-auto object-cover mb-1.5 border border-stone-300 group-hover:scale-105 transition-transform"
+                    />
+                    <p className="text-xs font-bold text-stone-900 truncate">{initialPatients[0].name}</p>
+                    <p className="text-[11px] text-stone-500 font-medium">{initialPatients[0].age} yrs • PIN: 1234</p>
+                  </button>
+
+                  {/* Meera Baruah Demo Button */}
+                  <button
+                    key="meera-demo-profile"
+                    type="button"
+                    onClick={() => handleQuickSelectPatient(initialPatients[1])}
+                    className="p-3 rounded-2xl bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-300 text-center transition-all cursor-pointer group shadow-2xs"
+                  >
+                    <img
+                      src={initialPatients[1].avatar}
+                      alt={initialPatients[1].name}
+                      className="w-11 h-11 rounded-full mx-auto object-cover mb-1.5 border border-stone-300 group-hover:scale-105 transition-transform"
+                    />
+                    <p className="text-xs font-bold text-stone-900 truncate">{initialPatients[1].name}</p>
+                    <p className="text-[11px] text-stone-500 font-medium">{initialPatients[1].age} yrs • PIN: 1234</p>
+                  </button>
                 </div>
               </div>
 

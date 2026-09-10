@@ -333,10 +333,11 @@ export function AppProvider({ children }) {
       const currentTargetId = activePatientId || storedPatientId;
 
       if (currentTargetId) {
-        const found = enrichedPatients.find(p => matchPatientHelper(p, currentTargetId)) ||
-                      initialPatients.find(p => matchPatientHelper(p, currentTargetId));
+        const isMeeraTarget = String(currentTargetId).toLowerCase().includes('meera') || currentTargetId === 'pat-2' || currentTargetId === '6a9e533f65c0817eb2016cc9';
+        const found = enrichedPatients.find(p => isMeeraTarget ? (matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : matchPatientHelper(p, currentTargetId)) ||
+                      initialPatients.find(p => isMeeraTarget ? (matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : matchPatientHelper(p, currentTargetId));
         if (found) {
-          const resolvedId = found.id || found._id;
+          const resolvedId = isMeeraTarget ? 'pat-2' : (found.id || found._id);
           setActivePatientId(resolvedId);
           localStorage.setItem('smriti_patient_id', resolvedId);
         } else if (enrichedPatients.length > 0) {
@@ -407,6 +408,16 @@ export function AppProvider({ children }) {
   const activePatient = useMemo(() => {
     const target = activePatientId || localStorage.getItem('smriti_patient_id');
     if (target) {
+      const isMeeraTarget = String(target).toLowerCase().includes('meera') || target === 'pat-2' || target === '6a9e533f65c0817eb2016cc9';
+      if (isMeeraTarget) {
+        const foundMeera = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : null) || initialPatients[1];
+        if (foundMeera) return foundMeera;
+      }
+      const isRameshTarget = String(target).toLowerCase().includes('ramesh') || target === 'pat-1' || target === '6a9e533f65c0817eb2016cc8';
+      if (isRameshTarget) {
+        const foundRamesh = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, 'pat-1') || matchPatientHelper(p, 'ramesh')) : null) || initialPatients[0];
+        if (foundRamesh) return foundRamesh;
+      }
       const found = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, target)) : null) || 
                     initialPatients.find(p => matchPatientHelper(p, target));
       if (found) return found;
@@ -583,11 +594,13 @@ export function AppProvider({ children }) {
 
   // 3. Patient Real Login (PIN keypad + Name) (Fast & Non-blocking)
   const loginPatient = async (name, age, pin) => {
+    clearPatientSession();
+    localStorage.removeItem('smriti_patient_state');
     const isMeera = (name || '').toLowerCase().includes('meera');
     try {
       const data = await loginPatientApi(name, age, pin);
       const matchedPatient = data.patient;
-      const targetId = matchedPatient._id || matchedPatient.id;
+      const targetId = isMeera ? 'pat-2' : (matchedPatient._id || matchedPatient.id);
       setActivePatientId(targetId);
       setIsPatientLoggedIn(true);
       localStorage.setItem('smriti_patient_token', data.token);
@@ -596,13 +609,8 @@ export function AppProvider({ children }) {
       syncPatientStateFromLocation(matchedPatient);
 
       setPatients(prev => {
-        const idx = prev.findIndex(p => matchPatientHelper(p, targetId) || matchPatientHelper(p, matchedPatient.name));
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], ...matchedPatient, id: targetId };
-          return updated;
-        }
-        return [matchedPatient, ...prev];
+        const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, matchedPatient.name));
+        return [{ ...matchedPatient, id: targetId }, ...filtered];
       });
 
       loadRealData().catch(e => console.warn('Background sync:', e.message));
@@ -625,7 +633,8 @@ export function AppProvider({ children }) {
         name: isMeera ? 'Meera Baruah' : (localMatched.name || 'Ramesh Sharma'),
         avatar: isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png',
         location: isMeera ? 'Shillong, Meghalaya' : (localMatched.location || 'Guwahati, Assam'),
-        nativeLanguage: isMeera ? 'Khasi' : (localMatched.nativeLanguage || 'Assamese')
+        nativeLanguage: isMeera ? 'Khasi' : (localMatched.nativeLanguage || 'Assamese'),
+        todayReminders: isMeera ? meeraStandardReminders : (localMatched.todayReminders || standard10Reminders)
       };
 
       const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
@@ -637,13 +646,8 @@ export function AppProvider({ children }) {
       syncPatientStateFromLocation(fullPatient);
 
       setPatients(prev => {
-        const idx = prev.findIndex(p => matchPatientHelper(p, targetId) || matchPatientHelper(p, fullPatient.name));
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], ...fullPatient };
-          return updated;
-        }
-        return [fullPatient, ...prev];
+        const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, fullPatient.name));
+        return [fullPatient, ...filtered];
       });
 
       loadRealData().catch(e => console.warn('Background sync:', e.message));
@@ -654,7 +658,14 @@ export function AppProvider({ children }) {
   // 3a. Instant Direct Patient Session Setter (0ms UI Transition)
   const setDirectPatientSession = useCallback((patient) => {
     if (!patient) return;
-    const isMeera = (patient?.name || '').toLowerCase().includes('meera') || patient?.id === 'pat-2' || patient?._id === '6a9e533f65c0817eb2016cc9';
+    clearPatientSession();
+    localStorage.removeItem('smriti_patient_state');
+
+    const isMeera = (patient?.name || '').toLowerCase().includes('meera') || 
+                    patient?.id === 'pat-2' || 
+                    patient?._id === '6a9e533f65c0817eb2016cc9' ||
+                    patient?.location?.toLowerCase().includes('shillong');
+
     const baseTemplate = isMeera ? initialPatients[1] : initialPatients[0];
     const targetId = isMeera ? 'pat-2' : (patient?.id || patient?._id || 'pat-1');
     const fullPatient = {
@@ -665,7 +676,8 @@ export function AppProvider({ children }) {
       name: isMeera ? 'Meera Baruah' : (patient?.name || 'Ramesh Sharma'),
       avatar: isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png',
       location: isMeera ? 'Shillong, Meghalaya' : (patient?.location || 'Guwahati, Assam'),
-      nativeLanguage: isMeera ? 'Khasi' : (patient?.nativeLanguage || 'Assamese')
+      nativeLanguage: isMeera ? 'Khasi' : (patient?.nativeLanguage || 'Assamese'),
+      todayReminders: isMeera ? meeraStandardReminders : (patient?.todayReminders || standard10Reminders)
     };
 
     const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
@@ -677,13 +689,8 @@ export function AppProvider({ children }) {
     syncPatientStateFromLocation(fullPatient);
 
     setPatients(prev => {
-      const idx = prev.findIndex(p => matchPatientHelper(p, targetId) || matchPatientHelper(p, fullPatient.name));
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = { ...updated[idx], ...fullPatient };
-        return updated;
-      }
-      return [fullPatient, ...prev];
+      const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, fullPatient.name));
+      return [fullPatient, ...filtered];
     });
 
     loadRealData().catch(e => console.warn('Background sync:', e.message));
