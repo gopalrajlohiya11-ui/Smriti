@@ -287,14 +287,14 @@ Live deployments:
 
 **Team Design Divas** — Smart India Hackathon 2026 | PS ID: SIH26003 | Branch: ITNS, NSUT
 
-| # | Name | Role | Email |
-|---|---|---|---|
-| 1 | **Gopal Raj Lohiya** *(Team Leader)* | Full Stack Developer | gopal.lohiya.ug25@nsut.ac.in |
-| 2 | **Aditya Rai Chauhan** | ML Engineer | aditya.chauhan.ug25@nsut.ac.in |
-| 3 | **Mahir Kumar** | Backend Developer | mahir.kumar.ug25@nsut.ac.in |
-| 4 | **Hitarth Garg** | Frontend Developer | hitarth.garg.ug25@nsut.ac.in |
-| 5 | **Mehak** | UI/UX Designer | mehak-ug25@nsut.ac.in |
-| 6 | **Diya Gautam** | Research & Content | diya.gautam.ug25@nsut.ac.in |
+| # | Name |
+|---|---|
+| 1 | **Gopal Raj Lohiya** *(Team Leader)* |
+| 2 | **Aditya Rai Chauhan** |
+| 3 | **Mahir Kumar** |
+| 4 | **Hitarth Garg** |
+| 5 | **Mehak** |
+| 6 | **Diya Gautam** |
 
 Special thanks to the clinical research teams at **LASI-DAD**, **ARDSI**, **NIMHANS**, **SCARF India**, and the **Ministry of DoNER** for their published epidemiological data and clinical guidance on dementia care in the North-Eastern Region.
 
