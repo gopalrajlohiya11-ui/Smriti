@@ -35,15 +35,8 @@
    - [Culturally Attuned Cognitive Games Suite (5 Clinical CST Domains)](#-culturally-attuned-cognitive-games-suite-5-clinical-cst-domains)
    - [Clinical Caregiver & Neurologist Command Hub](#-clinical-caregiver--neurologist-command-hub)
    - [Security, Privacy & DPDP Compliance](#-security-privacy--dpdp-compliance)
-2. [🔬 Clinical Research Dossier & Neurological Foundation](#-clinical-research-dossier--neurological-foundation)
-   - [What Actually Happens in Dementia?](#what-actually-happens-in-dementia)
-   - [5 Core Cognitive Domains & Smriti Game Mapping](#5-core-cognitive-domains--smriti-game-mapping)
-   - [Raw Epidemiological Data & Demographic Statistics](#raw-epidemiological-data--demographic-statistics)
-   - [Why Does the North-Eastern Region (NER) Suffer Disproportionately?](#why-does-the-north-eastern-region-ner-suffer-disproportionately)
-   - [Major NGOs, Clinical Institutions & Government Initiatives in India](#major-ngos-clinical-institutions--government-initiatives-in-india)
-   - [Existing Commercial Apps vs. Smriti](#existing-commercial-apps-vs-smriti)
-   - [Verified Open-Source Repositories & Academic Research Papers](#verified-open-source-repositories--academic-research-papers)
-3. [🌸 The Smriti Solution: Complete Architecture & Core Pillars](#-the-smriti-solution-complete-architecture--core-pillars)
+
+2. [🌸 The Smriti Solution: Complete Architecture & Core Pillars](#-the-smriti-solution-complete-architecture--core-pillars)
    - [1. Senior-Centric Patient Portal & Horizon Routines](#1-senior-centric-patient-portal--horizon-routines)
    - [2. Culturally Attuned Cognitive Games Suite](#2-culturally-attuned-cognitive-games-suite)
    - [3. Multimodal Voice Guidance & Google Gemini AI Assistant](#3-multimodal-voice-guidance--google-gemini-ai-assistant)
@@ -52,15 +45,15 @@
    - [6. Live Machine Learning Microservice (`dementia-ai-engine.onrender.com`)](#6-live-machine-learning-microservice)
    - [7. 100% Offline-First PWA Architecture (Workbox + IndexedDB)](#7-100-offline-first-pwa-architecture)
    - [8. Hardware-Level WebAuthn FIDO2 Biometrics & DPDP Act 2023 Compliance](#8-hardware-level-webauthn-fido2-biometrics--dpdp-act-2023-compliance)
-4. [🏛️ High-Level System Architecture](#️-high-level-system-architecture)
-5. [💻 Complete Technology Stack](#-complete-technology-stack)
-6. [🚀 Quick Start & Local Setup](#-quick-start--local-setup)
-7. [☁️ Cloud Deployment Guide (Vercel & Render)](#️-cloud-deployment-guide-vercel--render)
-8. [🔗 Complete REST API Reference](#-complete-rest-api-reference)
-9. [📱 Meta WhatsApp Cloud API Setup](#-meta-whatsapp-cloud-api-setup)
-10. [🔮 Future Scope & Long-Term Product Roadmap](#-future-scope--long-term-product-roadmap)
-11. [🛡️ Privacy, Ethics & DPDP 2023 Compliance](#️-privacy-ethics--dpdp-2023-compliance)
-12. [👥 Team & Acknowledgements](#-team--acknowledgements)
+3. [🏛️ High-Level System Architecture](#️-high-level-system-architecture)
+4. [💻 Complete Technology Stack](#-complete-technology-stack)
+5. [🚀 Quick Start & Local Setup](#-quick-start--local-setup)
+6. [☁️ Cloud Deployment Guide (Vercel & Render)](#️-cloud-deployment-guide-vercel--render)
+7. [🔗 Complete REST API Reference](#-complete-rest-api-reference)
+8. [📱 Meta WhatsApp Cloud API Setup](#-meta-whatsapp-cloud-api-setup)
+9. [🔮 Future Scope & Long-Term Product Roadmap](#-future-scope--long-term-product-roadmap)
+10. [🛡️ Privacy, Ethics & DPDP 2023 Compliance](#️-privacy-ethics--dpdp-2023-compliance)
+11. [👥 Team & Acknowledgements](#-team--acknowledgements)
 
 ---
 
@@ -132,168 +125,6 @@ Professional, data-dense healthcare SaaS interface tailored for clinical rigor, 
 
 ---
 
-## 🔬 Clinical Research Dossier & Neurological Foundation
-
-### What Actually Happens in Dementia?
-Dementia is **not normal aging**. It is a progressive, irreversible neurodegenerative syndrome characterized by synaptic failure, widespread neuronal loss, and cerebral microvascular degeneration that systematically degrades a senior's **Activities of Daily Living (ADLs)**.
-
-```
-                      ┌───────────────────────────────────────────────┐
-                      │        NEUROPATHOLOGICAL CASCADE              │
-                      └───────────────────────┬───────────────────────┘
-                                              │
-              ┌───────────────────────────────┼───────────────────────────────┐
-              ▼                               ▼                               ▼
-    ┌───────────────────┐           ┌───────────────────┐           ┌───────────────────┐
-    │ Alzheimer's (~65%)│           │ Vascular (~20%)   │           │ FTD / LBD (~15%)  │
-    │ Extracellular Aβ  │           │ Chronic cerebral  │           │ Frontotemporal    │
-    │ plaques + hyper-  │           │ hypoperfusion,    │           │ lobar atrophy,    │
-    │ phosphorylated    │           │ micro-infarcts,   │           │ α-synuclein Lewy  │
-    │ Tau tangles       │           │ lacunar strokes   │           │ body aggregates   │
-    └─────────┬─────────┘           └─────────┬─────────┘           └─────────┬─────────┘
-              │                               │                               │
-              └───────────────────────────────┼───────────────────────────────┘
-                                              │
-                                              ▼
-                      ┌───────────────────────────────────────────────┐
-                      │   PROGRESSIVE COGNITIVE & FUNCTIONAL LOSS     │
-                      │   • Working Memory Loss   • Executive Deficit │
-                      │   • Facial Agnosia        • Speech Dyspraxia  │
-                      └───────────────────────────────────────────────┘
-```
-
-1. **Alzheimer's Disease (AD) (~65% of cases)**:
-   - Extracellular Amyloid-β (Aβ) plaques and intracellular hyperphosphorylated Tau neurofibrillary tangles cause severe cholinergic neuron loss in the basal forebrain and irreversible hippocampal atrophy.
-2. **Vascular Dementia (VaD) (~20% of cases — *highest incidence in NER*)**:
-   - Chronic cerebral hypoperfusion, diffuse white matter ischemia, and lacunar micro-infarcts triggered by uncontrolled hypertension, atherosclerosis, and microvascular stiffening.
-3. **Frontotemporal & Lewy Body Dementias (FTD / LBD) (~15% of cases)**:
-   - Frontal and anterior temporal lobe degeneration causing behavioral disinhibition, executive dysfunction, and alpha-synuclein neuronal aggregates causing visual hallucinations and motor fluctuations.
-
----
-
-### Clinical Cognitive Domains & Smriti Game Mapping (Active CST + Roadmap Expansion)
-Smriti translates evidence-based **Cognitive Stimulation Therapy (CST)** protocols into 5 deployed exercises and 6 roadmap therapy modules targeting distinct neuroanatomical pathways:
-
-| # | Cognitive Domain | Neuroanatomical Focus | Clinical Manifestation in Dementia | Smriti Game Countermeasure (Active & Roadmap) |
-|---|---|---|---|---|
-| **1** | **Episodic & Working Memory** | Hippocampus & Entorhinal Cortex | Forgetting recent meals, names of common ingredients, and market tasks. | **Market Day Basket (বজাৰৰ পাচি) [Active]**<br/>Recall and gather authentic regional produce items (*Bhut Jolokia, Bamboo Shoot, Kaji Nemu, Assam Tea*) under dynamic basket constraints. |
-| **2** | **Executive Function & Planning** | Dorsolateral Prefrontal Cortex | Inability to sequence multi-step daily activities (brewing morning tea, dressing, watering Tulsi). | **Daily Routine Sequencer (दैनिक दिनचर्या) [Active]**<br/>Step-by-step chronological reordering of familiar cultural daily routines to reinforce motor and procedural memory. |
-| **3** | **Facial Recognition & Reminiscence** | Fusiform Gyrus (FFA) & Limbic System | Prosopagnosia / Facial agnosia; progressive alienation and inability to identify close family members. | **Faces & Family Recall (चेहरे और यादें) [Active]**<br/>Reminiscence matching of real family photos, names, and kinship bonds integrated directly with the patient’s Memory Bank. |
-| **4** | **Auditory Attention & Discrimination** | Superior Temporal Gyrus & Auditory Cortex | Inability to localize auditory stimuli, sound confusion, sensory disorientation. | **Sound & Rhythm Match (ध्वनि और लय) [Active]**<br/>Acoustic memory association with traditional indigenous instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*). |
-| **5** | **Semantic Categorization & Logic** | Left Temporal Pole & Inferior Parietal Lobule | Semantic confusion; inability to identify category anomalies or functional classifications. | **Odd One Out (अलग पहचानें) [Active]**<br/>Visual and semantic discrimination identifying the non-conforming item across regional botanical, culinary, and cultural sets. |
-| **6** | **Spatial Navigation & Mental Mapping** | Parietal Lobes & Parahippocampal Place Area (PPA) | Wandering, spatial disorientation, getting lost on familiar village paths. | **Village Path Navigator [Roadmap]**<br/>Assisting an elder to navigate back home through familiar landmarks in Assam and Meghalaya villages. |
-| **7** | **Pattern & Categorical Sorting** | Ventrolateral Prefrontal Cortex | Loss of category sorting abilities, tactile-visual association deficits. | **Spice & Herb Sorter [Roadmap]**<br/>Sorting indigenous North-Eastern spices (*Bhut Jolokia, Ginger, Lakadong Turmeric*) into traditional earthen storage jars. |
-| **8** | **Language & Semantic Fluency** | Broca's & Wernicke's Language Networks | Anomia, difficulty recalling words, loss of cultural idiomatic expressions. | **Proverb Completer [Roadmap]**<br/>Recalling and completing popular regional Assamese, Bengali, and Hindi folk proverbs and wise sayings. |
-| **9** | **Complex Executive Organization** | Frontopolar Cortex & Anterior Cingulate | Inability to plan complex multistep daily logistics. | **Tea Estate Planner [Roadmap]**<br/>Organizing daily agricultural and estate tasks in a tea garden to train multi-tiered executive function. |
-| **10** | **Visual Discrimination & Motif Recall** | Occipitotemporal Visual Cortex | Inability to recognize fine textile patterns and visual distinctions. | **Mekhela Pattern Match [Roadmap]**<br/>Identifying and matching traditional handwoven motifs on indigenous Mekhela Chador and Eri silk garments. |
-| **11** | **Temporal & Seasonal Orientation** | Medial Temporal Lobe & Suprachiasmatic Nucleus | Disorientation in time, season, and regional holiday cycles. | **Festival Calendar [Roadmap]**<br/>Connecting North-Eastern regional festivals (*Rongali Bihu, Wangala, Hornbill, Chapchar Kut*) with their appropriate seasons and months. |
-
----
-
-### Raw Epidemiological Data & Demographic Statistics
-
-```
-                                  DEMENTIA BURDEN OVERVIEW
-┌───────────────────────────┬───────────────────────────────┬──────────────────────────────────────────┐
-│ Jurisdiction / Scope      │ Prevalence / Population Count │ Key Demographic Insights & Source        │
-├───────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ Global Burden             │ ~55 Million (2026)            │ WHO / Alzheimer's Disease International: │
-│                           │ → 139 Million by 2050         │ >60% in LMICs. Global cost >$1.3 Trillion│
-├───────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ India National (60+)      │ 8.8 Million (2026)            │ LASI-DAD Study (Lancet Public Health):   │
-│                           │ 7.4% – 8.44% prevalence rate  │ Over 17.6% (24M+) have MCI. Projected    │
-│                           │                               │ to reach 14.3 Million by 2036.           │
-├───────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ Rural vs. Urban Disparity │ 68% Rural vs. 32% Urban       │ Rural India bears >2/3 of total burden   │
-│                           │                               │ due to zero local specialist coverage.   │
-├───────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ Gender & Literacy Impact  │ Females: 9.0% (vs. 5.8% Men)  │ Significantly higher in illiterate rural │
-│                           │ Non-literate: 10.1%           │ seniors due to lower cognitive reserve.  │
-├───────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ North-Eastern Region (NER)│ ~280,000 – 350,000 cases      │ Assam accounts for 180,000+ cases.       │
-│ (8 States)                │ across the 8 NER states       │ Mizoram & Meghalaya have fastest-growing │
-│                           │                               │ vascular dementia risk curves in India.  │
-└───────────────────────────┴───────────────────────────────┴──────────────────────────────────────────┘
-```
-
----
-
-### Why Does the North-Eastern Region (NER) Suffer Disproportionately?
-
-The North-Eastern Region of India faces a unique intersection of epidemiological, geographical, and healthcare deficits that make dementia far more severe than in mainland India:
-
-1. **The Vascular Risk Triad (Hypertension + Dietary Practices)**:
-   - **Epidemic Hypertension**: Clinical surveys in Assam (Kamrup ~33%) and Mizoram show hypertension prevalence **15–20% above the national average**, directly escalating cerebral micro-infarcts and Vascular Dementia.
-   - **High-Sodium Indigenous Diets**: Heavy dietary reliance on alkaline preparations (*Khar*), fermented high-salt fish (*Ngari, Shidol*), smoked meats, and widespread betel nut chewing (*Tamul-Paan*) causes chronic endothelial injury and microvascular stiffening.
-2. **The "Neurology Desert" (Extreme Specialist Deficit)**:
-   - **85%+ Specialist Concentration in Guwahati**: Over 85% of all DM/MCh neurologists across the entire 8 states operate exclusively out of Guwahati (GMCH, GNRC, Apollo).
-   - **Near-Zero Rural Coverage**: Hill states such as Arunachal Pradesh, Nagaland, and Mizoram have near-zero full-time cognitive neurologists outside capital cities, forcing frail elderly patients to undertake grueling 12-hour mountain journeys for basic clinical evaluations.
-3. **Topography & Connectivity Chasm**:
-   - Mountainous terrain, monsoon floods, and landslides sever physical access to secondary healthcare centers.
-   - Intermittent 2G/3G mobile networks cause conventional, cloud-reliant health apps to crash, permanently corrupting patient telemetry.
-4. **Linguistic Diversity & Cultural Alienation**:
-   - NER is home to over **220+ indigenous dialects** (Assamese, Bodo, Khasi, Garo, Mizo, Meitei, Nagamese).
-   - Standard Western cognitive tests (e.g., MMSE using US seasons or Western objects) cause massive false-positive cognitive impairment diagnoses.
-   - Severe societal stigma: Over 90% of families write off early memory loss as natural aging (*"বুঢ়া বয়সৰ পাহৰণি"* / *"Bura boyoxor pahoroni"*), resulting in diagnosis only at advanced Stage 3 or 4.
-
----
-
-### Major NGOs, Clinical Institutions & Government Initiatives in India
-
-| Organization / Body | Headquarters & Scope | Key Clinical Programs & Regional Presence |
-|---|---|---|
-| **ARDSI** *(Alzheimer's & Related Disorders Society of India)* | Kochi / National Apex NGO (Est. 1992) | Publishes the authoritative *Dementia in India Report*. Operates active regional chapters in **Guwahati (Dr. H. K. Goswami)** and **Mizoram (Aizawl)** providing caregiver respite training and day-care centers. |
-| **NIMHANS Bangalore** | National Institute of Mental Health & Neurosciences | Developed the ICMR-NCDC Cognitive Assessment Toolkits; operates the national 24×7 **Tele-MANAS (14416)** tele-counseling grid linked across all NER states. |
-| **Dementia India Alliance (DIA)** | National Non-Profit Network | Operates *"DemClinic"* national digital clinical support, family peer support groups, and elder rights legal advocacy. |
-| **Nightingales Medical Trust (NMT)** | Bangalore / Pan-India | Runs specialized dementia day care, memory screening mobile vans, and community caregiver training. |
-| **SCARF India (DEMCARES)** | Chennai (WHO Collaborating Centre) | Developed community dementia screening toolkits specifically adapted for rural **ASHA** and **Anganwadi** frontline healthcare workers. |
-| **Ministry of DoNER & NEC** | Government of India / Shillong | Funds regional healthcare connectivity, rural telemedicine nodes, and SIH26003 innovation challenges. |
-
----
-
-### Existing Commercial Apps vs. Smriti
-
-```
-┌───────────────────────────────┬───────────────────────────────┬──────────────────────────────────────────┐
-│ App / Platform                │ Target Market / Model         │ Critical Failure Modes in Rural NER      │
-├───────────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ CogniFit / Lumosity / BrainHQ │ US / EU Commercial            │ • Prohibitive subscription ($15-$20/mo)  │
-│                               │ ($15–$20 / month)             │ • English-only abstract geometric tasks  │
-│                               │                               │ • Requires high-speed broadband; crashes │
-├───────────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ MindMate / Timeless / CareZone│ Western Dementia Care         │ • Geared for nuclear Western families    │
-│                               │ (NHS / Medicare)              │ • Zero Assamese / Hindi voice guidance   │
-│                               │                               │ • No WhatsApp integration; no 2G support │
-├───────────────────────────────┼───────────────────────────────┼──────────────────────────────────────────┤
-│ 🌸 SMRITI                      │ North-Eastern & Rural Indian  │ ✓ 100% Free & Open-Access for clinics    │
-│ (Our SIH26003 Platform)       │ Demographics                  │ ✓ Culturally Attuned (Kaji Nemu, Dhol)   │
-│                               │                               │ ✓ 100% Offline-First PWA (IndexedDB)     │
-│                               │                               │ ✓ Multilingual Voice + WhatsApp Bot      │
-│                               │                               │ ✓ Real-time ML Adaptive Telemetry on Render│
-└───────────────────────────────┴───────────────────────────────┴──────────────────────────────────────────┘
-```
-
----
-
-### Verified Open-Source Repositories & Academic Research Papers
-
-- **LASI-DAD Diagnostic Study (*The Lancet Public Health*, 2023)**:
-  - *Paper DOI*: [`10.1016/S2468-2667(22)00301-7`](https://doi.org/10.1016/S2468-2667(22)00301-7) • *Clinical Portal*: [https://lasi-dad.org](https://lasi-dad.org)
-  - Nationally representative clinical assessment dataset of 4,000+ Indian seniors establishing the 7.4% national dementia prevalence baseline.
-- **NEUROHACK2022_Dementia (Clinical Dementia Rating ML Model)**:
-  - *Repositories*: [`github.com/shreyasgite/dementianet`](https://github.com/shreyasgite/dementianet) • [`github.com/DEMON-NEUROHACK`](https://github.com/DEMON-NEUROHACK)
-  - Machine learning pipeline using PCA, Support Vector Machines (SVM), and Random Forests to predict Clinical Dementia Rating (CDR) progression.
-- **DementiaVoiceAnalyzer (Acoustic Biomarker Pipeline)**:
-  - *Repository*: [`github.com/Butovens/DementiaVoiceAnalyzer`](https://github.com/Butovens/DementiaVoiceAnalyzer)
-  - Extracts acoustic speech biomarkers (pitch variability, shimmer, jitter, spectral centroids via openSMILE) to detect early cognitive decline.
-- **Alzheimer-Detection NLP (Spontaneous Speech Analysis)**:
-  - *Repository*: [`github.com/42bismuth/Alzheimer-Detection`](https://github.com/42bismuth/Alzheimer-Detection)
-  - React + Python NLP pipeline analyzing hesitation pauses, lexical richness, and syntactic complexity in dementia speech.
-- **NICE Clinical Guidelines on Cognitive Stimulation Therapy (CG42)**:
-  - *Guidelines*: [nice.org.uk/guidance/cg42](https://www.nice.org.uk/guidance/cg42) • *World Alzheimer Report (ADI)*
-  - Gold-standard medical evidence proving regular Cognitive Stimulation Therapy (CST) significantly slows cognitive decline by 6 to 9 months.
-
----
 
 ## 🌸 The Smriti Solution: Complete Architecture & Core Pillars
 
@@ -331,53 +162,7 @@ Smriti is engineered as a resilient **3-Tier Delivery Ecosystem**:
 └───────────────────────────────────┴────────────────────────────────────────────────────┘
 ```
 
-### 1. Senior-Centric Patient Portal & Horizon Routines
-- **Cognitive-Load Reduced Interface**: High-contrast, warm soothing palette (`#FAF7F2`), large 56px touch targets, and zero complex navigation trees.
-- **Horizon Routines**: Forward chronological progression through 10 daily routines (Morning Tea, Blood Pressure Medication, Hydration, Tulsi walk, Memory Game, Night Rest). Completing a routine dynamically spotlights the next scheduled task.
-- **Audible Celebrations**: Confetti animations and reassuring audio praise upon completing daily health milestones.
 
-### 2. Culturally Attuned Cognitive Games Suite (Active CST + 6 Roadmap Modules)
-The games are deeply rooted in North-Eastern Indian heritage and clinical neurology:
-- **Market Day Basket (বজাৰৰ পাচি) [Active]**: Memory & classification with 10 authentic NER botanical assets (*Kaji Nemu, Bamboo Shoot, Bhut Jolokia, Assam Tea, Malbhog Banana*).
-- **Daily Routine Sequencer (दैनिक दिनचर्या) [Active]**: Procedural memory sequencing daily cultural routines.
-- **Faces & Family Recall (चेहरे और यादें) [Active]**: Reminiscence therapy reinforcing family facial recognition and kinship relations.
-- **Sound & Rhythm Match (ध्वनि और लय) [Active]**: Auditory memory recognizing regional acoustic instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*).
-- **Odd One Out (अलग पहचानें) [Active]**: Semantic discrimination identifying categorical anomalies.
-- **Village Path Navigator [Roadmap Placeholder]**: Spatial navigation assisting seniors back home through familiar Assam village landmarks.
-- **Spice & Herb Sorter [Roadmap Placeholder]**: Categorical sorting of traditional NER spices into ceramic jars.
-- **Proverb Completer [Roadmap Placeholder]**: Semantic language fluency recalling regional folk idioms.
-- **Tea Estate Planner [Roadmap Placeholder]**: Executive multi-step planning of tea garden daily workflows.
-- **Mekhela Pattern Match [Roadmap Placeholder]**: Visual discrimination matching indigenous handloom motifs.
-- **Festival Calendar [Roadmap Placeholder]**: Temporal orientation connecting regional festivals with seasons.
-
-### 3. Multimodal Voice Guidance & Google Gemini AI Assistant
-- **Web Speech Synthesis**: Instant text-to-speech aloud reading across Assamese (`as-IN`), Hindi (`hi-IN`), and English (`en-IN`) with a race-condition-proof audio queue.
-- **Google Gemini Generative AI**: Context-grounded conversational companion aware of the patient’s active prescriptions, caregiver contact, and daily schedule. Supports natural voice audio input and spoken playback.
-
-### 4. Meta WhatsApp Bot & Automated Routine Engine
-- **Direct Bot Link**: Instant 1-tap connection via [`https://wa.me/15556680031`](https://wa.me/15556680031?text=Hi%20Smriti).
-- **Automated Node-Cron Reminders**: Background cron engine checks active patient prescription times and dispatches timely WhatsApp notifications.
-- **Bidirectional Sync**: Patient replies on WhatsApp automatically acknowledge reminders on the caregiver’s live dashboard.
-
-### 5. Clinical Caregiver Hub & Real-Time Red Flag Alerts
-- **Caregiver Command Center**: Patient roster management, vitals monitoring, and 7-day adherence visualizations.
-- **Active Red Flag Alerts**: Immediate high-priority alerts when critical morning or evening doses are missed, with 1-tap phone dialer and dismissal audit trails.
-- **Deep Cognitive Telemetry**: Graphical dashboards plotting reaction time distributions, mistake curves, and cognitive domain scores over time.
-
-### 6. Live Machine Learning Microservice
-- **Hosted on Render**: [`https://dementia-ai-engine.onrender.com`](https://dementia-ai-engine.onrender.com).
-- **Dynamic Adaptive Difficulty (`POST /get_next_difficulty`)**: Continuously analyzes round reaction times and mistake counts to calibrate next-session starting difficulties in real time.
-- **Longitudinal Health Scoring (`POST /calculate_health_score`)**: Synthesizes weekly cognitive game performance into a standardized Cognitive Health Score (0–100) and clinical status label (*Stable*, *Mild Decline*, *Moderate Decline*).
-
-### 7. 100% Offline-First PWA Architecture
-- **Workbox Service Worker**: Full application shell pre-cached for 100% functionality during complete internet outages.
-- **IndexedDB Sync Queue (`idb`)**: Medication completions, Memory Bank photos, and game telemetry are stored locally in IndexedDB and automatically synchronized with MongoDB when network connectivity returns.
-
-### 8. Hardware-Level WebAuthn FIDO2 Biometrics & DPDP Act 2023 Compliance
-- **FIDO2 Fingerprint & Face Unlock**: Hardware-level biometric authentication via the Web Authentication API; raw biometric data never leaves the senior's device.
-- **DPDP Act 2023 Compliance**: Mandatory caregiver/patient consent checkboxes prior to Memory Bank photo uploads, explicit data purpose limitation, 30-day right to erasure, and Grievance Officer audit logs.
-
----
 
 ## 🏛️ High-Level System Architecture
 
