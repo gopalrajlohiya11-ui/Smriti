@@ -451,34 +451,52 @@ export function AppProvider({ children }) {
   const activePatient = useMemo(() => {
     const target = activePatientId || localStorage.getItem('smriti_patient_id') || '';
     const storedName = localStorage.getItem('smriti_patient_name') || '';
-    const isMeera = String(target).toLowerCase().includes('meera') || target === 'pat-2' || target === '6a9e533f65c0817eb2016cc9' || storedName.toLowerCase().includes('meera');
 
+    // 1. Search in patients state first
+    if (patients && patients.length > 0) {
+      const found = patients.find(p => 
+        (target && matchPatientHelper(p, target)) || 
+        (storedName && matchPatientHelper(p, storedName))
+      );
+      if (found) return found;
+    }
+
+    // 2. Demo shortcut for Meera
+    const isMeera = String(target).toLowerCase().includes('meera') || target === 'pat-2' || target === '6a9e533f65c0817eb2016cc9' || storedName.toLowerCase().includes('meera');
     if (isMeera) {
-      const ramesh = initialPatients[0];
+      return initialPatients[1] || initialPatients[0];
+    }
+
+    // 3. Demo shortcut for Ramesh
+    const isRamesh = String(target).toLowerCase().includes('ramesh') || target === 'pat-1' || target === '6a9e533f65c0817eb2016cc8' || storedName.toLowerCase().includes('ramesh');
+    if (isRamesh) {
+      return initialPatients[0];
+    }
+
+    // 4. If patients state is non-empty, use first patient in state
+    if (patients && patients.length > 0) {
+      return patients[0];
+    }
+
+    // 5. If storedName exists from a real session, return fresh custom patient
+    if (storedName) {
       return {
-        ...ramesh,
-        id: 'pat-2',
-        _id: '6a9e533f65c0817eb2016cc9',
-        name: 'Meera Baruah',
-        age: 68,
-        gender: 'Female',
-        avatar: '/avatars/meera_baruah.png',
-        location: 'Shillong, Meghalaya',
-        nativeLanguage: 'Khasi',
-        todayReminders: ramesh.todayReminders || standard10Reminders,
-        streakDays: 14,
-        weeklyPerformance: ramesh.weeklyPerformance,
-        reminderHistory: ramesh.reminderHistory,
-        primaryCaregiver: ramesh.primaryCaregiver,
-        emergencyContact: '+91 94361 98765',
-        notes: 'Responsive to photo recognition and family memories. Enjoys Shillong pine walks and church choir music.'
+        id: target || `pat-${Date.now()}`,
+        _id: target || `pat-${Date.now()}`,
+        name: storedName,
+        age: 70,
+        gender: 'Senior',
+        avatar: '',
+        location: 'Assam, India',
+        nativeLanguage: 'Assamese',
+        todayReminders: [],
+        streakDays: 0,
+        reminderHistory: [],
+        weeklyPerformance: []
       };
     }
 
-    // Default to Ramesh
-    const found = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, target)) : null) || 
-                  initialPatients.find(p => matchPatientHelper(p, target));
-    if (found && !found.name.toLowerCase().includes('meera')) return found;
+    // 6. Default to Ramesh only when completely unauthenticated/public
     return initialPatients[0];
   }, [patients, activePatientId]);
 
@@ -683,44 +701,120 @@ export function AppProvider({ children }) {
   };
 
   // 3. Patient Real Login (PIN keypad + Name) (Fast & Non-blocking)
-  const loginPatient = async (name, age, pin) => {
+  const loginPatient = async (name, age, pin, phoneNumber) => {
     clearPatientSession();
     localStorage.removeItem('smriti_patient_state');
-    const isMeera = (name || '').toLowerCase().includes('meera');
-    const targetId = isMeera ? 'pat-2' : 'pat-1';
-    const patientName = isMeera ? 'Meera Baruah' : (name || 'Ramesh Sharma');
-    const patientAvatar = isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png';
-    const patientLocation = isMeera ? 'Shillong, Meghalaya' : 'Guwahati, Assam';
-    const patientLang = isMeera ? 'Khasi' : 'Assamese';
 
-    const ramesh = initialPatients[0];
-    const fullPatient = {
-      ...ramesh,
-      id: targetId,
-      _id: isMeera ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8',
-      name: patientName,
-      age: isMeera ? 68 : (parseInt(age, 10) || 74),
-      gender: isMeera ? 'Female' : 'Male',
-      avatar: patientAvatar,
-      location: patientLocation,
-      nativeLanguage: patientLang,
-      todayReminders: ramesh.todayReminders || standard10Reminders,
-      streakDays: 14,
-      reminderHistory: ramesh.reminderHistory,
-      weeklyPerformance: ramesh.weeklyPerformance
-    };
+    const trimmedName = (name || '').trim();
+    const isMeera = trimmedName.toLowerCase().includes('meera');
+    const isRamesh = trimmedName.toLowerCase().includes('ramesh');
 
-    const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
-    setActivePatientId(targetId);
-    setIsPatientLoggedIn(true);
-    localStorage.setItem('smriti_patient_token', dummyJwt);
-    localStorage.setItem('smriti_patient_auth', 'true');
-    localStorage.setItem('smriti_patient_id', targetId);
-    localStorage.setItem('smriti_patient_name', patientName);
-    syncPatientStateFromLocation(fullPatient);
+    try {
+      // 1. Authenticate against real backend MongoDB API
+      const data = await loginPatientApi(trimmedName, age, pin, phoneNumber);
+      const backendPatient = data.patient;
+      const targetId = backendPatient._id || backendPatient.id;
 
-    setPatients([fullPatient, isMeera ? ramesh : initialPatients[1]]);
-    return { success: true, patient: fullPatient };
+      // 2. Fetch fresh reminders for this patient from backend
+      let realReminders = [];
+      try {
+        const rems = await fetchPatientReminders(targetId);
+        if (Array.isArray(rems)) {
+          realReminders = rems.map(r => ({
+            id: r._id,
+            type: r.type,
+            title: r.title || 'Daily Routine',
+            hindiTitle: r.hindiTitle || r.title,
+            detail: r.detail || `Scheduled ${r.type}`,
+            hindiDetail: r.hindiDetail || r.detail,
+            icon: r.icon || (r.type === 'medicine' ? 'Pill' : r.type === 'hydration' ? 'Droplets' : r.type === 'game' ? 'BrainCircuit' : r.type === 'activity' ? 'Footprints' : r.type === 'appointment' ? 'Calendar' : 'meal'),
+            time: r.scheduledTime ? new Date(r.scheduledTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '9:00 AM',
+            status: r.acknowledged ? 'completed' : 'pending',
+            acknowledged: !!r.acknowledged,
+            dismissed: !!r.dismissed,
+            scheduledTime: r.scheduledTime
+          }));
+        }
+      } catch (e) {
+        console.warn('Could not fetch reminders for patient:', e);
+      }
+
+      const fullPatient = {
+        id: targetId,
+        _id: targetId,
+        name: backendPatient.name,
+        age: backendPatient.age || parseInt(age, 10) || 70,
+        gender: backendPatient.gender || 'Senior',
+        avatar: backendPatient.avatar || '',
+        location: backendPatient.location || 'Guwahati, Assam',
+        nativeLanguage: backendPatient.language || backendPatient.nativeLanguage || 'Assamese',
+        phone: backendPatient.phoneNumber || '',
+        rawPhone: backendPatient.phoneNumber || '',
+        cognitiveStage: backendPatient.cognitiveStage || 'Early Memory Support',
+        primaryCaregiver: backendPatient.primaryCaregiver || 'Assigned Caregiver',
+        emergencyContact: backendPatient.emergencyContact || '',
+        notes: backendPatient.notes || '',
+        medicalNotes: backendPatient.medicalNotes || '',
+        todayReminders: realReminders,
+        streakDays: calculatePatientStreak(backendPatient, [], realReminders),
+        reminderHistory: [],
+        weeklyPerformance: [],
+        notificationPreference: backendPatient.notificationPreference || 'whatsapp',
+        isDemoSeed: isMeera || isRamesh || !!backendPatient.isDemoSeed
+      };
+
+      setActivePatientId(targetId);
+      setIsPatientLoggedIn(true);
+      localStorage.setItem('smriti_patient_token', data.token);
+      localStorage.setItem('smriti_patient_auth', 'true');
+      localStorage.setItem('smriti_patient_id', targetId);
+      localStorage.setItem('smriti_patient_name', backendPatient.name);
+      syncPatientStateFromLocation(fullPatient);
+
+      setPatients([fullPatient]);
+      localStorage.setItem('smriti_patients', JSON.stringify([fullPatient]));
+      return { success: true, patient: fullPatient };
+    } catch (err) {
+      console.warn('Patient API login failed, checking fallback mode:', err.message);
+
+      // If demo credentials or backend offline fallback for demo patients:
+      if (isMeera || isRamesh) {
+        const demoIndex = isMeera ? 1 : 0;
+        const demoPatient = initialPatients[demoIndex];
+        const targetId = isMeera ? 'pat-2' : 'pat-1';
+        const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: demoPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+
+        setActivePatientId(targetId);
+        setIsPatientLoggedIn(true);
+        localStorage.setItem('smriti_patient_token', dummyJwt);
+        localStorage.setItem('smriti_patient_auth', 'true');
+        localStorage.setItem('smriti_patient_id', targetId);
+        localStorage.setItem('smriti_patient_name', demoPatient.name);
+        syncPatientStateFromLocation(demoPatient);
+
+        setPatients([demoPatient]);
+        return { success: true, patient: demoPatient };
+      }
+
+      // Check if patient exists in locally cached patients (e.g. from caregiver enrollment)
+      const cachedPatients = JSON.parse(localStorage.getItem('smriti_patients') || '[]');
+      const matchedLocal = cachedPatients.find(p => matchPatientHelper(p, trimmedName));
+      if (matchedLocal) {
+        const targetId = matchedLocal._id || matchedLocal.id;
+        const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: matchedLocal.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+        setActivePatientId(targetId);
+        setIsPatientLoggedIn(true);
+        localStorage.setItem('smriti_patient_token', dummyJwt);
+        localStorage.setItem('smriti_patient_auth', 'true');
+        localStorage.setItem('smriti_patient_id', targetId);
+        localStorage.setItem('smriti_patient_name', matchedLocal.name);
+        syncPatientStateFromLocation(matchedLocal);
+        setPatients([matchedLocal]);
+        return { success: true, patient: matchedLocal };
+      }
+
+      throw err;
+    }
   };
 
   // 3a. Instant Direct Patient Session Setter (0ms UI Transition)
@@ -729,33 +823,34 @@ export function AppProvider({ children }) {
     clearPatientSession();
     localStorage.removeItem('smriti_patient_state');
 
-    const isMeera = (patient?.name || '').toLowerCase().includes('meera') || 
-                    patient?.id === 'pat-2' || 
-                    patient?._id === '6a9e533f65c0817eb2016cc9' ||
-                    patient?.location?.toLowerCase().includes('shillong');
+    const targetId = patient._id || patient.id || 'pat-1';
+    const isMeera = (patient?.name || '').toLowerCase().includes('meera') || targetId === 'pat-2';
+    const isRamesh = (patient?.name || '').toLowerCase().includes('ramesh') || targetId === 'pat-1';
 
-    const ramesh = initialPatients[0];
-    const targetId = isMeera ? 'pat-2' : 'pat-1';
-    const patientName = isMeera ? 'Meera Baruah' : 'Ramesh Sharma';
-    const patientAvatar = isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png';
-    const patientLocation = isMeera ? 'Shillong, Meghalaya' : 'Guwahati, Assam';
-    const patientLang = isMeera ? 'Khasi' : 'Assamese';
-
-    const fullPatient = {
-      ...ramesh,
-      id: targetId,
-      _id: isMeera ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8',
-      name: patientName,
-      age: isMeera ? 68 : 74,
-      gender: isMeera ? 'Female' : 'Male',
-      avatar: patientAvatar,
-      location: patientLocation,
-      nativeLanguage: patientLang,
-      todayReminders: ramesh.todayReminders || standard10Reminders,
-      streakDays: 14,
-      reminderHistory: ramesh.reminderHistory,
-      weeklyPerformance: ramesh.weeklyPerformance
-    };
+    let fullPatient;
+    if (isMeera) {
+      fullPatient = initialPatients[1];
+    } else if (isRamesh) {
+      fullPatient = initialPatients[0];
+    } else {
+      // Real or newly enrolled custom patient
+      fullPatient = {
+        ...patient,
+        id: targetId,
+        _id: targetId,
+        name: patient.name || 'New Patient',
+        age: patient.age || 70,
+        gender: patient.gender || 'Senior',
+        avatar: patient.avatar || '',
+        location: patient.location || 'Guwahati, Assam',
+        nativeLanguage: patient.nativeLanguage || patient.language || 'Assamese',
+        todayReminders: patient.todayReminders || [],
+        streakDays: patient.streakDays || 0,
+        reminderHistory: patient.reminderHistory || [],
+        weeklyPerformance: patient.weeklyPerformance || [],
+        isDemoSeed: false
+      };
+    }
 
     const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
     setActivePatientId(targetId);
@@ -763,10 +858,11 @@ export function AppProvider({ children }) {
     localStorage.setItem('smriti_patient_token', dummyJwt);
     localStorage.setItem('smriti_patient_auth', 'true');
     localStorage.setItem('smriti_patient_id', targetId);
-    localStorage.setItem('smriti_patient_name', patientName);
+    localStorage.setItem('smriti_patient_name', fullPatient.name);
     syncPatientStateFromLocation(fullPatient);
 
-    setPatients([fullPatient, isMeera ? ramesh : initialPatients[1]]);
+    setPatients([fullPatient]);
+    localStorage.setItem('smriti_patients', JSON.stringify([fullPatient]));
   }, []);
 
   // 3a-2. Instant Direct Caregiver Session Setter (0ms UI Transition)
