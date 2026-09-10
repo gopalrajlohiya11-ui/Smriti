@@ -136,14 +136,17 @@ Smriti/
 
 ---
 
-## 8. Live Deployments
+## 8. Live Deployments & Resources
 
-| Service | URL |
+| Resource | URL |
 |---|---|
 | **Live Web App** | [smriti-puce.vercel.app](https://smriti-puce.vercel.app) |
 | **Backend API** | [smriti-backend-nwrl.onrender.com](https://smriti-backend-nwrl.onrender.com/api/health) |
 | **Live ML Engine** | [dementia-ai-engine.onrender.com](https://dementia-ai-engine.onrender.com/docs) |
 | **WhatsApp Bot** | [wa.me/15556680031](https://wa.me/15556680031?text=Hi%20Smriti) |
+| **Demo Video** | [youtu.be/TTV7cAvSF-s](https://youtu.be/TTV7cAvSF-s) |
+| **ML Engine Source Code** | [github.com/adityaraichauhan/Dementia-AI-engine](https://github.com/adityaraichauhan/Dementia-AI-engine) |
+| **Project Presentation (PPT)** | [View on Google Drive](https://docs.google.com/file/d/1ZMWVouCgjB8nl_J1NueILKSQ3ZTZmB5A/view) |
 
 ---
 
