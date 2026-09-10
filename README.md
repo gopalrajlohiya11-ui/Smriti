@@ -154,60 +154,26 @@ A full product walkthrough demo video is available on YouTube.
 
 ## 10. Screenshots / Prototype Photos
 
-### 👴 Patient Portal — Login & Dashboard
+Add important screenshots or hardware/prototype photos to: `docs/screenshots/`
 
-| **Tactile PIN & Biometric Login** | **Horizon Dashboard** |
-|:---:|:---:|
-| ![Patient Login](docs/screenshots/01_patient_login.png) | ![Patient Dashboard](docs/screenshots/02_patient_dashboard.png) |
-| *Tactile 4-digit PIN with audio feedback and WebAuthn FIDO2 biometrics* | *Time-aware greeting, regional state horizon banner, and spotlight routine* |
-
-| **Chronological Routine Schedule** | **Family Reminiscence Memory Vault** |
-|:---:|:---:|
-| ![Patient Reminders](docs/screenshots/03_patient_reminders.png) | ![Memory Bank](docs/screenshots/10_patient_family_vault.png) |
-| *Morning-to-night care schedule with audio read-aloud and 1-tap checks* | *Photo reminiscence gallery for facial recall and kinship memory preservation* |
-
-| **Patient Profile & Emergency Info** | **DPDP Act 2023 Privacy Policy** |
-|:---:|:---:|
-| ![Patient Profile](docs/screenshots/11_patient_profile.png) | ![Privacy Policy](docs/screenshots/18_privacy_policy.png) |
-| *Emergency doctor/caregiver dialers, blood group, and regional language toggles* | *Comprehensive legal compliance with DPDP Act 2023, consent trails, and rights* |
-
----
-
-### 🎮 Cognitive Games Suite
-
-| **Games Suite Hub** | **Market Day Basket (বজাৰৰ পাচি)** |
-|:---:|:---:|
-| ![Games Suite](docs/screenshots/04_patient_games_suite.png) | ![Market Day Basket](docs/screenshots/05_game_market_day_basket.png) |
-| *Central game launcher with streak tracking and category tabs* | *Working memory recall of regional produce (Kaji Nemu, Bhut Jolokia, Bamboo Shoot)* |
-
-| **Daily Routine Sequencer (दैनिक दिनचर्या)** | **Faces & Family Recall (चेहरे और यादें)** |
-|:---:|:---:|
-| ![Routine Sequencer](docs/screenshots/06_game_daily_routine_sequencer.png) | ![Faces Recall](docs/screenshots/07_game_faces_family_recall.png) |
-| *Executive function training sequencing familiar morning-to-night routines* | *Fusiform gyrus stimulation matching real family photos and kin relationships* |
-
-| **Sound & Rhythm Match (ध्वनि और लय)** | **Odd One Out (अलग पहचानें)** |
-|:---:|:---:|
-| ![Sound Match](docs/screenshots/08_game_sound_rhythm_match.png) | ![Odd One Out](docs/screenshots/09_game_odd_one_out.png) |
-| *Auditory attention recognizing indigenous instruments (Dhol, Pepa, Shankha)* | *Semantic categorization identifying botanical and culinary anomalies* |
-
----
-
-### 🩺 Caregiver & Clinician Dashboard
-
-| **Caregiver Login** | **Command Center & Patient Roster** |
-|:---:|:---:|
-| ![Caregiver Login](docs/screenshots/12_caregiver_login.png) | ![Caregiver Dashboard](docs/screenshots/13_caregiver_dashboard.png) |
-| *Secure email/password, Google OAuth, and WebAuthn clinician biometric login* | *Real-time patient roster with clinical status tags and adherence metrics* |
-
-| **Patient Clinical Dossier & Telemetry** | **Cognitive Games Telemetry** |
-|:---:|:---:|
-| ![Patient Detail](docs/screenshots/14_caregiver_patient_detail.png) | ![Game Telemetry](docs/screenshots/15_caregiver_cognitive_games.png) |
-| *AI Cognitive Health scoring, 7-day adherence charts, and top-3 routine overview* | *Round-by-round precision, reaction time distributions, and level history* |
-
-| **Red Flag Alerts & Action Center** | **Caregiver Settings & Profile** |
-|:---:|:---:|
-| ![Caregiver Notifications](docs/screenshots/16_caregiver_notifications.png) | ![Caregiver Profile](docs/screenshots/17_caregiver_profile.png) |
-| *Real-time alerts for missed critical medications with 1-tap telephone dialer* | *Profile management, notification preferences, and 30-day data erasure controls* |
+![Patient Login](docs/screenshots/01_patient_login.png)
+![Patient Dashboard](docs/screenshots/02_patient_dashboard.png)
+![Patient Reminders](docs/screenshots/03_patient_reminders.png)
+![Games Suite](docs/screenshots/04_patient_games_suite.png)
+![Market Day Basket](docs/screenshots/05_game_market_day_basket.png)
+![Daily Routine Sequencer](docs/screenshots/06_game_daily_routine_sequencer.png)
+![Faces and Family Recall](docs/screenshots/07_game_faces_family_recall.png)
+![Sound and Rhythm Match](docs/screenshots/08_game_sound_rhythm_match.png)
+![Odd One Out](docs/screenshots/09_game_odd_one_out.png)
+![Family Memory Vault](docs/screenshots/10_patient_family_vault.png)
+![Patient Profile](docs/screenshots/11_patient_profile.png)
+![Caregiver Login](docs/screenshots/12_caregiver_login.png)
+![Caregiver Dashboard](docs/screenshots/13_caregiver_dashboard.png)
+![Patient Clinical Detail](docs/screenshots/14_caregiver_patient_detail.png)
+![Cognitive Games Telemetry](docs/screenshots/15_caregiver_cognitive_games.png)
+![Red Flag Alerts](docs/screenshots/16_caregiver_notifications.png)
+![Caregiver Profile](docs/screenshots/17_caregiver_profile.png)
+![Privacy Policy](docs/screenshots/18_privacy_policy.png)
 
 ---
 
