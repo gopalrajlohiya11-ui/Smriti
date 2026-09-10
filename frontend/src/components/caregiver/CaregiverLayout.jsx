@@ -201,15 +201,19 @@ export default function CaregiverLayout({
               className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90 transition-opacity cursor-pointer group"
               title="View Clinician Profile & Account Settings"
             >
-              <div className="w-10 h-10 rounded-xl overflow-hidden border border-emerald-500/30 shrink-0 shadow-xs group-hover:scale-105 transition-transform bg-emerald-950 flex items-center justify-center">
-                <img
-                  src={caregiverUser?.avatar || '/avatars/dr_ananya_sharma.png'}
-                  alt={caregiverUser?.name || 'Dr. Ananya'}
-                  className="w-full h-full object-cover object-top"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+              <div className="w-10 h-10 rounded-xl overflow-hidden border border-emerald-500/30 shrink-0 shadow-xs group-hover:scale-105 transition-transform bg-emerald-950 flex items-center justify-center font-bold text-emerald-200">
+                {caregiverUser?.avatar ? (
+                  <img
+                    src={caregiverUser.avatar}
+                    alt={caregiverUser?.name || 'Caregiver'}
+                    className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span>{caregiverUser?.name?.charAt(0)?.toUpperCase() || 'C'}</span>
+                )}
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-white truncate group-hover:text-emerald-300 transition-colors">

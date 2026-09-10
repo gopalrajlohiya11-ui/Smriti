@@ -250,9 +250,7 @@ export default function CaregiverDashboard() {
       ...newPatientForm,
       pin: cleanPin,
       age: parseInt(newPatientForm.age, 10),
-      avatar: newPatientForm.gender === 'Female' 
-        ? '/avatars/meera_baruah.png'
-        : '/avatars/ramesh_sharma.png'
+      avatar: newPatientForm.avatar || ''
     });
 
     if (isDeviceBiometricSupported && created) {
@@ -515,11 +513,17 @@ export default function CaregiverDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3.5 min-w-0">
                           <div className="relative shrink-0">
-                            <img
-                              src={patient.avatar}
-                              alt={patient.name}
-                              className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl object-cover border border-slate-200 shadow-xs group-hover:scale-105 transition-transform duration-200"
-                            />
+                            {patient.avatar ? (
+                              <img
+                                src={patient.avatar}
+                                alt={patient.name}
+                                className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl object-cover border border-slate-200 shadow-xs group-hover:scale-105 transition-transform duration-200"
+                              />
+                            ) : (
+                              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-bold text-lg border border-teal-700 shadow-xs group-hover:scale-105 transition-transform duration-200">
+                                {patient.name?.charAt(0)?.toUpperCase() || 'P'}
+                              </div>
+                            )}
                             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white" />
                           </div>
 

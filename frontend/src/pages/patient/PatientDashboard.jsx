@@ -452,11 +452,17 @@ export default function PatientDashboard() {
               
               <div className="flex flex-col sm:flex-row items-center sm:items-center text-center sm:text-left gap-4">
                 <div className="relative">
-                  <img
-                    src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
-                    alt={activePatient?.name || "Patient"}
-                    className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover border-3 border-amber-300 shadow-md"
-                  />
+                  {activePatient?.avatar ? (
+                    <img
+                      src={activePatient.avatar}
+                      alt={activePatient?.name || "Patient"}
+                      className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover border-3 border-amber-300 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-amber-800 text-white font-bold text-3xl flex items-center justify-center border-3 border-amber-300 shadow-md">
+                      {activePatient?.name?.charAt(0)?.toUpperCase() || 'P'}
+                    </div>
+                  )}
                   <span className="absolute -bottom-1 -right-1 text-base bg-black/60 rounded-full px-1 border border-white/40 shadow-xs">
                     {currentRegion.emblemEmoji}
                   </span>

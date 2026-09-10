@@ -134,11 +134,17 @@ export default function PatientProfile() {
             {/* Avatar & Patient Info */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-5">
               <div className="relative shrink-0">
-                <img
-                  src={activePatient?.avatar || '/avatars/ramesh_sharma.png'}
-                  alt={activePatient?.name || 'Patient'}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
-                />
+                {activePatient?.avatar ? (
+                  <img
+                    src={activePatient.avatar}
+                    alt={activePatient?.name || 'Patient'}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#E5E0D8] shadow-xs"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-amber-800 text-white font-bold text-3xl flex items-center justify-center border-2 border-[#E5E0D8] shadow-xs">
+                    {activePatient?.name?.charAt(0)?.toUpperCase() || 'P'}
+                  </div>
+                )}
                 <span className="absolute -bottom-1 -right-1 bg-[#B5502E] text-white p-1.5 rounded-full shadow-xs border-2 border-white">
                   <User className="w-3.5 h-3.5" />
                 </span>

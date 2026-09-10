@@ -301,11 +301,17 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         {/* Sidebar Footer: Patient Badge + Switch User */}
         <div className="pt-4 border-t border-white/10 space-y-3">
           <div className="flex items-center gap-2.5 p-2.5 bg-black/25 rounded-2xl border border-white/10">
-            <img 
-              src={activePatient?.avatar || "/avatars/ramesh_sharma.png"}
-              alt={activePatient?.name || "Patient"}
-              className="w-10 h-10 rounded-xl object-cover border border-emerald-400/30 shrink-0"
-            />
+            {activePatient?.avatar ? (
+              <img 
+                src={activePatient.avatar}
+                alt={activePatient?.name || "Patient"}
+                className="w-10 h-10 rounded-xl object-cover border border-emerald-400/30 shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-emerald-800 text-white font-bold text-sm flex items-center justify-center border border-emerald-400/30 shrink-0">
+                {activePatient?.name?.charAt(0)?.toUpperCase() || 'P'}
+              </div>
+            )}
             <div className="truncate flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{activePatient?.name || 'Ramesh Sharma'}</p>
               <p className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">

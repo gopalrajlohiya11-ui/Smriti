@@ -189,7 +189,7 @@ router.get('/alerts', optionalAuth, async (req, res) => {
         reminderId: rem._id.toString(),
         patientId: p._id ? p._id.toString() : '',
         patientName: p.name || 'Patient',
-        patientAvatar: p.avatar || '/avatars/ramesh_sharma.png',
+        patientAvatar: p.avatar || '',
         patientLocation: p.location || 'Assam',
         severity: rem.type === 'medicine' ? 'critical' : 'high',
         title: `Missed ${rem.title || 'Scheduled Routine'}`,

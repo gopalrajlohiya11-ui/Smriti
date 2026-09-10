@@ -186,15 +186,19 @@ export default function CaregiverProfile() {
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-teal-500/40 shrink-0 shadow-md shadow-teal-950/20 bg-teal-900/60 flex items-center justify-center">
-              <img
-                src={caregiverUser?.avatar || '/avatars/dr_ananya_sharma.png'}
-                alt={caregiverUser?.name || 'Dr. Ananya'}
-                className="w-full h-full object-cover object-top"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-teal-500/40 shrink-0 shadow-md shadow-teal-950/20 bg-teal-900/60 flex items-center justify-center font-bold text-white text-2xl">
+              {caregiverUser?.avatar ? (
+                <img
+                  src={caregiverUser.avatar}
+                  alt={caregiverUser?.name || 'Caregiver'}
+                  className="w-full h-full object-cover object-top"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span>{caregiverUser?.name?.charAt(0)?.toUpperCase() || 'C'}</span>
+              )}
             </div>
             
             <div className="space-y-1.5">

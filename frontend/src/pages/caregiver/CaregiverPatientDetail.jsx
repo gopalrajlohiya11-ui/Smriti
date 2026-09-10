@@ -910,11 +910,17 @@ export default function CaregiverPatientDetail() {
             
             {/* Avatar & Patient Info */}
             <div className="flex items-center gap-3.5 sm:gap-5">
-              <img
-                src={selectedPatient.avatar}
-                alt={selectedPatient.name}
-                className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
-              />
+              {selectedPatient.avatar ? (
+                <img
+                  src={selectedPatient.avatar}
+                  alt={selectedPatient.name}
+                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                />
+              ) : (
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-teal-800 text-white flex items-center justify-center font-bold text-xl sm:text-2xl border border-teal-700 shrink-0 shadow-xs">
+                  {selectedPatient.name?.charAt(0)?.toUpperCase() || 'P'}
+                </div>
+              )}
               <div className="space-y-1 sm:space-y-1.5 min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight truncate">
@@ -2030,11 +2036,17 @@ export default function CaregiverPatientDetail() {
             <form onSubmit={handleSavePatientDetails} className="space-y-4 pt-4 text-xs">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <img
-                    src={avatarPreview || editForm.avatar || '/avatars/ramesh_sharma.png'}
-                    alt="Preview"
-                    className="w-16 h-16 rounded-2xl object-cover border border-slate-300"
-                  />
+                  {avatarPreview || editForm.avatar ? (
+                    <img
+                      src={avatarPreview || editForm.avatar}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-2xl object-cover border border-slate-300"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-teal-800 text-white flex items-center justify-center font-bold text-xl border border-teal-700">
+                      {editForm.name?.charAt(0)?.toUpperCase() || 'P'}
+                    </div>
+                  )}
                   <label className="absolute -bottom-1 -right-1 p-1.5 bg-teal-800 text-white rounded-full cursor-pointer hover:bg-teal-900 shadow-xs">
                     <Camera className="w-3.5 h-3.5" />
                     <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />

@@ -338,7 +338,7 @@ router.post('/', authenticateCaregiver, async (req, res) => {
       emergencyContact: emergencyContact || cleanPhone,
       notes: notes || '',
       medicalNotes: medicalNotes || '',
-      avatar: avatar || '/avatars/ramesh_sharma.png',
+      avatar: avatar || '',
       caregiverId: req.caregiver._id,
       webAuthnCredentialId: webAuthnCredentialId || undefined,
       webAuthnPublicKey: webAuthnPublicKey || undefined,
