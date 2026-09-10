@@ -63,14 +63,14 @@ The platform delivers:
 
 ## 5. Technology Stack
 
-- **Frontend:** React 19.2, Vite 8.2, React Router v7, Tailwind CSS v4, Lucide React
+- **Frontend:** React 19.2, Vite 8.2, React Router v7, Tailwind CSS v4, Lucide React, i18next, Recharts
 - **Offline PWA:** `vite-plugin-pwa`, Workbox Service Worker, IndexedDB (`idb`)
 - **Voice & Speech:** Web Speech Synthesis API — Assamese, Hindi, English
 - **Generative AI:** Google Gemini AI SDK (`@google/genai`) — multimodal text + voice
 - **Machine Learning:** Python, Scikit-Learn, FastAPI — hosted on Render Cloud
 - **Backend API:** Node.js, Express.js, Mongoose ODM, Node-Cron, bcrypt, JWT
 - **Database:** MongoDB Atlas Cloud
-- **Messaging:** Meta WhatsApp Business Cloud API
+- **APIs:** Meta WhatsApp Business Cloud API, Google OAuth 2.0, Bhashini API (regional language TTS)
 - **Security & Auth:** WebAuthn FIDO2, bcrypt PIN hashing, DPDP Act 2023 compliance
 - **Deployment:** Vercel (Frontend) · Render (Backend & ML Engine) · MongoDB Atlas (Database)
 
@@ -136,36 +136,52 @@ Smriti/
 
 ---
 
-## 8. Live Deployments & Resources
+## 8. Final Presentation
 
-| Resource | URL |
-|---|---|
-| **Live Web App** | [smriti-puce.vercel.app](https://smriti-puce.vercel.app) |
-| **Backend API** | [smriti-backend-nwrl.onrender.com](https://smriti-backend-nwrl.onrender.com/api/health) |
-| **Live ML Engine** | [dementia-ai-engine.onrender.com](https://dementia-ai-engine.onrender.com/docs) |
-| **WhatsApp Bot** | [wa.me/15556680031](https://wa.me/15556680031?text=Hi%20Smriti) |
-| **Demo Video** | [youtu.be/TTV7cAvSF-s](https://youtu.be/TTV7cAvSF-s) |
-| **ML Engine Source Code** | [github.com/adityaraichauhan/Dementia-AI-engine](https://github.com/adityaraichauhan/Dementia-AI-engine) |
-| **Project Presentation (PPT)** | [View on Google Drive](https://docs.google.com/file/d/1ZMWVouCgjB8nl_J1NueILKSQ3ZTZmB5A/view) |
+The project presentation (PPT) is available on Google Drive.
+
+See the link below (access set to "Anyone with the link — Viewer"):
+
+[View Presentation on Google Drive](https://docs.google.com/file/d/1ZMWVouCgjB8nl_J1NueILKSQ3ZTZmB5A/view)
 
 ---
 
-## 9. Local Setup
+## 9. Demo Video
 
-### Prerequisites
-- Node.js `v18.x` or higher
-- MongoDB Atlas URI (or local MongoDB on `mongodb://localhost:27017`)
-- Git
+A full product walkthrough demo video is available on YouTube.
 
-### Step 1 — Clone the repository
+[Watch Demo Video on YouTube](https://youtu.be/TTV7cAvSF-s)
+
+---
+
+## 10. Screenshots / Prototype Photos
+
+Screenshots of all major screens are available in the `docs/screenshots/` folder of this repository.
+
+Key screens include:
+- Patient login (PIN + biometric)
+- Horizon Routines dashboard
+- All 5 cognitive games
+- Caregiver command center and telemetry dashboard
+- Family Memory Bank
+- WhatsApp bot conversation flow
+
+See [`docs/screenshots/`](docs/screenshots/) for the full gallery.
+
+---
+
+## 11. Installation
+
 ```bash
 git clone https://github.com/gopalrajlohiya11-ui/Smriti.git
 cd Smriti
-```
 
-### Step 2 — Backend setup
-```bash
+# Install backend dependencies
 cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
 npm install
 ```
 
@@ -177,17 +193,9 @@ MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/Smriti
 JWT_SECRET=your_jwt_super_secret_key_here
 GEMINI_API_KEY=your_google_gemini_api_key
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
-
-# Meta WhatsApp Cloud API (optional)
 WHATSAPP_TOKEN=your_meta_whatsapp_token
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_verify_token
-```
-
-### Step 3 — Frontend setup
-```bash
-cd ../frontend
-npm install
 ```
 
 Create `frontend/.env`:
@@ -196,17 +204,41 @@ VITE_API_URL=http://localhost:5000/api
 VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id
 ```
 
-### Step 4 — Seed and run
-```bash
-# In backend/
-node seed.js       # Seed demo patients and caregivers
-npm start          # Start backend on port 5000
+---
 
-# In frontend/ (new terminal)
-npm run dev        # Start frontend on port 5173
+## 12. Run
+
+```bash
+# Terminal 1 — Backend (from /backend)
+node seed.js    # Seed demo data (first time only)
+npm start       # Starts backend on http://localhost:5000
+
+# Terminal 2 — Frontend (from /frontend)
+npm run dev     # Starts frontend on http://localhost:5173
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+Live deployments:
+
+| Service | URL |
+|---|---|
+| **Live Web App** | [smriti-puce.vercel.app](https://smriti-puce.vercel.app) |
+| **Backend API** | [smriti-backend-nwrl.onrender.com](https://smriti-backend-nwrl.onrender.com/api/health) |
+| **Live ML Engine** | [dementia-ai-engine.onrender.com](https://dementia-ai-engine.onrender.com/docs) |
+| **ML Engine Source** | [github.com/adityaraichauhan/Dementia-AI-engine](https://github.com/adityaraichauhan/Dementia-AI-engine) |
+| **WhatsApp Bot** | [wa.me/15556680031](https://wa.me/15556680031?text=Hi%20Smriti) |
+
+---
+
+## 13. Future Scope
+
+- **Government Tele-MANAS Integration:** Direct two-way routing into the National Tele-MANAS (14416) helpline network for automatic specialist referrals from remote NER districts.
+- **ASHA & Frontline Worker Tablet Suite:** Simplified offline screening toolkit for ASHA / Anganwadi workers with vernacular voice prompts in Bodo, Khasi, Garo, Mizo, Meitei, and Nagamese.
+- **Acoustic Speech Biomarker Analysis:** Integration of openSMILE acoustic feature extraction (pitch jitter, shimmer, hesitation pauses) into the Gemini voice engine to detect micro-cognitive decline from speech patterns.
+- **Wearable PPG & Vascular Risk Telemetry:** Bluetooth integration with low-cost smart bands for continuous heart rate, blood pressure, and sleep architecture monitoring to manage Vascular Dementia risks proactively.
+- **6 Additional Cognitive Games:** Village Path Navigator, Spice & Herb Sorter, Proverb Completer, Tea Estate Planner, Mekhela Pattern Match, and Festival Calendar — all targeting additional neuroanatomical pathways.
+- **Multi-Centric ICMR Clinical Validation:** Randomized controlled trials across 500+ NER patients measuring 12-month CST cognitive preservation metrics against CDR and HMSE benchmarks.
 
 ---
 
@@ -228,4 +260,3 @@ Special thanks to the clinical research teams at **LASI-DAD**, **ARDSI**, **NIMH
 ---
 
 *🌸 Smriti (স্মৃতি / स्मृति) — Preserving Memories, Empowering Caregivers, Culturally Grounded.*
-
