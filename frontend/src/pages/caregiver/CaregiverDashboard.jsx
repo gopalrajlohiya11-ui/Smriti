@@ -186,7 +186,7 @@ export default function CaregiverDashboard() {
         localStorage.setItem('smriti_caregiver_bio_email', caregiverUser?.email || '');
         sessionStorage.removeItem('smriti_just_signed_up_caregiver');
         setCaregiverBioStatus('success');
-        setCaregiverBioMsg('✓ Fingerprint / Face Unlock enabled successfully for this device!');
+        setCaregiverBioMsg('Fingerprint / Face Unlock enabled successfully for this device.');
         setTimeout(() => {
           setShowCaregiverBioPrompt(false);
           setCaregiverBioStatus('idle');
@@ -221,7 +221,7 @@ export default function CaregiverDashboard() {
       setSettingsStatus('saving');
       await setCaregiverPassword(backupPassword);
       setSettingsStatus('saved');
-      setSettingsMsg('✓ Password updated successfully!');
+      setSettingsMsg('Password updated successfully.');
       setTimeout(() => {
         setShowSettingsModal(false);
         setSettingsStatus('');
@@ -301,7 +301,7 @@ export default function CaregiverDashboard() {
       if (credential && credential.id) {
         await registerPatientBiometric(patientId, credential.id, 'public-key-credential');
         setPatientBioRegStatus('success');
-        setPatientBioRegMsg(`✓ Fingerprint / Face Unlock registered for ${patientName}!`);
+        setPatientBioRegMsg(`Fingerprint / Face Unlock registered for ${patientName}.`);
         setTimeout(() => {
           handleCompletePatientEnrollment(patientId);
         }, 1200);
@@ -1007,7 +1007,7 @@ export default function CaregiverDashboard() {
                     <span>Optional: Set Up Fingerprint / Face Unlock for {createdPatientData?.name}?</span>
                   </div>
                   <p className="text-xs sm:text-sm text-amber-800/90 leading-relaxed">
-                    <strong>⚠️ Important Hardware Note:</strong> Biometric credentials are bound to this physical device. <strong>Only set this up now if you are currently on the patient's own phone or tablet.</strong> If you are on your caregiver computer or staff station, please skip this step — you can easily enroll the patient's biometrics on their device anytime later from their profile.
+                    <strong>Important Hardware Note:</strong> Biometric credentials are bound to this physical device. <strong>Only set this up now if you are currently on the patient's own phone or tablet.</strong> If you are on your caregiver computer or staff station, please skip this step — you can easily enroll the patient's biometrics on their device anytime later from their profile.
                   </p>
                 </div>
 

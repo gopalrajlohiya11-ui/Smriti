@@ -340,7 +340,7 @@ export default function CaregiverCognitiveGames() {
               { id: 'all', label: 'All Games', icon: '🎮' },
               { id: 'market-day-basket', label: 'Market Day Basket', icon: '🧺' },
               { id: 'daily-routine-sequencer', label: 'Routine Sequencer', icon: '⏰' },
-              { id: 'faces-family-recall', label: 'Faces & Family', icon: '🌸' },
+              { id: 'faces-family-recall', label: 'Faces & Family', icon: '👥' },
               { id: 'sound-rhythm-match', label: 'Sound & Rhythm', icon: '🥁' },
               { id: 'odd-one-out', label: 'Odd One Out', icon: '🔍' }
             ].map(f => (
@@ -386,7 +386,7 @@ export default function CaregiverCognitiveGames() {
           ) : gamesLoadError ? (
             <div className="p-8 text-center bg-rose-50/80 rounded-3xl border border-rose-200 space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mx-auto text-xl">
-                ⚠️
+                <AlertCircle className="w-7 h-7 text-rose-700" />
               </div>
               <div className="space-y-1">
                 <p className="text-base font-bold text-rose-900">Failed to load game sessions</p>
@@ -562,7 +562,7 @@ export default function CaregiverCognitiveGames() {
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
                                   <span>{round.correctCount}/{round.totalAttempts} correct</span>
-                                  <span>⏱️ {round.timeTakenSeconds}s</span>
+                                  <span>{round.timeTakenSeconds}s</span>
                                 </div>
                               </div>
                             </div>

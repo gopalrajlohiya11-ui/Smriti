@@ -225,7 +225,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-black text-white truncate group-hover:text-emerald-300 transition-colors">
-                  Memory of Home 🌿
+                  Memory of Home
                 </p>
                 <p className="text-[10px] text-emerald-200/80 truncate font-medium">
                   {currentRegion.name} • Sounds & Tales
@@ -319,7 +319,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
         
         {comingSoonToast && (
           <div className="bg-[#B5502E] text-white text-xs font-bold text-center py-2 px-4 animate-in fade-in">
-            ℹ️ {comingSoonToast}
+            {comingSoonToast}
           </div>
         )}
 
@@ -328,7 +328,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
           <div className="bg-slate-900 text-white px-3.5 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 text-xs shadow-xs z-30 sticky top-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold border border-teal-400/30 text-[10px] uppercase tracking-wider shrink-0">
-                👁️ Caregiver Preview Mode
+                Caregiver Preview Mode
               </span>
               <span className="text-slate-300 truncate text-[11px] sm:text-xs">
                 Simulating patient view for <strong className="text-white">{activePatient?.name || 'Patient'}</strong>
@@ -393,7 +393,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             >
               <Trees className="w-4 h-4 text-emerald-300" />
               <span>{currentRegion.emblemEmoji} {currentRegion.name}</span>
-              <span className="text-[10px] bg-white/20 text-emerald-100 px-1.5 py-0.5 rounded font-mono">Sounds 🌿</span>
+              <span className="text-[10px] bg-white/20 text-emerald-100 px-1.5 py-0.5 rounded font-mono">Sounds</span>
             </button>
             
             {/* MOBILE ONLY: Single Settings Button (Opens Slide-up Sheet) */}
@@ -774,7 +774,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 className="w-full mt-2 min-h-[46px] px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0E382B] to-[#164E3D] text-white font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
               >
                 <Trees className="w-4 h-4 text-emerald-300" />
-                <span>Open Memory of Home 🌿 (Sounds & Stories)</span>
+                <span>Open Memory of Home (Sounds & Stories)</span>
               </button>
             </div>
 
@@ -789,7 +789,7 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
                 className="w-full min-h-[50px] px-4 py-2.5 rounded-2xl bg-[#FFF7ED] text-[#9a3412] border border-[#9a3412]/30 font-black text-sm flex items-center justify-center gap-2 active:bg-amber-100 transition-colors cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>{isHindi ? "📲 ऐप फोन पर इंस्टॉल करें" : "📲 Install App on Phone"}</span>
+                <span>{isHindi ? "ऐप फोन पर इंस्टॉल करें" : "Install App on Phone"}</span>
               </button>
             </div>
 

@@ -266,12 +266,12 @@ export default function PatientAllGames() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5E0D8] pb-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
-                {isHindi ? `सभी दिमागी खेल अभ्यास (${filteredGames.length})` : `All Brain Exercises (${filteredGames.length})`}
+                {isHindi ? `दिमागी खेल (${filteredGames.length})` : `Brain Exercises (${filteredGames.length})`}
               </h2>
               <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                 {isHindi 
-                  ? 'स्मृति, क्रम और ताल के अभ्यास के लिए नीचे दिए गए किसी भी खेल को चुनें' 
-                  : 'Choose any game below to practice memory, sequencing, and rhythm anytime'}
+                  ? 'अभ्यास शुरू करने के लिए कोई भी खेल चुनें' 
+                  : 'Select an exercise to begin your session'}
               </p>
             </div>
             

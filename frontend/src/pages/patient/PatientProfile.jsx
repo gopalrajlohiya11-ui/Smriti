@@ -111,7 +111,7 @@ export default function PatientProfile() {
             className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white hover:bg-stone-50 border border-[#E5E0D8] text-[#2B2B2B] font-bold text-sm sm:text-base shadow-2xs transition-all cursor-pointer min-h-[48px]"
           >
             <ArrowLeft className="w-5 h-5 text-[#B5502E]" />
-            <span>← {t('profilePage.backToDashboard')}</span>
+            <span>{t('profilePage.backToDashboard')}</span>
           </button>
 
           <button
@@ -174,7 +174,7 @@ export default function PatientProfile() {
                 }`}
               >
                 <Volume2 className="w-5 h-5 shrink-0" />
-                <span>{isPlayingAudio ? t('profilePage.speaking') : t('profilePage.listenProfile', 'Listen 🔊')}</span>
+                <span>{isPlayingAudio ? t('profilePage.speaking') : t('profilePage.listenProfile', 'Listen')}</span>
               </button>
             </div>
 
@@ -305,8 +305,8 @@ export default function PatientProfile() {
                 </div>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                   {isHindi 
-                    ? "पेज खोलने पर स्मृति स्वतः आवाज में बोलेगी। '🔊 सुनें' बटन हमेशा काम करेंगे।" 
-                    : "Smriti will speak greetings automatically on page open. Manual 🔊 Listen buttons always work."}
+                    ? "पेज खोलने पर स्मृति स्वतः आवाज में बोलेगी। 'सुनें' बटन हमेशा काम करेंगे।" 
+                    : "Smriti will speak greetings automatically on page open. Manual Listen buttons always work."}
                 </p>
               </div>
             </div>
@@ -352,7 +352,7 @@ export default function PatientProfile() {
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                   {isHindi 
-                    ? "तेज़ 1-टैप उपयोग और बिना इंटरनेट के ऑफ़लाइन कार्य करने के लिए स्मृति को होम स्क्रीन पर जोड़ें।" 
+                    ? "तेज़ 1-टैप उपयोग और ऑफ़लाइन कार्य करने के लिए स्मृति को होम स्क्रीन पर जोड़ें।" 
                     : "Add Smriti to your home screen for fast 1-tap access and offline tools."}
                 </p>
               </div>
@@ -367,7 +367,7 @@ export default function PatientProfile() {
                 className="min-h-[50px] px-6 py-3 rounded-2xl bg-gradient-to-r from-[#9a3412] to-[#c2410c] hover:from-[#7c2d12] hover:to-[#9a3412] text-white font-black text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98"
               >
                 <Download className="w-4 h-4" />
-                <span>{isHindi ? "📲 ऐप इंस्टॉल करें" : "📲 Install App"}</span>
+                <span>{isHindi ? "ऐप इंस्टॉल करें" : "Install App"}</span>
               </button>
             </div>
 
@@ -403,7 +403,7 @@ export default function PatientProfile() {
                 to="/privacy-policy"
                 className="min-h-[50px] px-6 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-teal-900 border border-stone-300 font-black text-sm flex items-center justify-center gap-2 shadow-2xs cursor-pointer transition-all active:scale-98"
               >
-                <span>{isHindi ? "📜 गोपनीयता नीति पढ़ें" : "📜 View Privacy Policy"}</span>
+                <span>{isHindi ? "गोपनीयता नीति पढ़ें" : "View Privacy Policy"}</span>
               </Link>
             </div>
           </div>

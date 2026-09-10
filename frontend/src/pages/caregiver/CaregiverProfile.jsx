@@ -109,7 +109,7 @@ export default function CaregiverProfile() {
         localStorage.setItem('smriti_caregiver_bio_credId', credential.id);
         setIsBiometricEnrolled(true);
         setBioStatus('success');
-        setBioMsg('✓ Biometric credential (Fingerprint / Face ID) successfully saved! You can now log into the clinician portal in 1 touch.');
+        setBioMsg('Biometric credential (Fingerprint / Face ID) successfully saved. You can now log into the clinician portal in 1 touch.');
         setTimeout(() => {
           setBioStatus('');
         }, 5000);
@@ -136,7 +136,7 @@ export default function CaregiverProfile() {
       setSettingsStatus('saving');
       await setCaregiverPassword(backupPassword);
       setSettingsStatus('saved');
-      setSettingsMsg('✓ Backup password successfully updated! You can now log in with either Google or your email and password.');
+      setSettingsMsg('Backup password successfully updated.');
       setBackupPassword('');
       setTimeout(() => {
         setSettingsStatus('');
@@ -176,7 +176,7 @@ export default function CaregiverProfile() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer group"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span>← Back to Patients Roster</span>
+            <span>Back to Patients Roster</span>
           </button>
         </div>
 
@@ -472,9 +472,7 @@ export default function CaregiverProfile() {
                     </div>
                   </div>
 
-                  <span className="text-slate-400 group-hover:text-teal-800 text-xs font-bold shrink-0">
-                    →
-                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-800 shrink-0" />
                 </div>
               );
             })}
@@ -510,7 +508,7 @@ export default function CaregiverProfile() {
               to="/privacy-policy"
               className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer"
             >
-              <span>📜 View Complete Privacy Policy</span>
+              <span>View Complete Privacy Policy</span>
             </Link>
           </div>
         </div>

@@ -66,7 +66,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#E5E0D8] shadow-2xs">
       {comingSoonToast && (
         <div className="bg-[#B5502E] text-white text-xs font-bold text-center py-2 px-4 animate-in fade-in">
-          ℹ️ {comingSoonToast}
+          {comingSoonToast}
         </div>
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -105,8 +105,8 @@ export default function MemoryOfHomeModal({ isOpen, onClose, selectedStateId, on
           <div className="absolute inset-0 bg-gradient-to-r from-[#0E382B] via-[#1B4D3E] to-[#0E382B] opacity-90" />
           
           <div className="relative z-10 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-2xl shadow-inner shrink-0">
-              🌿
+            <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center shadow-inner shrink-0 text-emerald-300">
+              <Trees className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -172,7 +172,7 @@ export default function MemoryOfHomeModal({ isOpen, onClose, selectedStateId, on
                 <div className="flex items-center gap-2.5">
                   <Trees className="w-5 h-5 text-[#1F6B4A]" />
                   <p className="text-xs sm:text-sm font-medium text-[#1F6B4A]">
-                    100% Offline Nature Sound Synthesizer — calming ambient acoustics rooted in the landscapes of {currentRegion.name}.
+                    Calming ambient nature sounds rooted in the landscapes of {currentRegion.name}.
                   </p>
                 </div>
                 {activeSoundType && (

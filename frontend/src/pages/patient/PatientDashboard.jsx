@@ -468,7 +468,7 @@ export default function PatientDashboard() {
                   title="Play relaxing local nature sounds & stories"
                 >
                   <Trees className="w-5 h-5 text-stone-950 shrink-0" />
-                  <span>{isHindi ? "घर की स्मृति 🌿" : "Memory of Home 🌿"}</span>
+                  <span>{isHindi ? "घर की स्मृति" : "Memory of Home"}</span>
                 </button>
 
                 {/* Listen to Daily Status */}
@@ -493,7 +493,7 @@ export default function PatientDashboard() {
 
             {isPlayingAudio && audioMessage && (
               <div className="mt-4 p-3.5 bg-black/40 rounded-2xl text-xs sm:text-sm text-amber-200 font-bold text-center border border-amber-300/30 animate-in fade-in">
-                🔊 "{audioMessage}"
+                "{audioMessage}"
               </div>
             )}
           </div>
@@ -525,10 +525,10 @@ export default function PatientDashboard() {
               onClick={() => window.dispatchEvent(new CustomEvent('smriti_open_memory_modal'))}
               className="text-[11px] text-[#0E382B] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 border border-emerald-300/60 cursor-pointer flex items-center gap-1 transition-colors"
             >
-              <span>🌿 Nature Sounds</span>
+              <span>Nature Sounds</span>
             </button>
             <div className="text-[11px] text-stone-500 font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg bg-stone-100 border border-stone-200">
-              🧵 {currentRegion.textileMotif}
+              {currentRegion.textileMotif}
             </div>
           </div>
         </div>
@@ -543,7 +543,7 @@ export default function PatientDashboard() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#1F6B4A] text-xs font-black uppercase tracking-wider border border-[#A3D9C1] shadow-2xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#1F6B4A]" />
-                  <span>{isHindi ? "✓ आज का खेल पूरा हुआ" : "✓ Today's Game Done"}</span>
+                  <span>{isHindi ? "आज का खेल पूर्ण" : "Today's Game Completed"}</span>
                 </span>
 
                 <span className="text-xs font-bold text-[#1F6B4A] flex items-center gap-1">
@@ -559,12 +559,12 @@ export default function PatientDashboard() {
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-xl sm:text-3xl font-black text-[#1F6B4A]">
-                      {isHindi ? "शाबाश! आज का खेल पूरा हुआ" : "Great Job! Today's Brain Game is Done"}
+                      {isHindi ? "आज का खेल पूरा हुआ" : "Today's Exercise Completed"}
                     </h3>
                     <p className="text-xs sm:text-sm text-stone-600 font-medium">
                       {isHindi 
-                        ? `आपने आज की मस्तिष्क चुनौती (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरी कर ली है!` 
-                        : `You've completed today's workout (${dailyFeaturedGame.title}). Feel free to explore more games anytime.`}
+                        ? `आपने आज का अभ्यास (${dailyFeaturedGame.hindiTitle || dailyFeaturedGame.title}) पूरा कर लिया है।` 
+                        : `You've completed today's exercise (${dailyFeaturedGame.title}).`}
                     </p>
                   </div>
                 </div>
@@ -576,7 +576,7 @@ export default function PatientDashboard() {
                     className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#185339] text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
                   >
                     <BrainCircuit className="w-5 h-5" />
-                    <span>{isHindi ? "और खेल खेलें" : "Play More Games"}</span>
+                    <span>{isHindi ? "और खेलें" : "Explore Games"}</span>
                   </button>
                 </div>
               </div>
@@ -587,11 +587,11 @@ export default function PatientDashboard() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF6F0] text-[#B5502E] text-xs font-black uppercase tracking-wider border border-[#B5502E]/20">
                   <Flame className="w-3.5 h-3.5 fill-[#B5502E]" />
-                  <span>{isHindi ? "आज की विशेष चुनौती" : "Today's Featured Challenge"}</span>
+                  <span>{isHindi ? "आज की चुनौती" : "Today's Challenge"}</span>
                 </span>
 
                 <span className="text-xs font-bold text-[#6B6B6B]">
-                  {dynamicStreakDays} {isHindi ? "दिन लगातार" : (dynamicStreakDays === 1 ? "Day Memory Streak" : "Day Memory Streak")}
+                  {dynamicStreakDays} {isHindi ? "दिन लगातार" : "Day Streak"}
                 </span>
               </div>
 
@@ -625,7 +625,7 @@ export default function PatientDashboard() {
                     className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl bg-[#B5502E] hover:bg-[#9E4224] text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xs transition-all active:scale-98 cursor-pointer shrink-0"
                   >
                     <Play className="w-5 h-5 fill-current" />
-                    <span>{isHindi ? "आज की चुनौती खेलें" : "Play Today's Challenge"}</span>
+                    <span>{isHindi ? "खेलें" : "Play Now"}</span>
                   </button>
                 </div>
               </div>
@@ -646,13 +646,13 @@ export default function PatientDashboard() {
               <div>
                 <p className="text-xs sm:text-sm font-bold text-[#C0392B]">
                   {isHindi 
-                    ? `⚠️ ${escalatedOverdueCount} पूर्व निर्धारित कार्य अभी भी बाकी हैं`
-                    : `⚠️ ${escalatedOverdueCount} earlier routine${escalatedOverdueCount > 1 ? 's' : ''} past scheduled time`}
+                    ? `${escalatedOverdueCount} पूर्व निर्धारित कार्य बाकी हैं`
+                    : `${escalatedOverdueCount} earlier routine${escalatedOverdueCount > 1 ? 's' : ''} pending`}
                 </p>
                 <p className="text-[11px] sm:text-xs text-[#6B6B6B] font-medium">
                   {isHindi 
-                    ? "ये कार्य समय बीत जाने के कारण अलर्ट में भेजे गए हैं। पूरा शेड्यूल देखने के लिए टैप करें।" 
-                    : "Moved to notifications so you can focus on current tasks. Tap to review anytime."}
+                    ? "शेड्यूल देखने के लिए टैप करें।" 
+                    : "Tap to review schedule."}
                 </p>
               </div>
             </div>
@@ -683,13 +683,13 @@ export default function PatientDashboard() {
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#1F6B4A] text-xs font-black uppercase tracking-wider border border-[#A3D9C1]">
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>{isHindi ? "आज के सभी कार्य पूरे हो चुके हैं 🎉" : "You're All Caught Up For Today 🎉"}</span>
+                      <span>{isHindi ? "आज के सभी कार्य पूर्ण" : "All Routines Completed"}</span>
                     </span>
                     <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
-                      {isHindi ? `शानदार! आज की सभी ${totalCount} दिनचर्याएं पूरी हुईं।` : `Great job! All ${totalCount} daily routines are done.`}
+                      {isHindi ? `सभी ${totalCount} दैनिक कार्य पूरे हुए` : `All ${totalCount} routines completed.`}
                     </h2>
                     <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
-                      {isHindi ? "अब आराम करें, दिमागी खेल खेलें या पारिवारिक तस्वीरें देखें।" : "Take time to relax, play a memory game, or look through family photos."}
+                      {isHindi ? "आज के सभी दैनिक कार्य पूरे हो गए हैं।" : "No pending tasks remaining today."}
                     </p>
                   </div>
                 </div>
@@ -699,7 +699,7 @@ export default function PatientDashboard() {
                   onClick={() => navigate('/patient/reminders')}
                   className="w-full sm:w-auto min-h-[56px] px-6 py-4 rounded-2xl bg-[#1F6B4A] hover:bg-[#18553B] text-white text-base sm:text-lg font-black shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shrink-0"
                 >
-                  <span>{isHindi ? "शेड्यूल देखें" : "View Timeline"}</span>
+                  <span>{isHindi ? "शेड्यूल देखें" : "View Schedule"}</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -719,15 +719,15 @@ export default function PatientDashboard() {
                   </div>
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF7F2] text-[#6B6B6B] text-xs font-black uppercase tracking-wider border border-[#E5E0D8]">
-                      <span>{isHindi ? "वर्तमान में कोई कार्य बाकी नहीं 🌟" : "No Active Routines Due Right Now 🌟"}</span>
+                      <span>{isHindi ? "कोई लंबित कार्य नहीं" : "No Pending Tasks"}</span>
                     </span>
                     <h2 className="text-xl sm:text-3xl font-black text-[#2B2B2B]">
-                      {isHindi ? "आप अभी के लिए पूरी तरह से अपडेट हैं।" : "You're all set for the current hour."}
+                      {isHindi ? "सभी कार्य अपडेट हैं।" : "You're all caught up."}
                     </h2>
                     <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium">
                       {isHindi 
-                        ? `आपके पास ${escalatedCount || overdueCount} पूर्व निर्धारित कार्य हैं जिन्हें आप अपनी सुविधानुसार शेड्यूल में देख सकते हैं।` 
-                        : `You have ${escalatedCount || overdueCount} past reminder${(escalatedCount || overdueCount) > 1 ? 's' : ''} in your timeline to review whenever you're ready.`}
+                        ? `आपके पास ${escalatedCount || overdueCount} पूर्व निर्धारित कार्य शेड्यूल में उपलब्ध हैं।` 
+                        : `You have ${escalatedCount || overdueCount} past reminder${(escalatedCount || overdueCount) > 1 ? 's' : ''} in your schedule.`}
                     </p>
                   </div>
                 </div>
@@ -827,7 +827,7 @@ export default function PatientDashboard() {
                     className="w-full sm:w-auto min-h-[56px] px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 bg-[#1F6B4A] text-white cursor-default shadow-xs"
                   >
                     <Check className="w-5 h-5 stroke-[3]" />
-                    <span>{isHindi ? "पूर्ण हुआ! ✓" : "Completed! ✓"}</span>
+                    <span>{isHindi ? "पूर्ण हुआ" : "Completed"}</span>
                   </button>
                 ) : !isActionable ? (
                   <button
@@ -839,7 +839,7 @@ export default function PatientDashboard() {
                     <Clock className="w-4.5 h-4.5 text-stone-400" />
                     <span>
                       {isHindi 
-                        ? `${routine.formattedTime} पर उपलब्ध होगा` 
+                        ? `${routine.formattedTime} पर उपलब्ध` 
                         : `Available at ${routine.formattedTime}`}
                     </span>
                   </button>
@@ -901,7 +901,7 @@ export default function PatientDashboard() {
                   {isHindi ? "दैनिक अनुस्मारक" : "Daily Reminders"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "दवा, पानी, भोजन और दिनचर्या" : "Medicine, hydration, meals, and check-ins"}
+                  {isHindi ? "दवा, भोजन और दैनिक शेड्यूल" : "Medicine, meals, and daily schedule"}
                 </p>
               </div>
 
@@ -931,7 +931,7 @@ export default function PatientDashboard() {
                   {isHindi ? "दिमागी खेल" : "Brain Games"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "दैनिक चुनौती और सरल दिमागी अभ्यास" : "Daily challenge & gentle memory exercises"}
+                  {isHindi ? "दैनिक स्मृति अभ्यास" : "Daily memory exercises"}
                 </p>
               </div>
 
@@ -960,7 +960,7 @@ export default function PatientDashboard() {
                   {isHindi ? "पारिवारिक यादें और तस्वीरें" : "Family Memories & Photos"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "प्यारी पारिवारिक तस्वीरें और आवाज के साथ सुनाई जाने वाली यादें" : "Cherished family photos with voice narrations"}
+                  {isHindi ? "परिवार की तस्वीरें और आवाज के साथ यादें" : "Photos with voice notes"}
                 </p>
               </div>
 
@@ -989,7 +989,7 @@ export default function PatientDashboard() {
                   {isHindi ? "मेरी प्रोफाइल और संपर्क" : "Profile & Care Contacts"}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B6B6B] font-medium mt-1">
-                  {isHindi ? "डॉक्टर संपर्क, आपातकालीन नंबर और सेटिंग्स" : "Doctor contacts, emergency numbers, and settings"}
+                  {isHindi ? "डॉक्टर संपर्क और आपातकालीन सेटिंग्स" : "Emergency contacts and settings"}
                 </p>
               </div>
 

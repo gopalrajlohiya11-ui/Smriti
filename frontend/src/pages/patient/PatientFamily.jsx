@@ -173,8 +173,8 @@ export default function PatientFamily() {
           </div>
         ) : filteredPhotos.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#E5E0D8] text-center space-y-4 shadow-2xs">
-            <div className="w-16 h-16 rounded-3xl bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 flex items-center justify-center mx-auto text-2xl shadow-xs">
-              🖼️
+            <div className="w-16 h-16 rounded-3xl bg-[#FDF6F0] text-[#B5502E] border border-[#B5502E]/20 flex items-center justify-center mx-auto shadow-xs">
+              <Users className="w-8 h-8 text-[#B5502E]" />
             </div>
             <div className="space-y-2 max-w-md mx-auto">
               <h3 className="text-xl sm:text-2xl font-black text-[#2B2B2B]">
@@ -246,7 +246,7 @@ export default function PatientFamily() {
                   className="w-full min-h-[52px] px-5 py-3 rounded-2xl bg-[#EFF4FA] hover:bg-[#2C5AA0] text-[#2C5AA0] hover:text-white border border-[#2C5AA0]/30 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-2xs"
                 >
                   <Volume2 className="w-4 h-4" />
-                  <span>{isHindi ? "कहानी सुनें 🔊" : "Listen to Story 🔊"}</span>
+                  <span>{isHindi ? "कहानी सुनें" : "Listen to Story"}</span>
                 </button>
               </div>
             ))}
@@ -306,7 +306,7 @@ export default function PatientFamily() {
                 className="w-full min-h-[56px] rounded-2xl bg-[#2C5AA0] hover:bg-[#224780] text-white font-black text-base flex items-center justify-center gap-2.5 transition-all shadow-xs cursor-pointer active:scale-98"
               >
                 <Volume2 className="w-5 h-5" />
-                <span>{isHindi ? "यादें सुनें 🔊" : "Listen to Family Memory 🔊"}</span>
+                <span>{isHindi ? "यादें सुनें" : "Listen to Memory"}</span>
               </button>
             </div>
           </div>

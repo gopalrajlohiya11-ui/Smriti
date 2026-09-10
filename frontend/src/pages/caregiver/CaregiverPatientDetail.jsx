@@ -1451,7 +1451,7 @@ export default function CaregiverPatientDetail() {
                                     </p>
                                     <div className="flex items-center justify-between text-[10px] text-slate-500">
                                       <span>{round.itemCount ? `${round.itemCount} items` : 'Standard'}</span>
-                                      <span>⏱️ {round.timeTakenSeconds ? `${round.timeTakenSeconds}s` : 'N/A'}</span>
+                                      <span>{round.timeTakenSeconds ? `${round.timeTakenSeconds}s` : 'N/A'}</span>
                                     </div>
                                     <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                       <div
@@ -1589,10 +1589,10 @@ export default function CaregiverPatientDetail() {
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/80 w-fit">
               {[
                 { id: 'all', label: 'All Slots', icon: null },
-                { id: 'morning', label: '🌅 Morning', icon: Sun },
-                { id: 'afternoon', label: '☀️ Afternoon', icon: Sun },
-                { id: 'evening', label: '🌆 Evening', icon: Sunset },
-                { id: 'night', label: '🌙 Night', icon: Moon }
+                { id: 'morning', label: 'Morning', icon: Sun },
+                { id: 'afternoon', label: 'Afternoon', icon: Sun },
+                { id: 'evening', label: 'Evening', icon: Sunset },
+                { id: 'night', label: 'Night', icon: Moon }
               ].map(tab => {
                 const count = tab.id === 'all' 
                   ? (selectedPatient.todayReminders?.length || 0)
@@ -2096,7 +2096,7 @@ export default function CaregiverPatientDetail() {
                   </span>
                   {selectedPatient.hasBiometric && (
                     <span className="text-[10px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
-                      ✓ Active
+                      Active
                     </span>
                   )}
                 </div>
@@ -2108,7 +2108,7 @@ export default function CaregiverPatientDetail() {
                   <Fingerprint className="w-4 h-4 text-slate-700" />
                   <span>
                     {biometricRegStatus === 'success' 
-                      ? '✓ Biometric Registered Successfully' 
+                      ? 'Biometric Registered Successfully' 
                       : selectedPatient.hasBiometric 
                       ? 'Re-register Fingerprint / Face ID' 
                       : 'Set up Biometric Sensor for this Patient'}
@@ -2118,7 +2118,7 @@ export default function CaregiverPatientDetail() {
 
               {isSavedSuccessfully && (
                 <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-300 font-bold text-center">
-                  ✓ Clinical record updated successfully!
+                  Clinical record updated successfully.
                 </div>
               )}
 
@@ -2418,15 +2418,15 @@ export default function CaregiverPatientDetail() {
                     onChange={(e) => setRoutineForm({ ...routineForm, type: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold cursor-pointer"
                   >
-                    <option value="medicine">💊 Prescription Medicine</option>
-                    <option value="hydration">💧 Hydration / Tea</option>
-                    <option value="meal">🍲 Meal / Nutrition</option>
-                    <option value="game">🧠 Cognitive Game</option>
-                    <option value="activity">🚶 Physical Activity / Walk</option>
-                    <option value="rest">🌙 Rest & Wind-down</option>
-                    <option value="appointment">🗓️ Clinical Appointment</option>
-                    <option value="social">👥 Family & Social</option>
-                    <option value="other">⏰ General Routine</option>
+                    <option value="medicine">Prescription Medicine</option>
+                    <option value="hydration">Hydration / Tea</option>
+                    <option value="meal">Meal / Nutrition</option>
+                    <option value="game">Cognitive Game</option>
+                    <option value="activity">Physical Activity / Walk</option>
+                    <option value="rest">Rest & Wind-down</option>
+                    <option value="appointment">Clinical Appointment</option>
+                    <option value="social">Family & Social</option>
+                    <option value="other">General Routine</option>
                   </select>
                 </div>
               </div>
@@ -2529,15 +2529,15 @@ export default function CaregiverPatientDetail() {
                     onChange={(e) => setRoutineForm({ ...routineForm, type: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-teal-700 text-slate-900 font-semibold cursor-pointer"
                   >
-                    <option value="medicine">💊 Prescription Medicine</option>
-                    <option value="hydration">💧 Hydration / Tea</option>
-                    <option value="meal">🍲 Meal / Nutrition</option>
-                    <option value="game">🧠 Cognitive Game</option>
-                    <option value="activity">🚶 Physical Activity / Walk</option>
-                    <option value="rest">🌙 Rest & Wind-down</option>
-                    <option value="appointment">🗓️ Clinical Appointment</option>
-                    <option value="social">👥 Family & Social</option>
-                    <option value="other">⏰ General Routine</option>
+                    <option value="medicine">Prescription Medicine</option>
+                    <option value="hydration">Hydration / Tea</option>
+                    <option value="meal">Meal / Nutrition</option>
+                    <option value="game">Cognitive Game</option>
+                    <option value="activity">Physical Activity / Walk</option>
+                    <option value="rest">Rest & Wind-down</option>
+                    <option value="appointment">Clinical Appointment</option>
+                    <option value="social">Family & Social</option>
+                    <option value="other">General Routine</option>
                   </select>
                 </div>
               </div>
@@ -2673,14 +2673,14 @@ export default function CaregiverPatientDetail() {
                           onChange={(e) => handleTemplateItemChange(idx, 'type', e.target.value)}
                           className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold focus:outline-none focus:border-teal-700 cursor-pointer text-xs"
                         >
-                          <option value="hydration">💧 Hydration</option>
-                          <option value="medicine">💊 Medicine</option>
-                          <option value="meal">🍲 Meal</option>
-                          <option value="game">🧠 Brain Game</option>
-                          <option value="activity">🚶 Walk/Activity</option>
-                          <option value="rest">🌙 Rest</option>
-                          <option value="appointment">🗓️ Appointment</option>
-                          <option value="social">👥 Social</option>
+                          <option value="hydration">Hydration</option>
+                          <option value="medicine">Medicine</option>
+                          <option value="meal">Meal</option>
+                          <option value="game">Brain Game</option>
+                          <option value="activity">Walk / Activity</option>
+                          <option value="rest">Rest</option>
+                          <option value="appointment">Appointment</option>
+                          <option value="social">Social</option>
                         </select>
                       </div>
 

@@ -46,7 +46,7 @@ export default function CaregiverNotifications() {
               className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer mb-2 group"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>← Back to Patients Roster</span>
+              <span>Back to Patients Roster</span>
             </button>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">

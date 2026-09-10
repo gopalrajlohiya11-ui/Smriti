@@ -203,7 +203,7 @@ export default function PatientReminders() {
                 className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#6B6B6B] hover:text-[#2B2B2B] transition-colors cursor-pointer mb-2 bg-[#FAF7F2] hover:bg-stone-100 px-3.5 py-2 rounded-xl border border-[#E5E0D8]"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>← {t('remindersPage.backToDashboard')}</span>
+                <span>{t('remindersPage.backToDashboard')}</span>
               </button>
 
               <h1 className="text-2xl sm:text-3xl font-black text-[#2B2B2B] flex items-center gap-3">
@@ -338,7 +338,7 @@ export default function PatientReminders() {
                       className="w-full sm:w-auto min-h-[56px] px-6 py-3.5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 bg-white text-[#1F6B4A] border-2 border-[#1F6B4A] hover:bg-[#EDF7F2] transition-all cursor-pointer shadow-2xs"
                     >
                       <Check className="w-5 h-5 stroke-[3]" />
-                      <span>{t('dashboard.completed')} ✓</span>
+                      <span>{t('dashboard.completed')}</span>
                     </button>
                   ) : !isActionable ? (
                     <button

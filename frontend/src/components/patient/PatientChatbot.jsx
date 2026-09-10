@@ -372,7 +372,7 @@ export default function PatientChatbot() {
       const fallbackBotMsg = {
         id: `bot-fallback-${Date.now()}`,
         sender: 'assistant',
-        text: `Hello! I heard your voice message. I am Smriti, your caring companion. Your doctor is Dr. Ananya Sharma, and your daily routine is being safely tracked. How can I help you? 🌸`,
+        text: `Hello! I heard your voice message. I am Smriti, your caring companion. Your doctor is Dr. Ananya Sharma, and your daily routine is being safely tracked. How can I help you?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -438,19 +438,19 @@ export default function PatientChatbot() {
     } catch (err) {
       console.warn('Chat send error, using intelligent client fallback:', err.message);
 
-      let fallbackText = `Hello! I am Smriti, your caring companion. Your primary doctor is Dr. Ananya Sharma, and your daily routine is being safely monitored. 🌸`;
+      let fallbackText = `Hello! I am Smriti, your caring companion. Your primary doctor is Dr. Ananya Sharma, and your daily routine is being safely monitored.`;
       const qLower = (query || '').toLowerCase();
 
       if (qLower.includes('doctor') || qLower.includes('caregiver') || qLower.includes('who is my doctor')) {
-        fallbackText = `Your primary doctor and caregiver is Dr. Ananya Sharma. She monitors your health and daily care routines with great devotion. 🌸`;
+        fallbackText = `Your primary doctor and caregiver is Dr. Ananya Sharma. She monitors your health and daily care routines with great devotion.`;
       } else if (qLower.includes('medicine') || qLower.includes('pill') || qLower.includes('tablet') || qLower.includes('dawa')) {
-        fallbackText = `Your morning prescription is Donepezil 5mg and blood pressure tablets taken with water at 8:45 AM, and your evening routine is at 8:30 PM. 🌸`;
+        fallbackText = `Your morning prescription is Donepezil 5mg and blood pressure tablets taken with water at 8:45 AM, and your evening routine is at 8:30 PM.`;
       } else if (qLower.includes('family') || qLower.includes('son') || qLower.includes('daughter') || qLower.includes('grandson')) {
-        fallbackText = `Your beloved family members include your grandson Arjun, your daughter Dr. Ananya, and your son Rahul. They love you deeply. 🌸`;
+        fallbackText = `Your beloved family members include your grandson Arjun, your daughter Dr. Ananya, and your son Rahul. They love you deeply.`;
       } else if (qLower.includes('where') || qLower.includes('home')) {
-        fallbackText = `You are safe at home in Guwahati. Everything is peaceful and your family and Dr. Ananya Sharma are right by your side. 🌸`;
+        fallbackText = `You are safe at home in Guwahati. Everything is peaceful and your family and Dr. Ananya Sharma are right by your side.`;
       } else if (qLower.includes('routine') || qLower.includes('schedule') || qLower.includes('today')) {
-        fallbackText = `Today's schedule includes your morning tea, prescribed medicine at 8:45 AM, a healthy lunch, and an evening garden walk at 4:30 PM. 🌸`;
+        fallbackText = `Today's schedule includes your morning tea, prescribed medicine at 8:45 AM, a healthy lunch, and an evening garden walk at 4:30 PM.`;
       }
 
       const fallbackBotMsg = {
