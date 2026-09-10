@@ -28,6 +28,33 @@
 
 ---
 
+
+
+1. Project Information
+
+* **Project Title:** Smriti – Cognitive Care Companion
+* **PS ID:** 26003
+* **PS Title:** AI-Based Cognitive Gaming and Memory Assistance Platform for Elderly Dementia Patients in North Eastern Region (NER)
+* **Category:** Software
+* **Theme:** MedTech / Healthcare
+
+2. Problem Statement
+
+Elderly patients in the rural North-Eastern Region (NER) suffering from cognitive decline and dementia lack access to dedicated neurological care, creating a "Neurology Desert." Furthermore, these patients face severe barriers including a lack of digital literacy, poor internet connectivity, and the absence of full-time, tech-savvy family caregivers. Existing Western medical apps do not support local tribal dialects, rely on culturally alien concepts, and fail to operate reliably in low-network mountainous zones.
+
+## 3. Proposed Solution
+
+Smriti is an offline-first, culturally attuned Progressive Web App (PWA) that delivers gamified cognitive therapy directly to elderly patients. To overcome digital literacy and caregiver absence, the app features an "ASHA Kiosk Mode" allowing community health workers to administer tests on their weekly rounds. It utilizes a hybrid multilingual UI powered by direct Bhashini Base64 audio streaming to support deep tribal dialects without relying on OS voice packs. An AI adaptive engine tracks reaction times and dynamically adjusts game difficulty, syncing clinical telemetry to a remote caregiver dashboard once network connectivity is restored.
+
+## 4. Key Features
+**Culturally Attuned Cognitive Games:** Exercises utilizing local NER assets (e.g., Market Day Basket, Routine Sequencer, Family Recall).
+* **100% Offline-First PWA:** Full functionality in zero-connectivity zones using IndexedDB and Workbox.
+* **Hybrid Multilingual UI:** Native UI translation for Assamese/Bengali, and direct Base64 Bhashini audio streaming for dialects like Manipuri, Khasi, and Mizo.
+* **ASHA Kiosk Mode:** Zero-caretaker dependency interface designed for community health workers.
+* **Dual-Layer AI Adaptive Care:** In-game real-time difficulty adjustment and cross-session ML predictive scaling.
+* **Meta WhatsApp Cloud API Bot:** Automated reminders and bidirectional conversational logging.
+* **Fail-Safe Resilience:** Automatic 6-second fallback to native OS voice synthesis if external ML APIs time out.
+
 ## 📑 Table of Contents
 
 1. [📸 Visual Walkthrough & Interface Gallery](#-visual-walkthrough--interface-gallery)
