@@ -138,9 +138,7 @@ Smriti/
 
 ## 8. Final Presentation
 
-The project presentation (PPT) is available on Google Drive.
-
-See the link below (access set to "Anyone with the link — Viewer"):
+The project presentation (PPT) is available on Google Drive (access: Anyone with the link — Viewer).
 
 [View Presentation on Google Drive](https://docs.google.com/file/d/1ZMWVouCgjB8nl_J1NueILKSQ3ZTZmB5A/view)
 
@@ -156,17 +154,60 @@ A full product walkthrough demo video is available on YouTube.
 
 ## 10. Screenshots / Prototype Photos
 
-Screenshots of all major screens are available in the `docs/screenshots/` folder of this repository.
+### 👴 Patient Portal — Login & Dashboard
 
-Key screens include:
-- Patient login (PIN + biometric)
-- Horizon Routines dashboard
-- All 5 cognitive games
-- Caregiver command center and telemetry dashboard
-- Family Memory Bank
-- WhatsApp bot conversation flow
+| **Tactile PIN & Biometric Login** | **Horizon Dashboard** |
+|:---:|:---:|
+| ![Patient Login](docs/screenshots/01_patient_login.png) | ![Patient Dashboard](docs/screenshots/02_patient_dashboard.png) |
+| *Tactile 4-digit PIN with audio feedback and WebAuthn FIDO2 biometrics* | *Time-aware greeting, regional state horizon banner, and spotlight routine* |
 
-See [`docs/screenshots/`](docs/screenshots/) for the full gallery.
+| **Chronological Routine Schedule** | **Family Reminiscence Memory Vault** |
+|:---:|:---:|
+| ![Patient Reminders](docs/screenshots/03_patient_reminders.png) | ![Memory Bank](docs/screenshots/10_patient_family_vault.png) |
+| *Morning-to-night care schedule with audio read-aloud and 1-tap checks* | *Photo reminiscence gallery for facial recall and kinship memory preservation* |
+
+| **Patient Profile & Emergency Info** | **DPDP Act 2023 Privacy Policy** |
+|:---:|:---:|
+| ![Patient Profile](docs/screenshots/11_patient_profile.png) | ![Privacy Policy](docs/screenshots/18_privacy_policy.png) |
+| *Emergency doctor/caregiver dialers, blood group, and regional language toggles* | *Comprehensive legal compliance with DPDP Act 2023, consent trails, and rights* |
+
+---
+
+### 🎮 Cognitive Games Suite
+
+| **Games Suite Hub** | **Market Day Basket (বজাৰৰ পাচি)** |
+|:---:|:---:|
+| ![Games Suite](docs/screenshots/04_patient_games_suite.png) | ![Market Day Basket](docs/screenshots/05_game_market_day_basket.png) |
+| *Central game launcher with streak tracking and category tabs* | *Working memory recall of regional produce (Kaji Nemu, Bhut Jolokia, Bamboo Shoot)* |
+
+| **Daily Routine Sequencer (दैनिक दिनचर्या)** | **Faces & Family Recall (चेहरे और यादें)** |
+|:---:|:---:|
+| ![Routine Sequencer](docs/screenshots/06_game_daily_routine_sequencer.png) | ![Faces Recall](docs/screenshots/07_game_faces_family_recall.png) |
+| *Executive function training sequencing familiar morning-to-night routines* | *Fusiform gyrus stimulation matching real family photos and kin relationships* |
+
+| **Sound & Rhythm Match (ध्वनि और लय)** | **Odd One Out (अलग पहचानें)** |
+|:---:|:---:|
+| ![Sound Match](docs/screenshots/08_game_sound_rhythm_match.png) | ![Odd One Out](docs/screenshots/09_game_odd_one_out.png) |
+| *Auditory attention recognizing indigenous instruments (Dhol, Pepa, Shankha)* | *Semantic categorization identifying botanical and culinary anomalies* |
+
+---
+
+### 🩺 Caregiver & Clinician Dashboard
+
+| **Caregiver Login** | **Command Center & Patient Roster** |
+|:---:|:---:|
+| ![Caregiver Login](docs/screenshots/12_caregiver_login.png) | ![Caregiver Dashboard](docs/screenshots/13_caregiver_dashboard.png) |
+| *Secure email/password, Google OAuth, and WebAuthn clinician biometric login* | *Real-time patient roster with clinical status tags and adherence metrics* |
+
+| **Patient Clinical Dossier & Telemetry** | **Cognitive Games Telemetry** |
+|:---:|:---:|
+| ![Patient Detail](docs/screenshots/14_caregiver_patient_detail.png) | ![Game Telemetry](docs/screenshots/15_caregiver_cognitive_games.png) |
+| *AI Cognitive Health scoring, 7-day adherence charts, and top-3 routine overview* | *Round-by-round precision, reaction time distributions, and level history* |
+
+| **Red Flag Alerts & Action Center** | **Caregiver Settings & Profile** |
+|:---:|:---:|
+| ![Caregiver Notifications](docs/screenshots/16_caregiver_notifications.png) | ![Caregiver Profile](docs/screenshots/17_caregiver_profile.png) |
+| *Real-time alerts for missed critical medications with 1-tap telephone dialer* | *Profile management, notification preferences, and 30-day data erasure controls* |
 
 ---
 
@@ -242,18 +283,18 @@ Live deployments:
 
 ---
 
-## 10. Team
+## Team
 
 **Team Design Divas** — Smart India Hackathon 2026 | PS ID: SIH26003 | Branch: ITNS, NSUT
 
-| # | Name | Roll No. | Role | Email |
-|---|---|---|---|---|
-| 1 | **Gopal Raj Lohiya** *(Team Leader)* | 2025UIN3348 | Full Stack Developer | gopal.lohiya.ug25@nsut.ac.in |
-| 2 | **Aditya Rai Chauhan** | 2025UIN3329 | ML Engineer | aditya.chauhan.ug25@nsut.ac.in |
-| 3 | **Mahir Kumar** | 20253302 | Backend Developer | mahir.kumar.ug25@nsut.ac.in |
-| 4 | **Hitarth Garg** | 2025UIN3361 | Frontend Developer | hitarth.garg.ug25@nsut.ac.in |
-| 5 | **Mehak** | 2025UIN2594 | UI/UX Designer | mehak-ug25@nsut.ac.in |
-| 6 | **Diya Gautam** | 2025UIN3351 | Research & Content | diya.gautam.ug25@nsut.ac.in |
+| # | Name | Role | Email |
+|---|---|---|---|
+| 1 | **Gopal Raj Lohiya** *(Team Leader)* | Full Stack Developer | gopal.lohiya.ug25@nsut.ac.in |
+| 2 | **Aditya Rai Chauhan** | ML Engineer | aditya.chauhan.ug25@nsut.ac.in |
+| 3 | **Mahir Kumar** | Backend Developer | mahir.kumar.ug25@nsut.ac.in |
+| 4 | **Hitarth Garg** | Frontend Developer | hitarth.garg.ug25@nsut.ac.in |
+| 5 | **Mehak** | UI/UX Designer | mehak-ug25@nsut.ac.in |
+| 6 | **Diya Gautam** | Research & Content | diya.gautam.ug25@nsut.ac.in |
 
 Special thanks to the clinical research teams at **LASI-DAD**, **ARDSI**, **NIMHANS**, **SCARF India**, and the **Ministry of DoNER** for their published epidemiological data and clinical guidance on dementia care in the North-Eastern Region.
 
