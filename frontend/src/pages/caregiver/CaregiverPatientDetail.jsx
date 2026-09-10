@@ -59,7 +59,8 @@ import {
   Coffee,
   Utensils,
   CheckCheck,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 
 import { matchPatientHelper } from '../../utils/authUtils';
@@ -1299,7 +1300,7 @@ export default function CaregiverPatientDetail() {
                   No games played yet
                 </p>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  Encourage <strong className="text-slate-700">{selectedPatient.name.split(' ')[0]}</strong> to try today's featured recall games in the Patient Portal to begin recording cognitive health metrics!
+                  Encourage <strong className="text-slate-700">{(selectedPatient?.name || 'Patient').split(' ')[0]}</strong> to try today's featured recall games in the Patient Portal to begin recording cognitive health metrics!
                 </p>
               </div>
               <button

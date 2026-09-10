@@ -444,7 +444,7 @@ export default function CaregiverDashboard() {
                 {bestStreakInfo.streak}d
               </p>
               <p className="text-[11px] sm:text-xs text-amber-900 font-semibold truncate max-w-[140px]">
-                {bestStreakInfo.patientName.split(' ')[0]} (Consistent)
+                {(bestStreakInfo.patientName || 'None').split(' ')[0]} (Consistent)
               </p>
             </div>
             <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-amber-100">
@@ -528,7 +528,7 @@ export default function CaregiverDashboard() {
                               {patient.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                              {patient.age} yrs • {patient.location.split(',')[0]}
+                              {patient.age} yrs • {(patient.location || 'Assam, India').split(',')[0]}
                             </p>
                           </div>
                         </div>

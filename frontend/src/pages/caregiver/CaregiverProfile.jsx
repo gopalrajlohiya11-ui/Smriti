@@ -463,7 +463,7 @@ export default function CaregiverProfile() {
                         {patient.name}
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        {patient.age}y • {patient.location.split(',')[0]}
+                        {patient.age}y • {(patient.location || 'Assam, India').split(',')[0]}
                       </p>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[10px] bg-teal-50 text-teal-800 px-2 py-0.2 rounded font-bold border border-teal-200">
