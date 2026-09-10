@@ -233,20 +233,15 @@ export function AppProvider({ children }) {
       ]);
 
       let backendPatients = backendPatientsRes;
-      const isCaregiverAuth = !!localStorage.getItem('smriti_caregiver_token');
-      const isPatientAuth = !!localStorage.getItem('smriti_patient_token');
-
-      if (!backendPatients || !Array.isArray(backendPatients)) {
-        backendPatients = isCaregiverAuth ? [] : [...initialPatients];
+      if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
+        backendPatients = [...initialPatients];
       } else {
-        // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain selectable
-        if (!isCaregiverAuth) {
-          initialPatients.forEach(ip => {
-            if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id))) {
-              backendPatients.push(ip);
-            }
-          });
-        }
+        // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain available
+        initialPatients.forEach(ip => {
+          if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id) || matchPatientHelper(bp, ip._id))) {
+            backendPatients.push(ip);
+          }
+        });
       }
 
       // 2. Format reminders for each backend patient without N+1 network requests

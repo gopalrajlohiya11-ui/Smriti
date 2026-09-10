@@ -198,14 +198,26 @@ export default function CaregiverPatientDetail() {
     setDirectPatientSession
   } = useApp();
 
+  const isMeeraId = id && (String(id).toLowerCase().includes('meera') || id === 'pat-2' || id === '6a9e533f65c0817eb2016cc9');
   const selectedPatient = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, id)) : null) || 
     initialPatients.find(p => matchPatientHelper(p, id)) || 
+    (isMeeraId ? initialPatients[1] : null) ||
     patients[0] || 
     initialPatients[0];
 
+  useEffect(() => {
+    if (selectedPatient) {
+      const targetId = selectedPatient._id || selectedPatient.id;
+      if (targetId && setActivePatientId) {
+        setActivePatientId(targetId);
+      }
+    }
+  }, [selectedPatient, setActivePatientId]);
+
   const switchToPatientView = (patient) => {
-    if (patient && setDirectPatientSession) {
-      setDirectPatientSession(patient);
+    const targetPatient = patient || selectedPatient;
+    if (targetPatient && setDirectPatientSession) {
+      setDirectPatientSession(targetPatient);
     }
     navigate('/patient');
   };

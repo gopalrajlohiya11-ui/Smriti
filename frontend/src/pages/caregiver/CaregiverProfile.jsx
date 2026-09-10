@@ -442,10 +442,14 @@ export default function CaregiverProfile() {
               const completedCount = patient.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
               const totalCount = patient.todayReminders?.length || 10;
 
+              const patientIdentifier = patient._id || patient.id || (patient.name?.toLowerCase().includes('meera') ? 'pat-2' : 'pat-1');
               return (
                 <div
-                  key={patient.id}
-                  onClick={() => navigate(`/caregiver/patient/${patient.id}`)}
+                  key={patientIdentifier}
+                  onClick={() => {
+                    if (setActivePatientId) setActivePatientId(patientIdentifier);
+                    navigate(`/caregiver/patient/${patientIdentifier}`);
+                  }}
                   className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-white hover:border-teal-600/40 hover:shadow-sm transition-all cursor-pointer flex items-center justify-between gap-3 group"
                 >
                   <div className="flex items-center gap-3 min-w-0">

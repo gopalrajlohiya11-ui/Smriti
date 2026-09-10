@@ -496,10 +496,14 @@ export default function CaregiverDashboard() {
                   statusStyle = 'bg-amber-50 text-amber-900 border-amber-200';
                 }
 
+                const patientIdentifier = patient._id || patient.id || (patient.name?.toLowerCase().includes('meera') ? 'pat-2' : 'pat-1');
                 return (
                   <div
-                    key={patient.id}
-                    onClick={() => navigate(`/caregiver/patient/${patient.id}`)}
+                    key={patientIdentifier}
+                    onClick={() => {
+                      if (setActivePatientId) setActivePatientId(patientIdentifier);
+                      navigate(`/caregiver/patient/${patientIdentifier}`);
+                    }}
                     className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-lg hover:border-emerald-600/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 sm:gap-5 group relative overflow-hidden"
                   >
                     {/* Top Accent Line on Hover */}
