@@ -714,6 +714,11 @@ export default function FacesFamilyRecall() {
                 <img
                   src={currentPerson?.image || '/family/grandson_arjun.png'}
                   alt={currentPerson?.name || 'Family member'}
+                  style={{
+                    objectPosition: (currentPerson?.image?.includes('priya') || (currentPerson?.name || '').includes('Priya')) ? 'center 15%' :
+                                    (currentPerson?.image?.includes('arjun') || (currentPerson?.name || '').includes('Arjun')) ? 'center top' :
+                                    (currentPerson?.image?.includes('bihu') || (currentPerson?.name || '').includes('Bihu')) ? 'center 20%' : 'center center'
+                  }}
                   className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                   onError={(e) => {
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';

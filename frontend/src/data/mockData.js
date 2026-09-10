@@ -170,6 +170,7 @@ export const familyPhotos = [
     photoUrl: "/family/daughter_priya.jpg",
     imageUrl: "/family/daughter_priya.jpg",
     image: "/family/daughter_priya.jpg",
+    objectPosition: "center 15%",
     audioPrompt: "This is your daughter Priya smiling warmly on the tea garden porch in Jorhat.",
     audioNote: "This is your daughter Priya smiling warmly on the tea garden porch in Jorhat."
   },
@@ -183,6 +184,7 @@ export const familyPhotos = [
     photoUrl: "/family/grandson_arjun.png",
     imageUrl: "/family/grandson_arjun.png",
     image: "/family/grandson_arjun.png",
+    objectPosition: "center top",
     audioPrompt: "This is your grandson Arjun holding the traditional Bihu Pepa at Guwahati riverfront.",
     audioNote: "This is your grandson Arjun holding the traditional Bihu Pepa at Guwahati riverfront."
   },
@@ -196,6 +198,7 @@ export const familyPhotos = [
     photoUrl: "/family/wife_sunita.png",
     imageUrl: "/family/wife_sunita.png",
     image: "/family/wife_sunita.png",
+    objectPosition: "center center",
     audioPrompt: "This is your beloved wife Sunita tending fresh flowers in your home courtyard.",
     audioNote: "This is your beloved wife Sunita tending fresh flowers in your home courtyard."
   },
@@ -209,6 +212,7 @@ export const familyPhotos = [
     photoUrl: "/family/ramesh_bihu.png",
     imageUrl: "/family/ramesh_bihu.png",
     image: "/family/ramesh_bihu.png",
+    objectPosition: "center 20%",
     audioPrompt: "This is the festive Magh Bihu morning beside the harvest Bhelaghar.",
     audioNote: "This is the festive Magh Bihu morning beside the harvest Bhelaghar."
   },
@@ -222,6 +226,7 @@ export const familyPhotos = [
     photoUrl: "/family/family_umiam_lake.png",
     imageUrl: "/family/family_umiam_lake.png",
     image: "/family/family_umiam_lake.png",
+    objectPosition: "center center",
     audioPrompt: "Here is the whole family gathered at the Umiam Lake viewpoint in Shillong.",
     audioNote: "Here is the whole family gathered at the Umiam Lake viewpoint in Shillong."
   }

@@ -1951,6 +1951,11 @@ export default function CaregiverPatientDetail() {
                     <img
                       src={photo.photoUrl || photo.imageUrl || photo.image}
                       alt={photo.title}
+                      style={{
+                        objectPosition: (photo.photoUrl?.includes('priya') || photo.imageUrl?.includes('priya') || photo.image?.includes('priya') || (photo.title || '').toLowerCase().includes('priya')) ? 'center 15%' :
+                                        (photo.photoUrl?.includes('arjun') || photo.imageUrl?.includes('arjun') || photo.image?.includes('arjun') || (photo.title || '').toLowerCase().includes('arjun')) ? 'center top' :
+                                        (photo.photoUrl?.includes('bihu') || photo.imageUrl?.includes('bihu') || photo.image?.includes('bihu') || (photo.title || '').toLowerCase().includes('bihu')) ? 'center 20%' : 'center center'
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       onError={(e) => {
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80';

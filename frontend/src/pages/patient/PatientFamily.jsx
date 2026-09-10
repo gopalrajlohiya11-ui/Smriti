@@ -111,6 +111,16 @@ export default function PatientFamily() {
     });
   }, [vaultPhotos, selectedFilter, searchQuery]);
 
+  const getPhotoPosition = (photo) => {
+    if (photo?.objectPosition) return photo.objectPosition;
+    const url = (photo?.photoUrl || photo?.imageUrl || photo?.image || photo?.url || '').toLowerCase();
+    const title = (photo?.title || '').toLowerCase();
+    if (url.includes('priya') || title.includes('priya') || title.includes('daughter')) return 'center 15%';
+    if (url.includes('arjun') || title.includes('arjun') || title.includes('grandson')) return 'center top';
+    if (url.includes('bihu') || title.includes('bihu') || url.includes('ramesh')) return 'center 20%';
+    return 'center center';
+  };
+
   return (
     <PatientNavShell pageTitle="Family Memories & Photos">
       <div className="space-y-6">
@@ -203,6 +213,7 @@ export default function PatientFamily() {
                     <img
                       src={photo.photoUrl || photo.imageUrl || photo.image || photo.url || 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80'}
                       alt={photo.title}
+                      style={{ objectPosition: getPhotoPosition(photo) }}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80';
@@ -269,6 +280,7 @@ export default function PatientFamily() {
             <img
               src={selectedPhoto.photoUrl || selectedPhoto.imageUrl || selectedPhoto.image || selectedPhoto.url || 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80'}
               alt={selectedPhoto.title}
+              style={{ objectPosition: getPhotoPosition(selectedPhoto) }}
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=600&auto=format&fit=crop&q=80';
