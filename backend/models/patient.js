@@ -14,7 +14,7 @@ const patientSchema = new mongoose.Schema({
   emergencyContact: { type: String },
   notes: { type: String },
   medicalNotes: { type: String },
-  avatar: { type: String },
+  avatar: { type: String, default: null },
   caregiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Caregiver' },
   notificationPreference: { type: String, enum: ['whatsapp', 'sms', 'ivr'], default: 'whatsapp' },
   lastGameLinkSentDate: { type: Date },
