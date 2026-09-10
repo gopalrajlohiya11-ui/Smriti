@@ -212,16 +212,20 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## 10. Team
 
-**Team Design Divas** — Smart India Hackathon 2026
+**Team Design Divas** — Smart India Hackathon 2026 | PS ID: SIH26003 | Branch: ITNS, NSUT
 
-| Member | Role |
-|---|---|
-| Gopal Raj Lohiya | Full Stack Developer & Team Lead |
-| Smriti Sharma | UI/UX Designer |
-| Yash Panchal | ML Engineer |
+| # | Name | Roll No. | Role | Email |
+|---|---|---|---|---|
+| 1 | **Gopal Raj Lohiya** *(Team Leader)* | 2025UIN3348 | Full Stack Developer | gopal.lohiya.ug25@nsut.ac.in |
+| 2 | **Aditya Rai Chauhan** | 2025UIN3329 | ML Engineer | aditya.chauhan.ug25@nsut.ac.in |
+| 3 | **Mahir Kumar** | 20253302 | Backend Developer | mahir.kumar.ug25@nsut.ac.in |
+| 4 | **Hitarth Garg** | 2025UIN3361 | Frontend Developer | hitarth.garg.ug25@nsut.ac.in |
+| 5 | **Mehak** | 2025UIN2594 | UI/UX Designer | mehak-ug25@nsut.ac.in |
+| 6 | **Diya Gautam** | 2025UIN3351 | Research & Content | diya.gautam.ug25@nsut.ac.in |
 
 Special thanks to the clinical research teams at **LASI-DAD**, **ARDSI**, **NIMHANS**, **SCARF India**, and the **Ministry of DoNER** for their published epidemiological data and clinical guidance on dementia care in the North-Eastern Region.
 
 ---
 
 *🌸 Smriti (স্মৃতি / स्मृति) — Preserving Memories, Empowering Caregivers, Culturally Grounded.*
+
