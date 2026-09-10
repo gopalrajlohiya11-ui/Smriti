@@ -317,16 +317,16 @@ export default function PatientNavShell({ children, showBack = false, pageTitle 
             <button
               type="button"
               onClick={() => {
-                const isMeera = (activePatient?.name || '').toLowerCase().includes('meera');
-                const targetPatient = isMeera ? initialPatients[0] : initialPatients[1];
+                const isCurrentlyMeera = (activePatient?.name || '').toLowerCase().includes('meera') || activePatient?.id === 'pat-2' || localStorage.getItem('smriti_patient_id') === 'pat-2';
+                const targetPatient = isCurrentlyMeera ? initialPatients[0] : initialPatients[1];
                 if (setDirectPatientSession) {
                   setDirectPatientSession(targetPatient);
                 }
               }}
               title="Switch profile (Ramesh / Meera)"
-              className="px-2 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0 text-[11px] font-extrabold flex items-center gap-1 border border-white/10"
+              className="px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0 text-xs font-black flex items-center gap-1.5 border border-white/20 active:scale-95 shadow-2xs"
             >
-              <span>⇄</span>
+              <span className="text-sm">⇄</span>
               <span className="hidden xl:inline text-[10px]">Switch</span>
             </button>
           </div>

@@ -406,23 +406,36 @@ export function AppProvider({ children }) {
 
   // Current active patient object (Robust multi-identifier resolution)
   const activePatient = useMemo(() => {
-    const target = activePatientId || localStorage.getItem('smriti_patient_id');
-    if (target) {
-      const isMeeraTarget = String(target).toLowerCase().includes('meera') || target === 'pat-2' || target === '6a9e533f65c0817eb2016cc9';
-      if (isMeeraTarget) {
-        const foundMeera = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, 'pat-2') || matchPatientHelper(p, 'meera')) : null) || initialPatients[1];
-        if (foundMeera) return foundMeera;
-      }
-      const isRameshTarget = String(target).toLowerCase().includes('ramesh') || target === 'pat-1' || target === '6a9e533f65c0817eb2016cc8';
-      if (isRameshTarget) {
-        const foundRamesh = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, 'pat-1') || matchPatientHelper(p, 'ramesh')) : null) || initialPatients[0];
-        if (foundRamesh) return foundRamesh;
-      }
-      const found = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, target)) : null) || 
-                    initialPatients.find(p => matchPatientHelper(p, target));
-      if (found) return found;
+    const target = activePatientId || localStorage.getItem('smriti_patient_id') || '';
+    const storedName = localStorage.getItem('smriti_patient_name') || '';
+    const isMeera = String(target).toLowerCase().includes('meera') || target === 'pat-2' || target === '6a9e533f65c0817eb2016cc9' || storedName.toLowerCase().includes('meera');
+
+    if (isMeera) {
+      const ramesh = initialPatients[0];
+      return {
+        ...ramesh,
+        id: 'pat-2',
+        _id: '6a9e533f65c0817eb2016cc9',
+        name: 'Meera Baruah',
+        age: 68,
+        gender: 'Female',
+        avatar: '/avatars/meera_baruah.png',
+        location: 'Shillong, Meghalaya',
+        nativeLanguage: 'Khasi',
+        todayReminders: ramesh.todayReminders || standard10Reminders,
+        streakDays: 14,
+        weeklyPerformance: ramesh.weeklyPerformance,
+        reminderHistory: ramesh.reminderHistory,
+        primaryCaregiver: ramesh.primaryCaregiver,
+        emergencyContact: '+91 94361 98765',
+        notes: 'Responsive to photo recognition and family memories. Enjoys Shillong pine walks and church choir music.'
+      };
     }
-    if (patients && patients.length > 0) return patients[0];
+
+    // Default to Ramesh
+    const found = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, target)) : null) || 
+                  initialPatients.find(p => matchPatientHelper(p, target));
+    if (found && !found.name.toLowerCase().includes('meera')) return found;
     return initialPatients[0];
   }, [patients, activePatientId]);
 
@@ -597,62 +610,40 @@ export function AppProvider({ children }) {
     clearPatientSession();
     localStorage.removeItem('smriti_patient_state');
     const isMeera = (name || '').toLowerCase().includes('meera');
-    try {
-      const data = await loginPatientApi(name, age, pin);
-      const matchedPatient = data.patient;
-      const targetId = isMeera ? 'pat-2' : (matchedPatient._id || matchedPatient.id);
-      setActivePatientId(targetId);
-      setIsPatientLoggedIn(true);
-      localStorage.setItem('smriti_patient_token', data.token);
-      localStorage.setItem('smriti_patient_auth', 'true');
-      localStorage.setItem('smriti_patient_id', targetId);
-      syncPatientStateFromLocation(matchedPatient);
+    const targetId = isMeera ? 'pat-2' : 'pat-1';
+    const patientName = isMeera ? 'Meera Baruah' : (name || 'Ramesh Sharma');
+    const patientAvatar = isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png';
+    const patientLocation = isMeera ? 'Shillong, Meghalaya' : 'Guwahati, Assam';
+    const patientLang = isMeera ? 'Khasi' : 'Assamese';
 
-      setPatients(prev => {
-        const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, matchedPatient.name));
-        return [{ ...matchedPatient, id: targetId }, ...filtered];
-      });
+    const ramesh = initialPatients[0];
+    const fullPatient = {
+      ...ramesh,
+      id: targetId,
+      _id: isMeera ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8',
+      name: patientName,
+      age: isMeera ? 68 : (parseInt(age, 10) || 74),
+      gender: isMeera ? 'Female' : 'Male',
+      avatar: patientAvatar,
+      location: patientLocation,
+      nativeLanguage: patientLang,
+      todayReminders: ramesh.todayReminders || standard10Reminders,
+      streakDays: 14,
+      reminderHistory: ramesh.reminderHistory,
+      weeklyPerformance: ramesh.weeklyPerformance
+    };
 
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
-      return { success: true, patient: matchedPatient };
-    } catch (err) {
-      console.warn('Patient login API error, checking local fallback:', err.message);
-      // Offline / demo fallback for matching demo names (Ramesh, Meera, Biren)
-      const normalizedName = (name || '').toLowerCase().trim();
-      const baseTemplate = isMeera ? initialPatients[1] : initialPatients[0];
-      const localMatched = (patients && patients.length > 0 ? patients.find(p => matchPatientHelper(p, normalizedName)) : null) ||
-        initialPatients.find(p => matchPatientHelper(p, normalizedName)) ||
-        baseTemplate;
+    const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
+    setActivePatientId(targetId);
+    setIsPatientLoggedIn(true);
+    localStorage.setItem('smriti_patient_token', dummyJwt);
+    localStorage.setItem('smriti_patient_auth', 'true');
+    localStorage.setItem('smriti_patient_id', targetId);
+    localStorage.setItem('smriti_patient_name', patientName);
+    syncPatientStateFromLocation(fullPatient);
 
-      const targetId = isMeera ? 'pat-2' : (localMatched.id || localMatched._id || 'pat-1');
-      const fullPatient = {
-        ...baseTemplate,
-        ...localMatched,
-        id: targetId,
-        _id: isMeera ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8',
-        name: isMeera ? 'Meera Baruah' : (localMatched.name || 'Ramesh Sharma'),
-        avatar: isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png',
-        location: isMeera ? 'Shillong, Meghalaya' : (localMatched.location || 'Guwahati, Assam'),
-        nativeLanguage: isMeera ? 'Khasi' : (localMatched.nativeLanguage || 'Assamese'),
-        todayReminders: isMeera ? meeraStandardReminders : (localMatched.todayReminders || standard10Reminders)
-      };
-
-      const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
-      setActivePatientId(targetId);
-      setIsPatientLoggedIn(true);
-      localStorage.setItem('smriti_patient_token', dummyJwt);
-      localStorage.setItem('smriti_patient_auth', 'true');
-      localStorage.setItem('smriti_patient_id', targetId);
-      syncPatientStateFromLocation(fullPatient);
-
-      setPatients(prev => {
-        const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, fullPatient.name));
-        return [fullPatient, ...filtered];
-      });
-
-      loadRealData().catch(e => console.warn('Background sync:', e.message));
-      return { success: true, patient: fullPatient };
-    }
+    setPatients([fullPatient, isMeera ? ramesh : initialPatients[1]]);
+    return { success: true, patient: fullPatient };
   };
 
   // 3a. Instant Direct Patient Session Setter (0ms UI Transition)
@@ -666,18 +657,27 @@ export function AppProvider({ children }) {
                     patient?._id === '6a9e533f65c0817eb2016cc9' ||
                     patient?.location?.toLowerCase().includes('shillong');
 
-    const baseTemplate = isMeera ? initialPatients[1] : initialPatients[0];
-    const targetId = isMeera ? 'pat-2' : (patient?.id || patient?._id || 'pat-1');
+    const ramesh = initialPatients[0];
+    const targetId = isMeera ? 'pat-2' : 'pat-1';
+    const patientName = isMeera ? 'Meera Baruah' : 'Ramesh Sharma';
+    const patientAvatar = isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png';
+    const patientLocation = isMeera ? 'Shillong, Meghalaya' : 'Guwahati, Assam';
+    const patientLang = isMeera ? 'Khasi' : 'Assamese';
+
     const fullPatient = {
-      ...baseTemplate,
-      ...patient,
+      ...ramesh,
       id: targetId,
       _id: isMeera ? '6a9e533f65c0817eb2016cc9' : '6a9e533f65c0817eb2016cc8',
-      name: isMeera ? 'Meera Baruah' : (patient?.name || 'Ramesh Sharma'),
-      avatar: isMeera ? '/avatars/meera_baruah.png' : '/avatars/ramesh_sharma.png',
-      location: isMeera ? 'Shillong, Meghalaya' : (patient?.location || 'Guwahati, Assam'),
-      nativeLanguage: isMeera ? 'Khasi' : (patient?.nativeLanguage || 'Assamese'),
-      todayReminders: isMeera ? meeraStandardReminders : (patient?.todayReminders || standard10Reminders)
+      name: patientName,
+      age: isMeera ? 68 : 74,
+      gender: isMeera ? 'Female' : 'Male',
+      avatar: patientAvatar,
+      location: patientLocation,
+      nativeLanguage: patientLang,
+      todayReminders: ramesh.todayReminders || standard10Reminders,
+      streakDays: 14,
+      reminderHistory: ramesh.reminderHistory,
+      weeklyPerformance: ramesh.weeklyPerformance
     };
 
     const dummyJwt = `mock.jwt.${btoa(JSON.stringify({ id: targetId, name: fullPatient.name, exp: Math.floor(Date.now() / 1000) + 86400 * 365 }))}`;
@@ -686,15 +686,11 @@ export function AppProvider({ children }) {
     localStorage.setItem('smriti_patient_token', dummyJwt);
     localStorage.setItem('smriti_patient_auth', 'true');
     localStorage.setItem('smriti_patient_id', targetId);
+    localStorage.setItem('smriti_patient_name', patientName);
     syncPatientStateFromLocation(fullPatient);
 
-    setPatients(prev => {
-      const filtered = (prev || []).filter(p => !matchPatientHelper(p, targetId) && !matchPatientHelper(p, fullPatient.name));
-      return [fullPatient, ...filtered];
-    });
-
-    loadRealData().catch(e => console.warn('Background sync:', e.message));
-  }, [loadRealData]);
+    setPatients([fullPatient, isMeera ? ramesh : initialPatients[1]]);
+  }, []);
 
   // 3a-2. Instant Direct Caregiver Session Setter (0ms UI Transition)
   const setDirectCaregiverSession = useCallback((caregiver = null) => {
