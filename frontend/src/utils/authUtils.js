@@ -124,6 +124,7 @@ export function clearPatientSession() {
   localStorage.removeItem('smriti_patient_auth');
   localStorage.removeItem('smriti_patient_token');
   localStorage.removeItem('smriti_patient_id');
+  localStorage.removeItem('smriti_patient_name');
 }
 
 /**

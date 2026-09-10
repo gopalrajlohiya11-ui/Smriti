@@ -247,9 +247,14 @@ export function AppProvider({ children }) {
     const caregiverEmail = (caregiverUser?.email || session.user?.email || '').toLowerCase();
     const isDemoCaregiver = !isAuthCaregiver || caregiverEmail === 'dr.ananya@smriti.in' || caregiverEmail.includes('demo');
 
+    const patientSession = getStoredPatientSession();
+    const isPatientAuth = Boolean(isPatientLoggedIn || patientSession.isValid || localStorage.getItem('smriti_patient_token'));
+    const storedPatientId = localStorage.getItem('smriti_patient_id') || activePatientId || '';
+    const storedPatientName = localStorage.getItem('smriti_patient_name') || '';
+
     // If device is offline, load from cached IndexedDB snapshot
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      const targetId = activePatientId || localStorage.getItem('smriti_patient_id') || 'pat-1';
+      const targetId = storedPatientId || 'pat-1';
       const cached = await getCachedPatientData(targetId);
       if (cached) {
         setPatients(prev => prev.length > 0 ? prev : [cached]);
@@ -268,24 +273,61 @@ export function AppProvider({ children }) {
 
       let backendPatients = backendPatientsRes;
 
-      if (isDemoCaregiver) {
-        // DEMO / PUBLIC MODE: Fallback to initialPatients if database has none, or ensure demo profiles exist
-        if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
-          backendPatients = [...initialPatients];
+      if (isAuthCaregiver) {
+        if (isDemoCaregiver) {
+          // DEMO / PUBLIC MODE: Fallback to initialPatients if database has none, or ensure demo profiles exist
+          if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
+            backendPatients = [...initialPatients];
+          } else {
+            // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain available
+            initialPatients.forEach(ip => {
+              if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id) || matchPatientHelper(bp, ip._id))) {
+                backendPatients.push(ip);
+              }
+            });
+          }
         } else {
-          // Ensure all standard demo profiles (Ramesh, Meera, Biren) remain available
-          initialPatients.forEach(ip => {
-            if (!backendPatients.some(bp => matchPatientHelper(bp, ip.name) || matchPatientHelper(bp, ip.id) || matchPatientHelper(bp, ip._id))) {
-              backendPatients.push(ip);
-            }
-          });
+          // AUTHENTICATED REAL CAREGIVER MODE:
+          // Strictly show only patients belonging to this caregiver from the database.
+          if (!backendPatients || !Array.isArray(backendPatients)) {
+            backendPatients = [];
+          }
+        }
+      } else if (isPatientAuth) {
+        // AUTHENTICATED PATIENT MODE:
+        let matchedPatient = null;
+        if (backendPatients && Array.isArray(backendPatients) && backendPatients.length > 0) {
+          matchedPatient = backendPatients.find(p => 
+            (storedPatientId && matchPatientHelper(p, storedPatientId)) || 
+            (storedPatientName && matchPatientHelper(p, storedPatientName))
+          );
+        }
+
+        if (matchedPatient) {
+          backendPatients = [matchedPatient];
+        } else {
+          // Check local cache for the active patient
+          const cached = JSON.parse(localStorage.getItem('smriti_patients') || '[]');
+          const localFound = cached.find(p => 
+            (storedPatientId && matchPatientHelper(p, storedPatientId)) || 
+            (storedPatientName && matchPatientHelper(p, storedPatientName))
+          );
+          if (localFound) {
+            backendPatients = [localFound];
+          } else if (storedPatientName.toLowerCase().includes('meera') || storedPatientId === 'pat-2') {
+            backendPatients = [initialPatients[1]];
+          } else if (storedPatientName.toLowerCase().includes('ramesh') || storedPatientId === 'pat-1') {
+            backendPatients = [initialPatients[0]];
+          } else if (backendPatients && Array.isArray(backendPatients) && backendPatients.length > 0) {
+            backendPatients = [backendPatients[0]];
+          } else {
+            backendPatients = [];
+          }
         }
       } else {
-        // AUTHENTICATED REAL CAREGIVER MODE:
-        // Strictly show only patients belonging to this caregiver from the database.
-        // Never inject demo profiles into a new or custom email account.
-        if (!backendPatients || !Array.isArray(backendPatients)) {
-          backendPatients = [];
+        // PUBLIC / UNLOGGED-IN DEMO MODE:
+        if (!backendPatients || !Array.isArray(backendPatients) || backendPatients.length === 0) {
+          backendPatients = [...initialPatients];
         }
       }
 
@@ -374,8 +416,7 @@ export function AppProvider({ children }) {
       } catch (e) {}
 
       // 3. Resolve Active Patient
-      const storedPatientId = localStorage.getItem('smriti_patient_id');
-      const currentTargetId = activePatientId || storedPatientId;
+      const currentTargetId = storedPatientId || activePatientId;
 
       if (currentTargetId && enrichedPatients.length > 0) {
         const isMeeraTarget = String(currentTargetId).toLowerCase().includes('meera') || currentTargetId === 'pat-2' || currentTargetId === '6a9e533f65c0817eb2016cc9';
@@ -384,16 +425,16 @@ export function AppProvider({ children }) {
           const resolvedId = isMeeraTarget ? 'pat-2' : (found.id || found._id);
           setActivePatientId(resolvedId);
           localStorage.setItem('smriti_patient_id', resolvedId);
-        } else {
+        } else if (isAuthCaregiver) {
+          setActivePatientId(enrichedPatients[0].id);
+          localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
+        } else if (!isPatientAuth) {
           setActivePatientId(enrichedPatients[0].id);
           localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
         }
-      } else if (enrichedPatients.length > 0) {
+      } else if (enrichedPatients.length > 0 && !isPatientAuth) {
         setActivePatientId(enrichedPatients[0].id);
         localStorage.setItem('smriti_patient_id', enrichedPatients[0].id);
-      } else {
-        setActivePatientId(null);
-        localStorage.removeItem('smriti_patient_id');
       }
 
       // 4. Update direct database-synchronized active alerts
@@ -703,6 +744,9 @@ export function AppProvider({ children }) {
   // 3. Patient Real Login (PIN keypad + Name) (Fast & Non-blocking)
   const loginPatient = async (name, age, pin, phoneNumber) => {
     clearPatientSession();
+    clearCaregiverSession();
+    setIsCaregiverLoggedIn(false);
+    setCaregiverUser(null);
     localStorage.removeItem('smriti_patient_state');
 
     const trimmedName = (name || '').trim();

@@ -256,6 +256,10 @@ router.get('/', optionalAuth, async (req, res) => {
       };
 
       patients = await Patient.find(query).sort({ createdAt: 1 }).lean();
+    } else if (req.patient) {
+      // Patient is authenticated with their patient token -> return only their patient record
+      const p = await Patient.findById(req.patient._id).lean();
+      patients = p ? [p] : [];
     } else {
       // Public / Demo fallback if not authenticated: ONLY demo accounts
       patients = await Patient.find({

@@ -31,8 +31,11 @@ export async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
 }
 
 // Helper for authorized headers
-function getAuthHeaders() {
-  const token = localStorage.getItem('smriti_caregiver_token') || localStorage.getItem('smriti_patient_token');
+export function getAuthHeaders() {
+  const isCaregiverActive = localStorage.getItem('smriti_caregiver_auth') === 'true' && !!localStorage.getItem('smriti_caregiver_token');
+  const token = isCaregiverActive
+    ? localStorage.getItem('smriti_caregiver_token')
+    : (localStorage.getItem('smriti_patient_token') || localStorage.getItem('smriti_caregiver_token'));
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
