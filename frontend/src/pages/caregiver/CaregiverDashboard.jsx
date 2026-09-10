@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import CaregiverLayout from '../../components/caregiver/CaregiverLayout';
 import { 
@@ -498,13 +498,13 @@ export default function CaregiverDashboard() {
 
                 const patientIdentifier = patient._id || patient.id || (patient.name?.toLowerCase().includes('meera') ? 'pat-2' : 'pat-1');
                 return (
-                  <div
+                  <Link
                     key={patientIdentifier}
+                    to={`/caregiver/patient/${patientIdentifier}`}
                     onClick={() => {
                       if (setActivePatientId) setActivePatientId(patientIdentifier);
-                      navigate(`/caregiver/patient/${patientIdentifier}`);
                     }}
-                    className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-lg hover:border-emerald-600/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 sm:gap-5 group relative overflow-hidden"
+                    className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-lg hover:border-emerald-600/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-4 sm:gap-5 group relative overflow-hidden block text-inherit no-underline"
                   >
                     {/* Top Accent Line on Hover */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -582,7 +582,7 @@ export default function CaregiverDashboard() {
 
                     </div>
 
-                  </div>
+                  </Link>
                 );
               })}
             </div>

@@ -758,31 +758,13 @@ export default function CaregiverPatientDetail() {
     }
   };
 
-  if (!selectedPatient) {
-    return (
-      <CaregiverLayout>
-        <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center space-y-4 shadow-xs">
-          <p className="text-base font-bold text-slate-900">Patient Record Not Found</p>
-          <p className="text-xs text-slate-500">The requested record does not exist or you do not have clinical access permissions.</p>
-          <button
-            onClick={() => navigate('/caregiver')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-800 text-white text-xs font-bold hover:bg-teal-900 cursor-pointer shadow-xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Return to Patients Roster</span>
-          </button>
-        </div>
-      </CaregiverLayout>
-    );
-  }
-
   const isDemo = selectedPatient?.isDemoSeed === true || 
     ['pat-1', 'pat-2', 'pat-3'].includes(selectedPatient?.id) || 
     ['pat-1', 'pat-2', 'pat-3'].includes(selectedPatient?._id) || 
     ['Ramesh Sharma', 'Meera Baruah', 'Biren Das'].includes(selectedPatient?.name);
 
-  const completedTodayCount = selectedPatient.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
-  const totalTodayCount = selectedPatient.todayReminders?.length || (isDemo ? 10 : 0);
+  const completedTodayCount = selectedPatient?.todayReminders?.filter(r => r.status === 'completed' || r.acknowledged === true).length || 0;
+  const totalTodayCount = selectedPatient?.todayReminders?.length || (isDemo ? 10 : 0);
   const progressPct = totalTodayCount > 0 ? Math.round((completedTodayCount / totalTodayCount) * 100) : 0;
 
   // Calculate 7-day blended cognitive and routine performance from real MongoDB GameSessions
@@ -872,6 +854,24 @@ export default function CaregiverPatientDetail() {
       };
     });
   }, [gameSessions, selectedPatient, completedTodayCount, totalTodayCount, isDemo]);
+
+  if (!selectedPatient) {
+    return (
+      <CaregiverLayout>
+        <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center space-y-4 shadow-xs">
+          <p className="text-base font-bold text-slate-900">Patient Record Not Found</p>
+          <p className="text-xs text-slate-500">The requested record does not exist or you do not have clinical access permissions.</p>
+          <button
+            onClick={() => navigate('/caregiver')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-800 text-white text-xs font-bold hover:bg-teal-900 cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Patients Roster</span>
+          </button>
+        </div>
+      </CaregiverLayout>
+    );
+  }
 
   return (
     <CaregiverLayout>
