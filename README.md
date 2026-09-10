@@ -289,15 +289,14 @@ Live deployments:
 
 | # | Name |
 |---|---|
-| 1 | **Gopal Raj Lohiya** *(Team Leader)* |
+| 1 | **Gopal Raj Lohiya** |
 | 2 | **Aditya Rai Chauhan** |
 | 3 | **Mahir Kumar** |
 | 4 | **Hitarth Garg** |
 | 5 | **Mehak** |
 | 6 | **Diya Gautam** |
 
-Special thanks to the clinical research teams at **LASI-DAD**, **ARDSI**, **NIMHANS**, **SCARF India**, and the **Ministry of DoNER** for their published epidemiological data and clinical guidance on dementia care in the North-Eastern Region.
-
 ---
 
 *🌸 Smriti (স্মৃতি / स्मृति) — Preserving Memories, Empowering Caregivers, Culturally Grounded.*
+
