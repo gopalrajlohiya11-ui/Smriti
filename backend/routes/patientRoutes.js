@@ -26,42 +26,58 @@ router.post('/login', rateLimitLogin, async (req, res) => {
       return res.status(400).json({ error: 'A 4-digit PIN is required' });
     }
 
-    let patient = null;
+    const pinStr = pin.toString().trim();
+    const exactName = name ? name.trim() : '';
+    const cleanPhone = phoneNumber ? phoneNumber.replace(/\D/g, '') : '';
 
-    if (phoneNumber) {
-      const cleanPhone = phoneNumber.replace(/\D/g, '');
-      patient = await Patient.findOne({ phoneNumber: cleanPhone });
+    if (!exactName && !cleanPhone) {
+      return res.status(400).json({ error: 'Name or phone number is required to login.' });
     }
 
-    if (!patient && name) {
-      const cleanName = name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      patient = await Patient.findOne({ name: new RegExp(`^${cleanName}$`, 'i') });
-      if (!patient) {
-        patient = await Patient.findOne({ name: new RegExp(cleanName, 'i') });
-      }
+    // Build strictly case-sensitive exact query (NO regex with 'i' flag, NO .toLowerCase())
+    const query = {};
+    if (exactName) {
+      query.name = exactName;
+    }
+    if (cleanPhone) {
+      query.phoneNumber = cleanPhone;
     }
 
-    // Generic error to prevent user enumeration
-    if (!patient) {
+    // Retrieve matching records with exact casing
+    const candidates = await Patient.find(query);
+
+    if (!candidates || candidates.length === 0) {
       return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
     }
 
-    // Verify PIN with bcrypt or plaintext fallback
-    const pinStr = pin.toString().trim();
-    if (patient.pin) {
+    let patient = null;
+
+    for (const candidate of candidates) {
       let isPinValid = false;
-      if (typeof patient.pin === 'string' && (patient.pin.startsWith('$2a$') || patient.pin.startsWith('$2b$'))) {
-        isPinValid = await bcrypt.compare(pinStr, patient.pin);
+      if (candidate.pin) {
+        if (typeof candidate.pin === 'string' && (candidate.pin.startsWith('$2a$') || candidate.pin.startsWith('$2b$'))) {
+          isPinValid = await bcrypt.compare(pinStr, candidate.pin);
+        } else {
+          isPinValid = candidate.pin.toString().trim() === pinStr || pinStr === '1234';
+        }
       } else {
-        isPinValid = patient.pin.toString().trim() === pinStr || pinStr === '1234';
+        isPinValid = pinStr === '1234';
       }
-      if (!isPinValid) {
-        return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
+
+      if (isPinValid) {
+        // If age is provided and matches, prioritize this record
+        if (age && candidate.age && parseInt(candidate.age, 10) === parseInt(age, 10)) {
+          patient = candidate;
+          break;
+        } else if (!patient) {
+          patient = candidate;
+        }
       }
-    } else {
-      if (pinStr !== '1234') {
-        return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
-      }
+    }
+
+    // If no candidate matches both the exact identifier and the valid PIN
+    if (!patient) {
+      return res.status(401).json({ error: 'Invalid name/phone number or PIN.' });
     }
 
     // Generate scoped JWT token for patient
@@ -98,7 +114,7 @@ router.post('/biometric-login', rateLimitLogin, async (req, res) => {
     }
 
     if (!patient && name) {
-      patient = await Patient.findOne({ name: new RegExp(name.trim(), 'i'), hasBiometric: true });
+      patient = await Patient.findOne({ name: name.trim(), hasBiometric: true });
     }
 
     if (!patient) {

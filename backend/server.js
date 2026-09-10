@@ -213,7 +213,48 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Smriti Backend Server is listening on port ${PORT} (host: 0.0.0.0)`);
     console.log(`📡 Health check URL: http://localhost:${PORT}/health or /api/health`);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // KEEP-ALIVE SELF-PING
+    // Prevents Render free-tier from sleeping (spins down after 15 min idle).
+    // Pings our own /api/health every 14 minutes when deployed.
+    // Auto-disabled on localhost — no env variable changes needed for local dev.
+    // ─────────────────────────────────────────────────────────────────────────
+    const PING_INTERVAL_MS = 14 * 60 * 1000; // 14 minutes in milliseconds
+
+    // Render injects RENDER_EXTERNAL_URL automatically on their platform.
+    // Fallback: you can set BACKEND_URL manually in Render Environment Variables.
+    const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || null;
+    const isLocalDev = !selfUrl || selfUrl.includes('localhost') || selfUrl.includes('127.0.0.1');
+
+    if (isLocalDev) {
+      console.log('🔕 [Keep-Alive] Self-ping disabled (localhost / no RENDER_EXTERNAL_URL set).');
+    } else {
+      const pingTarget = `${selfUrl.replace(/\/$/, '')}/api/health`;
+      console.log(`💓 [Keep-Alive] Self-ping ACTIVE → ${pingTarget} every 14 min`);
+
+      setInterval(async () => {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 s hard timeout
+
+          const response = await fetch(pingTarget, {
+            method: 'GET',
+            signal: controller.signal,
+            headers: { 'User-Agent': 'SmritiKeepAlive/1.0' }
+          });
+          clearTimeout(timeoutId);
+
+          const ts = new Date().toISOString();
+          console.log(`💓 [Keep-Alive] Ping ${response.ok ? 'OK' : 'WARN'} (HTTP ${response.status}) at ${ts}`);
+        } catch (err) {
+          const reason = err.name === 'AbortError' ? 'timed out after 10 s' : err.message;
+          console.warn(`⚠️  [Keep-Alive] Ping failed: ${reason}`);
+        }
+      }, PING_INTERVAL_MS);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
   });
 }
 
-startServer();
+startServer();
