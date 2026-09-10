@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
 const roundDetailSchema = new mongoose.Schema({
-  level: { type: Number, required: true },
-  itemCount: { type: Number, required: true },
-  mode: { type: String, required: true }, // "categorization" | "math"
-  accuracy: { type: Number, required: true },
-  correctCount: { type: Number, required: true },
-  totalAttempts: { type: Number, required: true },
-  timeTakenSeconds: { type: Number, required: true }
+  level: { type: Number, default: 1 },
+  itemCount: { type: Number, default: 4 },
+  mode: { type: String, default: 'standard' },
+  accuracy: { type: Number, default: 100 },
+  correctCount: { type: Number, default: 1 },
+  totalAttempts: { type: Number, default: 1 },
+  timeTakenSeconds: { type: Number, default: 5 }
 }, { _id: false });
 
 const gameSessionSchema = new mongoose.Schema({
