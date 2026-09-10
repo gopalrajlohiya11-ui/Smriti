@@ -81,13 +81,13 @@ Designed for elderly accessibility with warm, soothing tones (`#FAF7F2`), high-c
 
 ---
 
-### 🎮 Culturally Attuned Cognitive Games Suite (5 Clinical CST Domains)
+### 🎮 Culturally Attuned Cognitive Games Suite (Active CST + 6 Roadmap Therapies)
 Evidence-based digital Cognitive Stimulation Therapy (CST) targeting specific neuroanatomical pathways using authentic North-Eastern Indian cultural assets.
 
 | **Cognitive Games Suite Hub** | **Market Day Basket (বজাৰৰ পাচি)** |
 |:---:|:---:|
 | <img src="docs/screenshots/04_patient_games_suite.png" alt="Games Suite Hub" width="100%"/> | <img src="docs/screenshots/05_game_market_day_basket.png" alt="Market Day Basket" width="100%"/> |
-| *Central game launcher with streak tracking and dynamic difficulty badges* | *Working memory recall of regional produce (Kaji Nemu, Bhut Jolokia, Bamboo Shoot)* |
+| *Central game launcher with streak tracking, category tabs, and roadmap placeholders* | *Working memory recall of regional produce (Kaji Nemu, Bhut Jolokia, Bamboo Shoot)* |
 
 | **Daily Routine Sequencer (दैनिक दिनचर्या)** | **Faces & Family Recall (चेहरे और यादें)** |
 |:---:|:---:|
@@ -98,6 +98,8 @@ Evidence-based digital Cognitive Stimulation Therapy (CST) targeting specific ne
 |:---:|:---:|
 | <img src="docs/screenshots/08_game_sound_rhythm_match.png" alt="Sound Match" width="100%"/> | <img src="docs/screenshots/09_game_odd_one_out.png" alt="Odd One Out" width="100%"/> |
 | *Auditory attention recognizing indigenous instruments (Dhol, Pepa, Shankha)* | *Semantic categorization identifying botanical and culinary anomalies* |
+
+> **🚀 6 New Roadmap Clinical Games**: Village Path Navigator (Spatial Logic), Spice & Herb Sorter (Produce Categorization), Proverb Completer (Semantic Memory), Tea Estate Planner (Executive Sequencing), Mekhela Pattern Match (Visual Discrimination), and Festival Calendar (Temporal Orientation).
 
 ---
 
@@ -169,16 +171,22 @@ Dementia is **not normal aging**. It is a progressive, irreversible neurodegener
 
 ---
 
-### 5 Core Cognitive Domains & Smriti Game Mapping
-Smriti translates clinical **Cognitive Stimulation Therapy (CST)** protocols into 5 culturally grounded digital exercises targeting specific neurological networks:
+### Clinical Cognitive Domains & Smriti Game Mapping (Active CST + Roadmap Expansion)
+Smriti translates evidence-based **Cognitive Stimulation Therapy (CST)** protocols into 5 deployed exercises and 6 roadmap therapy modules targeting distinct neuroanatomical pathways:
 
-| # | Cognitive Domain | Neuroanatomical Focus | Clinical Manifestation in Dementia | Smriti Game Countermeasure |
+| # | Cognitive Domain | Neuroanatomical Focus | Clinical Manifestation in Dementia | Smriti Game Countermeasure (Active & Roadmap) |
 |---|---|---|---|---|
-| **1** | **Episodic & Working Memory** | Hippocampus & Entorhinal Cortex | Forgetting recent meals, names of common ingredients, and market tasks. | **Market Day Basket (বজাৰৰ পাচি)**<br/>Recall and gather authentic regional produce items (*Bhut Jolokia, Bamboo Shoot, Kaji Nemu, Assam Tea*) under dynamic basket constraints. |
-| **2** | **Executive Function & Planning** | Dorsolateral Prefrontal Cortex | Inability to sequence multi-step daily activities (brewing morning tea, dressing, watering Tulsi). | **Daily Routine Sequencer (দैनिक दिनचर्या)**<br/>Step-by-step chronological reordering of familiar cultural daily routines to reinforce motor and procedural memory. |
-| **3** | **Facial Recognition & Reminiscence** | Fusiform Gyrus (FFA) & Limbic System | Prosopagnosia / Facial agnosia; progressive alienation and inability to identify close family members. | **Faces & Family Recall (चेहरे और यादें)**<br/>Reminiscence matching of real family photos, names, and kinship bonds integrated directly with the patient’s Memory Bank. |
-| **4** | **Auditory Attention & Discrimination** | Superior Temporal Gyrus & Auditory Cortex | Inability to localize auditory stimuli, sound confusion, sensory disorientation. | **Sound & Rhythm Match (ध्वनि और लय)**<br/>Acoustic memory association with traditional indigenous instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*). |
-| **5** | **Semantic Categorization & Logic** | Left Temporal Pole & Inferior Parietal Lobule | Semantic confusion; inability to identify category anomalies or functional classifications. | **Odd One Out (अलग पहचानें)**<br/>Visual and semantic discrimination identifying the non-conforming item across regional botanical, culinary, and cultural sets. |
+| **1** | **Episodic & Working Memory** | Hippocampus & Entorhinal Cortex | Forgetting recent meals, names of common ingredients, and market tasks. | **Market Day Basket (বজাৰৰ পাচি) [Active]**<br/>Recall and gather authentic regional produce items (*Bhut Jolokia, Bamboo Shoot, Kaji Nemu, Assam Tea*) under dynamic basket constraints. |
+| **2** | **Executive Function & Planning** | Dorsolateral Prefrontal Cortex | Inability to sequence multi-step daily activities (brewing morning tea, dressing, watering Tulsi). | **Daily Routine Sequencer (दैनिक दिनचर्या) [Active]**<br/>Step-by-step chronological reordering of familiar cultural daily routines to reinforce motor and procedural memory. |
+| **3** | **Facial Recognition & Reminiscence** | Fusiform Gyrus (FFA) & Limbic System | Prosopagnosia / Facial agnosia; progressive alienation and inability to identify close family members. | **Faces & Family Recall (चेहरे और यादें) [Active]**<br/>Reminiscence matching of real family photos, names, and kinship bonds integrated directly with the patient’s Memory Bank. |
+| **4** | **Auditory Attention & Discrimination** | Superior Temporal Gyrus & Auditory Cortex | Inability to localize auditory stimuli, sound confusion, sensory disorientation. | **Sound & Rhythm Match (ध्वनि और लय) [Active]**<br/>Acoustic memory association with traditional indigenous instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*). |
+| **5** | **Semantic Categorization & Logic** | Left Temporal Pole & Inferior Parietal Lobule | Semantic confusion; inability to identify category anomalies or functional classifications. | **Odd One Out (अलग पहचानें) [Active]**<br/>Visual and semantic discrimination identifying the non-conforming item across regional botanical, culinary, and cultural sets. |
+| **6** | **Spatial Navigation & Mental Mapping** | Parietal Lobes & Parahippocampal Place Area (PPA) | Wandering, spatial disorientation, getting lost on familiar village paths. | **Village Path Navigator [Roadmap]**<br/>Assisting an elder to navigate back home through familiar landmarks in Assam and Meghalaya villages. |
+| **7** | **Pattern & Categorical Sorting** | Ventrolateral Prefrontal Cortex | Loss of category sorting abilities, tactile-visual association deficits. | **Spice & Herb Sorter [Roadmap]**<br/>Sorting indigenous North-Eastern spices (*Bhut Jolokia, Ginger, Lakadong Turmeric*) into traditional earthen storage jars. |
+| **8** | **Language & Semantic Fluency** | Broca's & Wernicke's Language Networks | Anomia, difficulty recalling words, loss of cultural idiomatic expressions. | **Proverb Completer [Roadmap]**<br/>Recalling and completing popular regional Assamese, Bengali, and Hindi folk proverbs and wise sayings. |
+| **9** | **Complex Executive Organization** | Frontopolar Cortex & Anterior Cingulate | Inability to plan complex multistep daily logistics. | **Tea Estate Planner [Roadmap]**<br/>Organizing daily agricultural and estate tasks in a tea garden to train multi-tiered executive function. |
+| **10** | **Visual Discrimination & Motif Recall** | Occipitotemporal Visual Cortex | Inability to recognize fine textile patterns and visual distinctions. | **Mekhela Pattern Match [Roadmap]**<br/>Identifying and matching traditional handwoven motifs on indigenous Mekhela Chador and Eri silk garments. |
+| **11** | **Temporal & Seasonal Orientation** | Medial Temporal Lobe & Suprachiasmatic Nucleus | Disorientation in time, season, and regional holiday cycles. | **Festival Calendar [Roadmap]**<br/>Connecting North-Eastern regional festivals (*Rongali Bihu, Wangala, Hornbill, Chapchar Kut*) with their appropriate seasons and months. |
 
 ---
 
@@ -328,13 +336,19 @@ Smriti is engineered as a resilient **3-Tier Delivery Ecosystem**:
 - **Horizon Routines**: Forward chronological progression through 10 daily routines (Morning Tea, Blood Pressure Medication, Hydration, Tulsi walk, Memory Game, Night Rest). Completing a routine dynamically spotlights the next scheduled task.
 - **Audible Celebrations**: Confetti animations and reassuring audio praise upon completing daily health milestones.
 
-### 2. Culturally Attuned Cognitive Games Suite
-All 5 games are deeply rooted in North-Eastern Indian heritage:
-- **Market Day Basket (বজাৰৰ পাচি)**: Memory & classification with 10 authentic NER botanical assets (*Kaji Nemu, Bamboo Shoot, Bhut Jolokia, Assam Tea, Malbhog Banana*).
-- **Daily Routine Sequencer (दैनिक दिनचर्या)**: Procedural memory sequencing daily cultural routines.
-- **Faces & Family Recall (चेहरे और यादें)**: Reminiscence therapy reinforcing family facial recognition and kinship relations.
-- **Sound & Rhythm Match (ध्वनि और लय)**: Auditory memory recognizing regional acoustic instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*).
-- **Odd One Out (अलग पहचानें)**: Semantic discrimination identifying categorical anomalies.
+### 2. Culturally Attuned Cognitive Games Suite (Active CST + 6 Roadmap Modules)
+The games are deeply rooted in North-Eastern Indian heritage and clinical neurology:
+- **Market Day Basket (বজাৰৰ পাচি) [Active]**: Memory & classification with 10 authentic NER botanical assets (*Kaji Nemu, Bamboo Shoot, Bhut Jolokia, Assam Tea, Malbhog Banana*).
+- **Daily Routine Sequencer (दैनिक दिनचर्या) [Active]**: Procedural memory sequencing daily cultural routines.
+- **Faces & Family Recall (चेहरे और यादें) [Active]**: Reminiscence therapy reinforcing family facial recognition and kinship relations.
+- **Sound & Rhythm Match (ध्वनि और लय) [Active]**: Auditory memory recognizing regional acoustic instruments (*Assamese Dhol, Pepa horn, Shankha, Temple Bell*).
+- **Odd One Out (अलग पहचानें) [Active]**: Semantic discrimination identifying categorical anomalies.
+- **Village Path Navigator [Roadmap Placeholder]**: Spatial navigation assisting seniors back home through familiar Assam village landmarks.
+- **Spice & Herb Sorter [Roadmap Placeholder]**: Categorical sorting of traditional NER spices into ceramic jars.
+- **Proverb Completer [Roadmap Placeholder]**: Semantic language fluency recalling regional folk idioms.
+- **Tea Estate Planner [Roadmap Placeholder]**: Executive multi-step planning of tea garden daily workflows.
+- **Mekhela Pattern Match [Roadmap Placeholder]**: Visual discrimination matching indigenous handloom motifs.
+- **Festival Calendar [Roadmap Placeholder]**: Temporal orientation connecting regional festivals with seasons.
 
 ### 3. Multimodal Voice Guidance & Google Gemini AI Assistant
 - **Web Speech Synthesis**: Instant text-to-speech aloud reading across Assamese (`as-IN`), Hindi (`hi-IN`), and English (`en-IN`) with a race-condition-proof audio queue.
