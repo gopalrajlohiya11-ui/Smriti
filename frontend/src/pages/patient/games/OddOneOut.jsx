@@ -216,6 +216,34 @@ class OddAudioSynth {
   }
 }
 
+function createOddCards(levelNum, count, isHindiMode) {
+  const theme = THEMES[(levelNum - 1) % THEMES.length];
+  const totalCards = Math.max(3, Math.min(6, count));
+  const oddIndex = Math.floor(Math.random() * totalCards);
+
+  const generated = [];
+  for (let i = 0; i < totalCards; i++) {
+    if (i === oddIndex) {
+      generated.push({
+        id: `card-odd-${levelNum}-${i}-${Date.now()}`,
+        name: isHindiMode ? theme.odd.hindiName : theme.odd.name,
+        emoji: theme.odd.emoji,
+        hint: isHindiMode ? theme.odd.hindiHint : theme.odd.hint,
+        isOdd: true
+      });
+    } else {
+      generated.push({
+        id: `card-maj-${levelNum}-${i}-${Date.now()}`,
+        name: isHindiMode ? theme.majority.hindiName : theme.majority.name,
+        emoji: theme.majority.emoji,
+        hint: isHindiMode ? theme.majority.hindiHint : theme.majority.hint,
+        isOdd: false
+      });
+    }
+  }
+  return generated;
+}
+
 export default function OddOneOut() {
   const navigate = useNavigate();
   const { currentLanguage, activePatient, isOnline } = useApp();
@@ -228,7 +256,7 @@ export default function OddOneOut() {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [runningScore, setRunningScore] = useState(0);
   const [cardCount, setCardCount] = useState(3);
-  const [cards, setCards] = useState([]);
+  const [cards, setCards] = useState(() => createOddCards(1, 3, false));
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [feedbackState, setFeedbackState] = useState(null); // 'correct' | 'wrong'
   const [feedbackMsg, setFeedbackMsg] = useState('');
@@ -267,29 +295,7 @@ export default function OddOneOut() {
   // Generate round
   const generateRound = useCallback((levelNum, count) => {
     const theme = THEMES[(levelNum - 1) % THEMES.length];
-    const totalCards = Math.max(3, Math.min(6, count));
-    const oddIndex = Math.floor(Math.random() * totalCards);
-
-    const generated = [];
-    for (let i = 0; i < totalCards; i++) {
-      if (i === oddIndex) {
-        generated.push({
-          id: `card-odd-${levelNum}-${i}`,
-          name: isHindi ? theme.odd.hindiName : theme.odd.name,
-          emoji: theme.odd.emoji,
-          hint: isHindi ? theme.odd.hindiHint : theme.odd.hint,
-          isOdd: true
-        });
-      } else {
-        generated.push({
-          id: `card-maj-${levelNum}-${i}`,
-          name: isHindi ? theme.majority.hindiName : theme.majority.name,
-          emoji: theme.majority.emoji,
-          hint: isHindi ? theme.majority.hindiHint : theme.majority.hint,
-          isOdd: false
-        });
-      }
-    }
+    const generated = createOddCards(levelNum, count, isHindi);
 
     setCards(generated);
     setSelectedCardId(null);
@@ -310,6 +316,9 @@ export default function OddOneOut() {
     let isMounted = true;
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
+
+    // Immediately trigger voice and fresh round 1:
+    generateRound(1, 3);
 
     async function initAdaptiveStartingDifficulty() {
       try {
@@ -332,10 +341,10 @@ export default function OddOneOut() {
             setAiStartingBanner(msg);
             setTimeout(() => { if (isMounted) setAiStartingBanner(null); }, 6000);
           }
+          generateRound(1, initialCount);
         }
-        generateRound(1, initialCount);
       } catch (e) {
-        generateRound(1, 3);
+        // Fallback already rendered
       }
     }
 
