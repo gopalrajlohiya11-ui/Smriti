@@ -760,45 +760,52 @@ export async function fetchLastGameDifficulty(patientId, gameType = '') {
   }
 }
 
-// 14. Translate Speech / Regional Reminder Text (POST /api/speech/translate)
+// Fast in-memory caches for speech & translation to achieve 0ms instant playback
+const frontendTranslationCache = new Map();
+const frontendSynthesisCache = new Map();
+
+// 14. Translate Speech / Reminders into Regional Dialect (POST /api/translation/translate)
 export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' }) {
   if (!textToSpeak) return { translated_text: '', original_text: '', source: 'empty' };
 
+  const cleanLang = (targetLanguage || 'en').split('-')[0].split('_')[0].toLowerCase();
+  const cacheKey = `${cleanLang}:${textToSpeak.trim()}`;
+  if (frontendTranslationCache.has(cacheKey)) {
+    return frontendTranslationCache.get(cacheKey);
+  }
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/speech/translate`, {
+    const response = await fetch(`${API_BASE_URL}/translation/translate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ textToSpeak, targetLanguage }),
+      body: JSON.stringify({ textToSpeak, targetLanguage: cleanLang }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      frontendTranslationCache.set(cacheKey, data);
+      return data;
     }
     throw new Error(`HTTP error ${response.status}`);
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn('Backend translation route unreachable, trying direct teammate AI engine fallback:', err.message);
 
-    // Direct fallback to Teammate AI Engine on Render
+    // Direct fallback to ML microservice on Render with fast 3.5s timeout
     try {
       const directController = new AbortController();
-      const directTimeoutId = setTimeout(() => directController.abort(), 6000);
-      const isRegional = (targetLanguage || 'en').toLowerCase().startsWith('as') || (targetLanguage || 'en').toLowerCase().startsWith('hi');
-      const directEndpoint = isRegional 
-        ? 'https://dementia-ai-engine.onrender.com/speak_regional_reminder' 
-        : 'https://dementia-ai-engine.onrender.com/speak_reminder';
+      const directTimeoutId = setTimeout(() => directController.abort(), 3500);
 
-      const directRes = await fetch(directEndpoint, {
+      const directRes = await fetch('https://dementia-ai-engine.onrender.com/speak_regional_reminder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text_to_speak: textToSpeak,
-          target_language: targetLanguage.split('-')[0].toLowerCase()
+          target_language: cleanLang
         }),
         signal: directController.signal
       });
@@ -806,15 +813,17 @@ export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' })
 
       if (directRes.ok) {
         const data = await directRes.json();
-        return {
+        const resObj = {
           translated_text: data.translated_text || data.spoken_text || textToSpeak,
           original_text: textToSpeak,
           target_language: targetLanguage,
           source: 'direct_live_api'
         };
+        frontendTranslationCache.set(cacheKey, resObj);
+        return resObj;
       }
     } catch (directErr) {
-      console.warn('Direct live translation fallback error:', directErr.message);
+      // Graceful fallback
     }
 
     // Ultimate safe fallback: Return original untranslated text
@@ -831,31 +840,39 @@ export async function translateSpeechApi({ textToSpeak, targetLanguage = 'en' })
 export async function synthesizeSpeechApi({ textToSpeak, targetLanguage = 'en' }) {
   if (!textToSpeak) return { audio_base64: null, spoken_text: '', translated_text: '', source: 'empty' };
 
+  const cleanLang = (targetLanguage || 'en').split('-')[0].split('_')[0].toLowerCase();
+  const cacheKey = `${cleanLang}:${textToSpeak.trim()}`;
+  if (frontendSynthesisCache.has(cacheKey)) {
+    return frontendSynthesisCache.get(cacheKey);
+  }
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 7000);
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
 
   try {
     const response = await fetch(`${API_BASE_URL}/speech/synthesize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ textToSpeak, targetLanguage }),
+      body: JSON.stringify({ textToSpeak, targetLanguage: cleanLang }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      if (data && data.audio_base64) {
+        frontendSynthesisCache.set(cacheKey, data);
+      }
+      return data;
     }
     throw new Error(`HTTP error ${response.status}`);
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn('Backend synthesis route unreachable, attempting direct microservice fallback:', err.message);
 
     // Direct fallback to ML microservice on Render
     try {
       const directController = new AbortController();
-      const directTimeoutId = setTimeout(() => directController.abort(), 7000);
-      const cleanLang = (targetLanguage || 'en').split('-')[0].split('_')[0].toLowerCase();
+      const directTimeoutId = setTimeout(() => directController.abort(), 3500);
 
       const directRes = await fetch('https://dementia-ai-engine.onrender.com/synthesize_speech', {
         method: 'POST',
@@ -870,7 +887,7 @@ export async function synthesizeSpeechApi({ textToSpeak, targetLanguage = 'en' }
 
       if (directRes.ok) {
         const data = await directRes.json();
-        return {
+        const resObj = {
           audio_base64: data.audio_base64 || null,
           spoken_text: data.spoken_text || data.translated_text || textToSpeak,
           translated_text: data.spoken_text || data.translated_text || textToSpeak,
@@ -879,9 +896,13 @@ export async function synthesizeSpeechApi({ textToSpeak, targetLanguage = 'en' }
           engine: data.engine || 'direct_bhashini_fallback',
           source: 'direct_microservice'
         };
+        if (resObj.audio_base64) {
+          frontendSynthesisCache.set(cacheKey, resObj);
+        }
+        return resObj;
       }
     } catch (directErr) {
-      console.warn('Direct live synthesis fallback error:', directErr.message);
+      // Fallback
     }
 
     return {

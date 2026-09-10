@@ -1,7 +1,30 @@
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
+
+// Keep-alive agents to eliminate TCP/TLS connection handshake latency on repeated calls
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 50 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 50 });
+const axiosClient = axios.create({
+  httpAgent,
+  httpsAgent
+});
+
+// Fast in-memory caches to deliver 0ms instant playback for repeated phrases
+const translationCache = new Map();
+const synthesisCache = new Map();
+const MAX_CACHE_SIZE = 500;
+
+function setCache(cacheMap, key, value) {
+  if (cacheMap.size >= MAX_CACHE_SIZE) {
+    const firstKey = cacheMap.keys().next().value;
+    cacheMap.delete(firstKey);
+  }
+  cacheMap.set(key, value);
+}
 
 const getBaseUrl = () => process.env.ML_SERVICE_URL || 'https://dementia-ai-engine.onrender.com';
-const getTimeout = () => parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 6000;
+const getTimeout = () => parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 3500;
 
 // North-Eastern & Indic regional language codes that route to regional translation
 const REGIONAL_LANGUAGES = [
@@ -63,6 +86,16 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
     };
   }
 
+  // Check in-memory translation cache (0ms instant response)
+  const cacheKey = `${normalizedLang}:${rawText}`;
+  if (translationCache.has(cacheKey)) {
+    console.log(`⚡ [Translation Service] Cache hit for [${normalizedLang}]: "${rawText.slice(0, 30)}..."`);
+    return {
+      ...translationCache.get(cacheKey),
+      source: 'memory_cache'
+    };
+  }
+
   const isRegional = REGIONAL_LANGUAGES.includes(normalizedLang) || normalizedLang === 'as';
 
   try {
@@ -77,7 +110,7 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
       };
       
       console.log(`🌐 [Translation Service] POST /speak_regional_reminder (lang="${normalizedLang}", timeout=${timeoutMs}ms)...`);
-      response = await axios.post(`${baseUrl}/speak_regional_reminder`, payload, {
+      response = await axiosClient.post(`${baseUrl}/speak_regional_reminder`, payload, {
         timeout: timeoutMs,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -89,7 +122,7 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
       };
 
       console.log(`🌐 [Translation Service] POST /speak_reminder (lang="${normalizedLang}", timeout=${timeoutMs}ms)...`);
-      response = await axios.post(`${baseUrl}/speak_reminder`, payload, {
+      response = await axiosClient.post(`${baseUrl}/speak_reminder`, payload, {
         timeout: timeoutMs,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -107,13 +140,15 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
       const elapsed = Date.now() - startTime;
       console.log(`✅ [Translation Service] Response received in ${elapsed}ms [${normalizedLang}]: "${translatedText.slice(0, 80)}..." (engine: ${engine})`);
 
-      return {
+      const result = {
         translated_text: translatedText,
         original_text: rawText,
         target_language: normalizedLang,
         source: 'live_api',
         engine: engine
       };
+      setCache(translationCache, cacheKey, result);
+      return result;
     }
 
     console.warn('⚠️ [Translation Service] Received empty data from translation API, returning original text.');
@@ -137,7 +172,7 @@ async function getTranslatedSpeech({ textToSpeak, targetLanguage = 'en' }) {
 
 /**
  * Synthesizes text into base64 audio via Bhashini / ML TTS microservice on Render.
- * Calls POST /synthesize_speech with 6-second timeout and robust fallbacks.
+ * Calls POST /synthesize_speech with 3.5-second timeout and robust fallbacks.
  * 
  * @param {Object} params
  * @param {string} params.textToSpeak - Raw text to synthesize and translate
@@ -161,6 +196,16 @@ async function getSynthesizedSpeech({ textToSpeak, targetLanguage = 'en' }) {
   const baseUrl = getBaseUrl();
   const timeoutMs = getTimeout();
 
+  // Check in-memory synthesis cache (0ms instant playback)
+  const synthCacheKey = `${normalizedLang}:${rawText}`;
+  if (synthesisCache.has(synthCacheKey)) {
+    console.log(`⚡ [Bhashini Synthesis] Cache hit for [${normalizedLang}]: "${rawText.slice(0, 30)}..."`);
+    return {
+      ...synthesisCache.get(synthCacheKey),
+      source: 'memory_cache'
+    };
+  }
+
   try {
     const startTime = Date.now();
     const payload = {
@@ -169,7 +214,7 @@ async function getSynthesizedSpeech({ textToSpeak, targetLanguage = 'en' }) {
     };
 
     console.log(`🎙️ [Bhashini Synthesis Service] POST /synthesize_speech (lang="${normalizedLang}", timeout=${timeoutMs}ms)...`);
-    const response = await axios.post(`${baseUrl}/synthesize_speech`, payload, {
+    const response = await axiosClient.post(`${baseUrl}/synthesize_speech`, payload, {
       timeout: timeoutMs,
       headers: { 'Content-Type': 'application/json' }
     });
@@ -179,7 +224,7 @@ async function getSynthesizedSpeech({ textToSpeak, targetLanguage = 'en' }) {
       const spokenText = response.data.spoken_text || response.data.translated_text || rawText;
       console.log(`✅ [Bhashini Synthesis Service] Audio generated in ${elapsed}ms [${normalizedLang}] (size: ${response.data.audio_base64.length} chars)`);
 
-      return {
+      const result = {
         audio_base64: response.data.audio_base64,
         spoken_text: spokenText,
         translated_text: spokenText,
@@ -188,6 +233,8 @@ async function getSynthesizedSpeech({ textToSpeak, targetLanguage = 'en' }) {
         engine: response.data.engine || 'bhashini_tts_engine',
         source: 'live_bhashini_api'
       };
+      setCache(synthesisCache, synthCacheKey, result);
+      return result;
     }
 
     console.warn('⚠️ [Bhashini Synthesis Service] No audio_base64 returned from microservice.');

@@ -15,6 +15,7 @@ export const ASSAMESE_VOICE_NOTICE = "অসমীয়া কণ্ঠস্�
 
 let cachedVoices = [];
 let voicesLoadedPromise = null;
+const clientAudioCache = new Map();
 
 // Pre-populate voices and listen to browser voiceschanged event on app load
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -283,8 +284,9 @@ export const speakLocalized = async ({
   }
 
   const code = (langCode || 'en').toLowerCase();
+  const cacheKey = `${code}:${cleanText}`;
 
-  // Helper for Web Speech Fallback when Bhashini API is unavailable or offline
+  // Helper for Web Speech Fallback when Bhashini API is unavailable or for instant local speech
   const fallbackToWebSpeech = async (textToSpeak) => {
     if (thisRequestId !== activeSpeechRequestId) return;
 
@@ -357,7 +359,49 @@ export const speakLocalized = async ({
   };
 
   // =========================================================================
-  // 1. PRIMARY PIPELINE: Bhashini TTS Base64 Audio Synthesis via Backend
+  // FAST-PATH 1: Instant Local Speech for English (0ms latency)
+  // =========================================================================
+  if (code === 'en' || code.startsWith('en')) {
+    console.log(`⚡ [SpeechSynthesis] Instant 0ms playback for English [${code}]`);
+    await fallbackToWebSpeech(cleanText);
+    return;
+  }
+
+  // =========================================================================
+  // FAST-PATH 2: Instant Cached Base64 Audio Playback (0ms latency)
+  // =========================================================================
+  if (clientAudioCache.has(cacheKey)) {
+    console.log(`⚡ [Bhashini Pipeline] Instant cache hit for [${code}]: "${cleanText.slice(0, 30)}..."`);
+    const cachedBase64 = clientAudioCache.get(cacheKey);
+    const audioSrc = cachedBase64.startsWith('data:') ? cachedBase64 : `data:audio/wav;base64,${cachedBase64}`;
+    const audio = new Audio(audioSrc);
+    audio.playbackRate = rate || 1.0;
+    activeAudioElement = audio;
+
+    audio.onplay = () => {
+      if (thisRequestId === activeSpeechRequestId && onStart) onStart();
+    };
+    audio.onended = () => {
+      if (thisRequestId === activeSpeechRequestId) {
+        activeAudioElement = null;
+        if (onEnd) onEnd();
+      }
+    };
+    audio.onerror = () => {
+      activeAudioElement = null;
+      fallbackToWebSpeech(cleanText);
+    };
+
+    try {
+      await audio.play();
+      return;
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  // =========================================================================
+  // 3. PRIMARY PIPELINE: Bhashini TTS Base64 Audio Synthesis via Backend
   // =========================================================================
   try {
     console.log(`🎙️ [Bhashini Pipeline] Requesting synthesis for [${code}]: "${cleanText.slice(0, 40)}..."`);
@@ -371,6 +415,8 @@ export const speakLocalized = async ({
     if (synthResult && synthResult.audio_base64) {
       console.log(`🔊 [Bhashini Pipeline] Playing native synthesized Base64 audio for [${code}] (engine: ${synthResult.engine || 'Bhashini'})`);
       const base64Data = synthResult.audio_base64;
+      clientAudioCache.set(cacheKey, base64Data);
+
       const audioSrc = base64Data.startsWith('data:') 
         ? base64Data 
         : `data:audio/wav;base64,${base64Data}`;
@@ -411,7 +457,7 @@ export const speakLocalized = async ({
   }
 
   // =========================================================================
-  // 2. RESILIENT FALLBACK: Web Speech API & Assamese Notice
+  // 4. RESILIENT FALLBACK: Web Speech API & Assamese Notice
   // =========================================================================
   console.log(`🔄 [Bhashini Pipeline] Executing fallback to Web Speech for [${code}]`);
   await fallbackToWebSpeech(cleanText);
