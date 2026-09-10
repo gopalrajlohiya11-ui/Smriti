@@ -331,12 +331,30 @@ export const cognitiveGames = [
 ];
 
 export const regionalLanguages = [
-  { code: 'en', name: 'English', greeting: 'Good Morning', dir: 'ltr', status: 'active' },
-  { code: 'hi', name: 'हिन्दी (Hindi)', greeting: 'नमस्ते (Namaste)', dir: 'ltr', status: 'active' },
-  { code: 'as', name: 'অসমীয়া (Assamese)', greeting: 'সুপ্ৰভাত (Xubho Probhat)', dir: 'ltr', status: 'active' },
-  { code: 'kha', name: 'Khasi (Meghalaya)', greeting: 'Kumno (Good Day)', dir: 'ltr', status: 'coming_soon' },
-  { code: 'mizo', name: 'Mizo (Mizoram)', greeting: 'Chibai (Welcome)', dir: 'ltr', status: 'coming_soon' },
-  { code: 'bn', name: 'বাংলা (Bengali)', greeting: 'সুপ্রভাত (Suprobhat)', dir: 'ltr', status: 'coming_soon' }
+  // ── DEPLOYED & ACTIVE (BHASHINI NMT + TTS SYNTHESIS) ──
+  { code: 'en', name: 'English', greeting: 'Good Morning', dir: 'ltr', status: 'active', region: 'National' },
+  { code: 'hi', name: 'हिन्दी (Hindi)', greeting: 'नमस्ते (Namaste)', dir: 'ltr', status: 'active', region: 'National / NER' },
+  { code: 'as', name: 'অসমীয়া (Assamese)', greeting: 'সুপ্ৰভাত (Xubho Probhat)', dir: 'ltr', status: 'active', region: 'Assam' },
+  { code: 'bn', name: 'বাংলা (Bengali)', greeting: 'সুপ্রভাত (Suprobhat)', dir: 'ltr', status: 'active', region: 'Barak Valley / Tripura' },
+  { code: 'brx', name: 'बड़ो (Bodo)', greeting: 'खुलुमबाय (Khulumbai)', dir: 'ltr', status: 'active', region: 'Bodoland / Assam' },
+  { code: 'mni', name: 'মৈতৈলোন্ (Manipuri)', greeting: 'খুরুমজরি (Khurumjari)', dir: 'ltr', status: 'active', region: 'Manipur' },
+
+  // ── COMING SOON (NORTH-EASTERN & INDIC PIPELINE EXPANSION) ──
+  { code: 'kha', name: 'Khasi (Meghalaya)', greeting: 'Kumno (Good Day)', dir: 'ltr', status: 'coming_soon', region: 'Meghalaya' },
+  { code: 'mizo', name: 'Mizo (Mizoram)', greeting: 'Chibai (Welcome)', dir: 'ltr', status: 'coming_soon', region: 'Mizoram' },
+  { code: 'grt', name: 'Garo (Meghalaya)', greeting: 'Namgipa (Greetings)', dir: 'ltr', status: 'coming_soon', region: 'Meghalaya' },
+  { code: 'trp', name: 'Kokborok (Tripura)', greeting: 'Khulumkha (Hello)', dir: 'ltr', status: 'coming_soon', region: 'Tripura' },
+  { code: 'nag', name: 'Nagamese (Nagaland)', greeting: 'Sale (Hello)', dir: 'ltr', status: 'coming_soon', region: 'Nagaland' },
+  { code: 'adi', name: 'Adi (Arunachal)', greeting: 'Kadu (Welcome)', dir: 'ltr', status: 'coming_soon', region: 'Arunachal Pradesh' },
+  { code: 'ne', name: 'नेपाली (Nepali / Sikkim)', greeting: 'नमस्ते (Namaste)', dir: 'ltr', status: 'coming_soon', region: 'Sikkim' },
+  { code: 'or', name: 'ଓଡ଼ିଆ (Odia)', greeting: 'ନମସ୍କাৰ (Namaskara)', dir: 'ltr', status: 'coming_soon', region: 'Odisha' },
+  { code: 'mr', name: 'मराठी (Marathi)', greeting: 'शुभ प्रभात (Shubh Prabhat)', dir: 'ltr', status: 'coming_soon', region: 'Maharashtra' },
+  { code: 'gu', name: 'ગુજરાતી (Gujarati)', greeting: 'સુપ્રભાત (Suprabhat)', dir: 'ltr', status: 'coming_soon', region: 'Gujarat' },
+  { code: 'ta', name: 'தமிழ் (Tamil)', greeting: 'வணக்கம் (Vanakkam)', dir: 'ltr', status: 'coming_soon', region: 'Tamil Nadu' },
+  { code: 'te', name: 'తెలుగు (Telugu)', greeting: 'శుభోదయం (Shubhodayam)', dir: 'ltr', status: 'coming_soon', region: 'Andhra / Telangana' },
+  { code: 'kn', name: 'ಕನ್ನಡ (Kannada)', greeting: 'ಶುಭೋದಯ (Shubhodaya)', dir: 'ltr', status: 'coming_soon', region: 'Karnataka' },
+  { code: 'ml', name: 'മലയാളം (Malayalam)', greeting: 'സുപ്രഭാതം (Suprabhatham)', dir: 'ltr', status: 'coming_soon', region: 'Kerala' },
+  { code: 'bho', name: 'भोजपुरी (Bhojpuri)', greeting: 'प्रणाम (Pranam)', dir: 'ltr', status: 'coming_soon', region: 'Bihar / UP' }
 ];
 
 export const defaultGameSessionsByPatient = {

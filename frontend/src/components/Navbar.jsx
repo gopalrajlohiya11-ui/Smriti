@@ -135,35 +135,73 @@ export default function Navbar() {
 
               {langDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-[#E5E0D8] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="absolute right-0 mt-2 w-80 rounded-2xl bg-white border border-[#E5E0D8] shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 max-h-[460px] overflow-y-auto"
                   onMouseLeave={() => setLangDropdownOpen(false)}
                 >
-                  <div className="px-4 py-2 text-xs font-bold text-[#6B6B6B] uppercase tracking-wider border-b border-stone-100">
-                    {t('navbar.regionalLanguages', 'Languages')}
+                  {/* Deployed Active Languages */}
+                  <div className="px-4 py-2 text-[10px] font-black text-emerald-800 bg-emerald-50/70 uppercase tracking-wider flex items-center justify-between border-y border-emerald-100 first:border-t-0">
+                    <span>🟢 Deployed (Bhashini AI Voice & NMT)</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-900 font-bold">Active</span>
                   </div>
-                  {regionalLanguages.map((lang) => {
-                    const isComingSoon = lang.status === 'coming_soon';
+                  {regionalLanguages.filter(l => l.status === 'active').map((lang) => {
                     const isCurrent = currentLanguage.code === lang.code;
 
                     return (
                       <button
                         key={lang.code}
                         onClick={() => handleLanguageSelect(lang)}
-                        className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                        className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm flex items-center justify-between transition-colors cursor-pointer border-b border-stone-50 ${
                           isCurrent
-                            ? 'bg-[#FDF6F0] text-[#B5502E] font-bold'
-                            : 'text-[#2B2B2B] hover:bg-stone-50'
+                            ? 'bg-[#FDF6F0] text-[#B5502E] font-black'
+                            : 'text-[#2B2B2B] hover:bg-stone-50 font-medium'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span>{lang.name}</span>
-                          {isComingSoon && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-[#6B6B6B] border border-[#E5E0D8]">
-                              {t('navbar.comingSoon', 'Soon')}
-                            </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span>{lang.name}</span>
+                            {isCurrent && <Check className="w-3.5 h-3.5 text-[#B5502E] stroke-[3]" />}
+                          </div>
+                          {lang.region && (
+                            <span className="text-[10px] text-[#8C8C8C] font-normal">{lang.region}</span>
                           )}
                         </div>
                         <span className="text-xs text-[#6B6B6B] font-normal italic">
+                          {lang.greeting.split(' ')[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  {/* Coming Soon Languages */}
+                  <div className="px-4 py-2 mt-2 text-[10px] font-black text-amber-800 bg-amber-50/70 uppercase tracking-wider flex items-center justify-between border-y border-amber-100">
+                    <span>⏳ In Pipeline (Regional Rollout)</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-200/80 text-amber-900 font-bold">Soon</span>
+                  </div>
+                  {regionalLanguages.filter(l => l.status === 'coming_soon').map((lang) => {
+                    const isCurrent = currentLanguage.code === lang.code;
+
+                    return (
+                      <button
+                        key={lang.code}
+                        onClick={() => handleLanguageSelect(lang)}
+                        className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer border-b border-stone-50/60 ${
+                          isCurrent
+                            ? 'bg-[#FDF6F0] text-[#B5502E] font-bold'
+                            : 'text-[#4A4A4A] hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span>{lang.name}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-stone-100 text-[#6B6B6B] border border-[#E5E0D8]">
+                              Soon
+                            </span>
+                          </div>
+                          {lang.region && (
+                            <span className="text-[9.5px] text-[#8C8C8C]">{lang.region}</span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-[#6B6B6B] italic">
                           {lang.greeting.split(' ')[0]}
                         </span>
                       </button>
