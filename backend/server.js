@@ -37,36 +37,9 @@ mongoose.connection.on('reconnected', () => {
   console.log(`🔄 [MongoDB Atlas] Reconnected successfully to MongoDB Atlas!`);
 });
 
-// Robust health check endpoint for uptime monitoring & Render diagnostics
-const getHealthStatus = (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const stateMap = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting'
-  };
-
-  const isHealthy = dbState === 1;
-  const status = isHealthy ? 'ok' : 'degraded';
-
-  res.status(isHealthy ? 200 : 503).json({
-    status,
-    server: 'online',
-    timestamp: new Date().toISOString(),
-    uptimeSeconds: Math.round(process.uptime()),
-    database: {
-      status: stateMap[dbState] || 'unknown',
-      readyState: dbState,
-      name: mongoose.connection.name || null,
-      host: mongoose.connection.host || null,
-      isConfigured: Boolean(process.env.MONGO_URI)
-    }
-  });
-};
-
-app.get('/health', getHealthStatus);
-app.get('/api/health', getHealthStatus);
+// Lightweight health check — returns plain "ok" to satisfy cron-job.org keep-alive
+app.get('/health', (req, res) => res.status(200).send('ok'));
+app.get('/api/health', (req, res) => res.status(200).send('ok'));
 
 // Import routes
 const caregiverRoutes = require('./routes/caregiverRoutes');
