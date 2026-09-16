@@ -136,21 +136,7 @@ Smriti/
 
 ---
 
-## 8. Final Presentation
 
-The project presentation (PPT) is available on Google Drive (access: Anyone with the link — Viewer).
-
-[View Presentation on Google Drive](https://docs.google.com/file/d/1ZMWVouCgjB8nl_J1NueILKSQ3ZTZmB5A/view)
-
----
-
-## 9. Demo Video
-
-A full product walkthrough demo video is available on YouTube.
-
-[Watch Demo Video on YouTube](https://youtu.be/TTV7cAvSF-s)
-
----
 
 ## 10. Screenshots / Prototype Photos
 
